@@ -26,6 +26,27 @@ public class WorkoutPlanRepositoryImpl implements WorkoutPlanRepository {
     private static final int PAGE_SIZE = 10;
 
     @Override
+    public long countAll() {
+        Session s = factory.getObject().getCurrentSession();
+        var cb = s.getCriteriaBuilder();
+        var cq = cb.createQuery(Long.class);
+        var root = cq.from(WorkoutPlan.class);
+        cq.select(cb.count(root));
+        return s.createQuery(cq).getSingleResult();
+    }
+
+    @Override
+    public long countTemplatePlans() {
+        Session s = factory.getObject().getCurrentSession();
+        var cb = s.getCriteriaBuilder();
+        var cq = cb.createQuery(Long.class);
+        var root = cq.from(WorkoutPlan.class);
+        cq.select(cb.count(root));
+        cq.where(cb.isTrue(root.get("isTemplate")));
+        return s.createQuery(cq).getSingleResult();
+    }
+
+    @Override
     public WorkoutPlan save(WorkoutPlan p) {
         Session s = factory.getObject().getCurrentSession();
         if (p.getPlanId() == null) {
@@ -85,7 +106,10 @@ public class WorkoutPlanRepositoryImpl implements WorkoutPlanRepository {
 
         int page = 1;
         if (params != null && params.get("page") != null) {
-            try { page = Math.max(Integer.parseInt(params.get("page")), 1); } catch (NumberFormatException ignore) {}
+            try {
+                page = Math.max(Integer.parseInt(params.get("page")), 1);
+            } catch (NumberFormatException ignore) {
+            }
         }
         int start = (page - 1) * PAGE_SIZE;
         q.setFirstResult(start);

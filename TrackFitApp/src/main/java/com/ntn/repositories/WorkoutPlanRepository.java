@@ -10,4 +10,6 @@ public interface WorkoutPlanRepository {
     void delete(WorkoutPlan p);
     List<WorkoutPlan> getPlansByUser(Integer userId, java.util.Map<String,String> params);
     long countPlansByUser(Integer userId, java.util.Map<String,String> params);
+    long countAll();
+    long countTemplatePlans();
 }

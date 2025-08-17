@@ -1,0 +1,112 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="${mode=='edit'} ? 'Cập nhật người dùng' : 'Thêm người dùng'">Người dùng</title>
+  <th:block th:replace="~{base :: resources}"></th:block>
+</head>
+<body>
+<div th:replace="~{base :: header}"></div>
+
+<main class="container py-4" style="max-width:820px">
+  <h3 class="mb-3" th:text="${mode=='edit'} ? 'Cập nhật người dùng' : 'Thêm người dùng'"></h3>
+
+  <form th:action="${mode=='edit'} ? @{'/users/' + ${userId}} : @{/users}"
+        method="post" th:object="${form}" enctype="multipart/form-data">
+
+    <!-- Username / Email -->
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Username</label>
+        <input class="form-control" th:field="*{username}" th:readonly="${mode=='edit'}" required>
+        <div class="text-danger small" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Email</label>
+        <input class="form-control" th:field="*{email}">
+        <div class="text-danger small" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+      </div>
+    </div>
+
+    <!-- Họ tên -->
+    <div class="row g-3 mt-1">
+      <div class="col-md-6">
+        <label class="form-label">Họ</label>
+        <input class="form-control" th:field="*{firstName}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Tên</label>
+        <input class="form-control" th:field="*{lastName}">
+      </div>
+    </div>
+
+    <!-- Role + Password -->
+    <div class="row g-3 mt-1">
+      <div class="col-md-6">
+        <label class="form-label">Role</label>
+        <select class="form-select" th:field="*{role}" required>
+          <option value="ROLE_USER">ROLE_USER</option>
+          <option value="ROLE_ADMIN">ROLE_ADMIN</option>
+        </select>
+        <div class="text-danger small" th:if="${#fields.hasErrors('role')}" th:errors="*{role}"></div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" th:text="${mode=='edit'} ? 'Đổi mật khẩu (nếu cần)' : 'Mật khẩu'"></label>
+        <input type="password" class="form-control" th:field="*{password}"
+               th:attrappend="${mode=='create'} ? ' required' : ''">
+        <div class="text-danger small" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+      </div>
+    </div>
+
+    <!-- Giới tính + Ngày sinh (chỉ 1 block) -->
+    <div class="row g-3 mt-1" th:with="genders=${{'Male','Female'}}">
+      <div class="col-md-6">
+        <label class="form-label">Giới tính</label>
+        <select class="form-select" th:field="*{gender}"
+                th:attrappend="${mode=='create'} ? ' required' : ''">
+          <option th:if="${mode=='create'}" th:value="" disabled selected>-- Chọn giới tính --</option>
+          <option th:each="g : ${genders}" th:value="${g}" th:text="${g}"></option>
+        </select>
+        <div class="text-danger small" th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}"></div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Ngày sinh</label>
+        <input type="date" class="form-control" th:field="*{birthDate}"
+               th:attr="max=${#temporals.format(#temporals.createNow(),'yyyy-MM-dd')}"
+               th:attrappend="${mode=='create'} ? ' required' : ''">
+        <div class="text-danger small" th:if="${#fields.hasErrors('birthDate')}" th:errors="*{birthDate}"></div>
+      </div>
+    </div>
+
+    <!-- Avatar -->
+    <div class="row g-3 mt-1">
+      <div class="col-md-6">
+        <label class="form-label">Ảnh đại diện</label>
+        <input type="file" class="form-control" th:field="*{avatarFile}" accept="image/*" onchange="previewAvatar(event)">
+        <div class="form-text">Chấp nhận: jpg, png, gif…</div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label d-block">Xem trước</label>
+        <img id="avatarPreview"
+             th:src="${form.avatarUrl} != null ? ${form.avatarUrl} : @{/img/avatar-placeholder.png}"
+             alt="avatar" style="max-width: 140px; border-radius: 8px;">
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <button class="btn btn-primary">Lưu</button>
+      <a class="btn btn-secondary" th:href="@{/users}">Hủy</a>
+    </div>
+  </form>
+</main>
+
+<script>
+  function previewAvatar(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    document.getElementById('avatarPreview').src = URL.createObjectURL(file);
+  }
+</script>
+
+<div th:replace="~{base :: footer}"></div>
+</body>
+</html>

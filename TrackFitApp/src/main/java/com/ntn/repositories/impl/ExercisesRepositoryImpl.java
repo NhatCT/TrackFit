@@ -2,7 +2,7 @@ package com.ntn.repositories.impl;
 
 import com.ntn.pojo.Exercises;
 import com.ntn.repositories.ExercisesRepository;
-import jakarta.persistence.TypedQuery;                         
+import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -24,6 +24,16 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
     private LocalSessionFactoryBean factory;
 
     private static final int PAGE_SIZE = 10;
+
+    @Override
+    public long countAll() {
+        Session s = factory.getObject().getCurrentSession();
+        var cb = s.getCriteriaBuilder();
+        var cq = cb.createQuery(Long.class);
+        var root = cq.from(Exercises.class);
+        cq.select(cb.count(root));
+        return s.createQuery(cq).getSingleResult();
+    }
 
     @Override
     public Exercises save(Exercises e) {
@@ -74,8 +84,9 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
             // ));
         }
 
-        if (!predicates.isEmpty())
+        if (!predicates.isEmpty()) {
             cq.where(predicates.toArray(Predicate[]::new));
+        }
 
         // Sắp xếp mặc định: mới nhất trước (fallback theo id nếu thiếu createdAt)
         try {
@@ -89,7 +100,10 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
         // page 1-based
         int page = 1;
         if (params != null && params.get("page") != null) {
-            try { page = Math.max(Integer.parseInt(params.get("page")), 1); } catch (NumberFormatException ignore) {}
+            try {
+                page = Math.max(Integer.parseInt(params.get("page")), 1);
+            } catch (NumberFormatException ignore) {
+            }
         }
         int start = (page - 1) * PAGE_SIZE;
         q.setFirstResult(start);
@@ -119,8 +133,9 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
             // ));
         }
 
-        if (!predicates.isEmpty())
+        if (!predicates.isEmpty()) {
             cq.where(predicates.toArray(Predicate[]::new));
+        }
 
         cq.select(cb.count(root));
         TypedQuery<Long> q = s.createQuery(cq); // << TypedQuery

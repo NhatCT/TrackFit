@@ -1,0 +1,45 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Danh sách bài tập</title>
+  <th:block th:replace="base :: resources"></th:block>
+</head>
+<body>
+<div th:replace="base :: header"></div>
+
+<main class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">Bài tập</h3>
+    <a class="btn btn-primary" th:href="@{/exercises/new}">Thêm bài tập</a>
+  </div>
+
+  <div th:if="${msg}" class="alert alert-success" th:text="${msg}"></div>
+
+  <table class="table table-hover align-middle">
+    <thead><tr>
+      <th>ID</th><th>Tên</th><th>Nhóm cơ</th><th>Mục tiêu</th><th>Video</th><th></th>
+    </tr></thead>
+    <tbody>
+    <tr th:each="e : ${items}">
+      <td th:text="${e.exercisesId}">1</td>
+      <td th:text="${e.name}">Push Up</td>
+      <td th:text="${e.muscleGroup}">Chest</td>
+      <td th:text="${e.targetGoal}">Tăng cơ</td>
+      <td>
+        <a th:if="${e.videoUrl}" th:href="${e.videoUrl}" target="_blank">Xem</a>
+      </td>
+      <td class="text-end">
+        <a th:href="@{'/exercises/' + ${e.exercisesId}}" class="btn btn-sm btn-outline-primary">Sửa</a>
+        <button class="btn btn-sm btn-outline-danger"
+                th:onclick="'confirmDelete(\'/exercises/' + ${e.exercisesId} + '/delete\')'">
+          Xoá
+        </button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</main>
+
+<div th:replace="base :: footer"></div>
+</body>
+</html>

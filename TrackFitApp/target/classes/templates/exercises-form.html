@@ -1,0 +1,51 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="${mode=='edit'} ? 'Cập nhật bài tập' : 'Thêm bài tập'">Bài tập</title>
+  <th:block th:replace="base :: resources"></th:block>
+</head>
+<body>
+<div th:replace="base :: header"></div>
+
+<main class="container py-4" style="max-width:820px">
+  <h3 class="mb-4" th:text="${mode=='edit'} ? 'Cập nhật bài tập' : 'Thêm bài tập'"></h3>
+
+  <form th:action="${mode=='edit'} ? @{'/exercises/' + ${exerciseId}} : @{/exercises}"
+        method="post" th:object="${form}">
+    <div class="mb-3">
+      <label class="form-label">Tên bài tập</label>
+      <input class="form-control" th:field="*{name}" required>
+      <div class="text-danger small" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Nhóm cơ</label>
+        <input class="form-control" th:field="*{muscleGroup}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Mục tiêu</label>
+        <input class="form-control" th:field="*{targetGoal}">
+      </div>
+    </div>
+
+    <div class="mb-3 mt-3">
+      <label class="form-label">Link video</label>
+      <input class="form-control" th:field="*{videoUrl}">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Mô tả</label>
+      <textarea rows="4" class="form-control" th:field="*{description}"></textarea>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary">Lưu</button>
+      <a class="btn btn-secondary" th:href="@{/exercises}">Hủy</a>
+    </div>
+  </form>
+</main>
+
+<div th:replace="base :: footer"></div>
+</body>
+</html>

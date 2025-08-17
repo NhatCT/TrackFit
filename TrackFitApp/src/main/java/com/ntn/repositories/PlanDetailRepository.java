@@ -8,4 +8,6 @@ public interface PlanDetailRepository {
     PlanDetail findById(Integer id);
     List<PlanDetail> findByPlanId(Integer planId);
     void delete(PlanDetail d);
+    Integer avgDurationByPlanAndExercise(Integer planId, Integer exerciseId);
+
 }

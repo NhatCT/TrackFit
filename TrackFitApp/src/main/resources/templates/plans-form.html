@@ -1,0 +1,93 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title th:text="${mode=='edit'} ? 'Cập nhật kế hoạch' : 'Tạo kế hoạch'">Kế hoạch</title>
+  <th:block th:replace="base :: resources"></th:block>
+</head>
+<body>
+<div th:replace="base :: header"></div>
+
+<main class="container py-4">
+  <h3 class="mb-3" th:text="${mode=='edit'} ? 'Cập nhật kế hoạch' : 'Tạo kế hoạch'"></h3>
+
+  <form th:action="${mode=='edit'} ? @{'/plans/' + ${planId}} : @{/plans}"
+        method="post" th:object="${form}" id="planForm">
+
+    <div class="row g-3">
+      <div class="col-md-8">
+        <label class="form-label">Tên kế hoạch</label>
+        <input class="form-control" th:field="*{planName}" required>
+      </div>
+      <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" th:field="*{isTemplate}">
+          <label class="form-check-label">Đặt làm kế hoạch mẫu</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+      <div class="col-md-4">
+        <label class="form-label">Goal ID (tuỳ chọn)</label>
+        <input class="form-control" th:field="*{goalId}">
+      </div>
+    </div>
+
+    <hr class="my-4">
+
+    <h5 class="mb-2">Chi tiết buổi tập</h5>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle" id="detailsTable">
+        <thead><tr>
+          <th>Exercise ID</th><th>Thứ (1-7)</th><th>Phút</th><th></th>
+        </tr></thead>
+        <tbody id="detailBody">
+        <!-- nếu edit: server render sẵn -->
+        <tr th:each="d,st : *{details}">
+          <td><input class="form-control" th:name="${'details['+st.index+'].exerciseId'}" th:value="${d.exerciseId}" required></td>
+          <td><input class="form-control" th:name="${'details['+st.index+'].dayOfWeek'}" th:value="${d.dayOfWeek}" required></td>
+          <td><input class="form-control" th:name="${'details['+st.index+'].duration'}" th:value="${d.duration}" required></td>
+          <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">Xoá</button></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addRow()">+ Thêm dòng</button>
+
+    <div class="mt-4 d-flex gap-2">
+      <button class="btn btn-primary">Lưu</button>
+      <a class="btn btn-secondary" th:href="@{/plans}">Hủy</a>
+    </div>
+  </form>
+</main>
+
+<div th:replace="base :: footer"></div>
+
+<script>
+function addRow() {
+  const tbody = document.getElementById('detailBody');
+  const idx = tbody.children.length;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input class="form-control" name="details[${idx}].exerciseId" required></td>
+    <td><input class="form-control" name="details[${idx}].dayOfWeek" required></td>
+    <td><input class="form-control" name="details[${idx}].duration" required></td>
+    <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">Xoá</button></td>
+  `;
+  tbody.appendChild(tr);
+}
+function removeRow(btn) {
+  const tr = btn.closest('tr');
+  tr.remove();
+  // re-index tên input để Spring bind đúng
+  const rows = document.querySelectorAll('#detailBody tr');
+  rows.forEach((r,i) => {
+    r.querySelectorAll('input').forEach(inp => {
+      inp.name = inp.name.replace(/details\[\d+\]/, `details[${i}]`);
+    });
+  });
+}
+</script>
+</body>
+</html>

@@ -2,6 +2,7 @@ package com.ntn.services.impl;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.ntn.dto.AdminUserFormDTO;
 import com.ntn.dto.ChangePasswordDTO;
 import com.ntn.dto.HealthDataDTO;
 import com.ntn.dto.UserRegistrationDTO;
@@ -24,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -193,6 +195,129 @@ public class UserServiceImpl implements UserService {
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
         return dto;
+    }
+
+    @Override
+    public List<UserResponseDTO> listAllUsers() {
+        return userRepo.findAll().stream().map(this::mapToUserResponseDTO).toList();
+    }
+
+    @Override
+    public UserResponseDTO getUserById(Integer id) {
+        User u = userRepo.findById(id);
+        if (u == null) {
+            throw new IllegalArgumentException("Không tìm thấy người dùng");
+        }
+        return mapToUserResponseDTO(u);
+    }
+
+    @Override
+    public UserResponseDTO createUserByAdmin(AdminUserFormDTO form) {
+        if (form.getUsername() == null || form.getUsername().isBlank()) {
+            throw new IllegalArgumentException("Username không được trống");
+        }
+        if (form.getPassword() == null || form.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Mật khẩu không được trống");
+        }
+        if (form.getEmail() == null || form.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Email không được trống");
+        }
+        if (form.getGender() == null || form.getGender().isBlank()) {
+            throw new IllegalArgumentException("Giới tính không được trống");
+        }
+        if (form.getBirthDate() == null) {
+            throw new IllegalArgumentException("Ngày sinh không được trống");
+        }
+
+        if (userRepo.getUserByUsername(form.getUsername()) != null) {
+            throw new IllegalArgumentException("Tên người dùng đã tồn tại");
+        }
+        if (userRepo.getUserByEmail(form.getEmail()) != null) {
+            throw new IllegalArgumentException("Email đã tồn tại");
+        }
+
+        User u = new User();
+        u.setUsername(form.getUsername());
+        u.setPassword(passwordEncoder.encode(form.getPassword()));
+        u.setEmail(form.getEmail());
+        u.setFirstName(form.getFirstName());
+        u.setLastName(form.getLastName());
+        u.setRole(form.getRole() != null ? form.getRole() : "ROLE_USER");
+        u.setGender(form.getGender());
+        u.setBirthDate(form.getBirthDate());
+        u.setCreatedAt(java.time.LocalDateTime.now());
+
+        // Upload avatar nếu có
+        if (form.getAvatarFile() != null && !form.getAvatarFile().isEmpty()) {
+            try {
+                var res = cloudinary.uploader().upload(
+                        form.getAvatarFile().getBytes(),
+                        ObjectUtils.asMap("resource_type", "auto")
+                );
+                u.setAvatarUrl(res.get("secure_url").toString());
+            } catch (IOException e) {
+                throw new RuntimeException("Không thể tải ảnh đại diện");
+            }
+        }
+
+        u = userRepo.addUser(u);
+        return mapToUserResponseDTO(u);
+    }
+
+    @Override
+    public UserResponseDTO updateUserByAdmin(Integer id, AdminUserFormDTO form) {
+        User u = userRepo.findById(id);
+        if (u == null) {
+            throw new IllegalArgumentException("Không tìm thấy người dùng");
+        }
+
+        if (form.getEmail() != null && !form.getEmail().isBlank()) {
+            u.setEmail(form.getEmail());
+        }
+        if (form.getFirstName() != null && !form.getFirstName().isBlank()) {
+            u.setFirstName(form.getFirstName());
+        }
+        if (form.getLastName() != null && !form.getLastName().isBlank()) {
+            u.setLastName(form.getLastName());
+        }
+        if (form.getRole() != null && !form.getRole().isBlank()) {
+            u.setRole(form.getRole());
+        }
+        if (form.getGender() != null && !form.getGender().isBlank()) {
+            u.setGender(form.getGender());
+        }
+        if (form.getBirthDate() != null) {
+            u.setBirthDate(form.getBirthDate());
+        }
+        if (form.getPassword() != null && !form.getPassword().isBlank()) {
+            u.setPassword(passwordEncoder.encode(form.getPassword()));
+        }
+
+        // Upload avatar mới nếu có
+        if (form.getAvatarFile() != null && !form.getAvatarFile().isEmpty()) {
+            try {
+                var res = cloudinary.uploader().upload(
+                        form.getAvatarFile().getBytes(),
+                        ObjectUtils.asMap("resource_type", "auto")
+                );
+                u.setAvatarUrl(res.get("secure_url").toString());
+            } catch (IOException e) {
+                throw new RuntimeException("Không thể tải ảnh đại diện");
+            }
+        }
+
+        u.setUpdatedAt(java.time.LocalDateTime.now());
+        userRepo.updateUser(u);
+        return mapToUserResponseDTO(u);
+    }
+
+    @Override
+    public void deleteById(Integer id) {
+        User u = userRepo.findById(id);
+        if (u == null) {
+            throw new IllegalArgumentException("Không tìm thấy người dùng");
+        }
+        userRepo.delete(u);
     }
 
 }

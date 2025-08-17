@@ -22,18 +22,14 @@ public interface UserService extends UserDetailsService {
     UserResponseDTO getUserWithHealthInfo(String username);
 
     boolean updateHealthMetrics(String username, HealthDataDTO healthData);
-//
-//    List<HealthDataDTO> getHealthDataByUsername(String username);
-//
-//    void updateHealthData(String username, Integer healthId, HealthDataDTO healthData);
-//
-//    void deleteHealthData(String username, Integer healthId);
 
-//    void createGoal(String username, GoalDTO goal);
-//
-//    List<GoalDTO> getGoalsByUsername(String username);
-//
-//    void updateGoal(String username, Integer goalId, GoalDTO goal);
-//
-//    void deleteGoal(String username, Integer goalId);
+    List<UserResponseDTO> listAllUsers();
+
+    UserResponseDTO getUserById(Integer id);
+
+    UserResponseDTO createUserByAdmin(AdminUserFormDTO form);
+
+    UserResponseDTO updateUserByAdmin(Integer id, AdminUserFormDTO form);
+
+    void deleteById(Integer id);
 }

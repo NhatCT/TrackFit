@@ -1,0 +1,42 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Danh sách kế hoạch</title>
+  <th:block th:replace="base :: resources"></th:block>
+</head>
+<body>
+<div th:replace="base :: header"></div>
+
+<main class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">Kế hoạch luyện tập</h3>
+    <a class="btn btn-primary" th:href="@{/plans/new}">Tạo kế hoạch</a>
+  </div>
+
+  <div th:if="${msg}" class="alert alert-success" th:text="${msg}"></div>
+
+  <table class="table table-hover align-middle">
+    <thead><tr>
+      <th>ID</th><th>Tên</th><th>Mẫu</th><th>Ngày tạo</th><th></th>
+    </tr></thead>
+    <tbody>
+    <tr th:each="p : ${plans}">
+      <td th:text="${p.planId}">1</td>
+      <td th:text="${p.planName}">Kế hoạch A</td>
+      <td>
+        <span class="badge text-bg-secondary" th:text="${p.template} ? 'Template' : 'Cá nhân'">Template</span>
+      </td>
+      <td th:text="${#dates.format(p.createdAt, 'dd/MM/yyyy HH:mm')}">--</td>
+      <td class="text-end">
+        <a th:href="@{'/plans/' + ${p.planId}}" class="btn btn-sm btn-outline-primary">Sửa</a>
+        <button class="btn btn-sm btn-outline-danger"
+                th:onclick="'confirmDelete(\'/plans/' + ${p.planId} + '/delete\')'">Xoá</button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</main>
+
+<div th:replace="base :: footer"></div>
+</body>
+</html>

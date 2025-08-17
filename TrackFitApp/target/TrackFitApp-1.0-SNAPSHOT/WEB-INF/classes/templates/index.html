@@ -1,66 +1,24 @@
 <!doctype html>
-
 <html xmlns:th="http://www.thymeleaf.org">
-    <head>
-        <title>Trang chủ</title>
-        <th:context th:replace="base :: resources"></th:context>
-    </head>
-    <body>
-        <div th:replace="base :: header"></div>
+<head>
+  <title>Trang chủ</title>
+  <th:block th:replace="base :: resources"></th:block>
+</head>
+<body>
+<div th:replace="base :: header"></div>
 
-        <main class="container">
-            <h1 class="text-info text-center mt-2">QUẢN LÝ SẢN PHẨM</h1>
+<main class="container py-4">
+  <div class="p-5 mb-4 bg-light rounded-3">
+    <div class="container-fluid py-5">
+      <h1 class="display-5 fw-bold">Chào mừng đến TrackFit</h1>
+      <p class="col-md-8 fs-5">
+        Trang quản trị: quản lý bài tập, kế hoạch mẫu, người dùng và xem thống kê hệ thống.
+      </p>
+      <a class="btn btn-primary btn-lg" th:href="@{/dashboard}">Vào Dashboard</a>
+    </div>
+  </div>
+</main>
 
-            <div class="mt-2 mb-2">
-                <a th:href="@{/products}" class="btn btn-success">Thêm sản phẩm</a>
-            </div>
-
-            <div>
-                <form th:action="@{/}">
-                    <div class="form-floating mb-3 mt-3">
-                        <input type="text" class="form-control" id="kw" placeholder="Nhập từ khóa" name="kw" />
-                        <label for="kw">Nhập từ khóa</label>
-                    </div>
-                    <div class="form-floating mb-3 mt-3 row">
-                        <div class="col-md-6 col-12">
-                            <input type="number" id="from" class="form-control" placeholder="Gía min" name="fromPrice">
-                            <label for="from">Gía min</label>
-                        </div>
-                        <div class="col-md-6 col-12">
-                            <input type="number" id="to" class="form-control" placeholder="Gía min" name="toPrice">
-                            <label for="to">Gía max</label>
-                        </div>
-                    </div>
-                    <div class="form-floating mb-3 mt-3">
-                        <button type="submit" class="btn btn-info">Tìm kiếm</button>
-                    </div>
-                </form>
-            </div>
-
-            <table class="table">
-                <tr>
-                    <th></th>
-                    <th>Id</th>
-                    <th>Tên sản phẩm</th>
-                    <th>Giá sản phẩm</th>
-                    <th></th>
-                </tr>
-                <tr th:each="p: ${products}">
-                    <td>
-                        <img th:src="${p.image}" width="200" class="rounded" />
-                    </td>
-                    <td th:text="${p.id}"></td>
-                    <td th:text="${p.name}"></td>
-                    <td th:text="${p.price} + 'VNĐ'"></td>
-                    <td>
-                        <a th:href="@{'/products/' + ${p.id}}"  class="btn btn-info">Cập nhật</a>
-                        <button th:onclick="'deleteProduct(\'' + @{/api/products/} + ${p.id} + '\')'" class="btn btn-danger">Xóa</button>
-                    </td>
-                </tr>
-            </table>
-        </main>
-
-        <div th:replace="base :: footer"></div>
-        <script th:src="@{/js/main.js}"></script>
-    </body>
+<div th:replace="base :: footer"></div>
+</body>
 </html>

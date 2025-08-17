@@ -1,0 +1,80 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Thống kê của tôi</title>
+  <th:block th:replace="base :: resources"></th:block>
+</head>
+<body>
+<div th:replace="base :: header"></div>
+
+<main class="container py-4">
+  <h3 class="mb-3">Thống kê luyện tập</h3>
+
+  <div class="row g-3">
+    <div class="col-md-4"><div class="card text-center"><div class="card-body">
+      <div class="text-muted">Tổng buổi</div>
+      <div class="fs-3" th:text="${summary.totalSessions}">0</div>
+    </div></div></div>
+
+    <div class="col-md-4"><div class="card text-center"><div class="card-body">
+      <div class="text-muted">Hoàn thành</div>
+      <div class="fs-3" th:text="${summary.totalCompleted}">0</div>
+    </div></div></div>
+
+    <div class="col-md-4"><div class="card text-center"><div class="card-body">
+      <div class="text-muted">Tổng thời lượng (phút)</div>
+      <div class="fs-3" th:text="${summary.totalMinutes}">0</div>
+    </div></div></div>
+  </div>
+
+  <div class="row mt-4 g-3">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">Theo ngày</h6>
+          <canvas id="dailyChart" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-body">
+          <h6 class="card-title">Mục tiêu phổ biến</h6>
+          <ul class="list-group list-group-flush" th:if="${summary.byGoal}">
+            <li class="list-group-item d-flex justify-content-between align-items-center"
+                th:each="g : ${summary.byGoal}">
+              <span th:text="${g.goalType}">Tăng cơ</span>
+              <span class="badge text-bg-secondary" th:text="${g.completedCount}">0</span>
+            </li>
+          </ul>
+          <div th:if="${#lists.isEmpty(summary.byGoal)}" class="text-muted">Chưa có dữ liệu</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div th:replace="base :: footer"></div>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+const daily = /*[[${summary.daily}]]*/ [];
+const labels = daily.map(d => new Date(d.date).toISOString().substring(0,10));
+const sessions = daily.map(d => d.sessions);
+const minutes  = daily.map(d => d.minutes);
+
+new Chart(document.getElementById('dailyChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      { label: 'Buổi', data: sessions },
+      { label: 'Phút', data: minutes }
+    ]
+  },
+  options: { responsive:true, scales: { y: { beginAtZero:true, ticks:{ precision:0 } } } }
+});
+/*]]>*/
+</script>
+</body>
+</html>

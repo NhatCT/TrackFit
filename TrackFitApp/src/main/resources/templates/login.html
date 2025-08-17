@@ -1,37 +1,29 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Trang chủ</title>
-    <th:context th:replace="base :: resources"></th:context>
+  <title>Đăng nhập</title>
+  <th:block th:replace="base :: resources"></th:block>
 </head>
 <body>
-    <div th:replace="base :: header"></div>
+<div th:replace="base :: header"></div>
+<main class="container py-5" style="max-width:560px">
+  <h3 class="mb-3 text-center">Đăng nhập</h3>
 
-    <main class="container">
-        <h1 class="text-center text-info mt-2">ĐĂNG NHẬP</h1>
+  <div th:if="${param.error}" class="alert alert-danger">Sai tên đăng nhập hoặc mật khẩu!</div>
+  <div th:if="${param.logout}" class="alert alert-success">Đã đăng xuất.</div>
 
-        <!-- THÔNG BÁO LỖI -->
-        <div th:if="${param.error}" class="alert alert-danger">
-            Sai tên đăng nhập hoặc mật khẩu!
-        </div>
-
-        <form method="post" th:action="@{/login}">
-            <div class="form-floating mb-3 mt-3">
-                <input type="text" class="form-control" id="name" placeholder="Tên đăng nhập" name="username" required>
-                <label for="name">Tên đăng nhập</label>
-            </div>
-
-            <div class="form-floating mt-3 mb-3">
-                <input type="password" class="form-control" id="pwd" placeholder="Mật khẩu" name="password" required>
-                <label for="pwd">Mật khẩu</label>
-            </div>
-
-            <div class="form-floating mt-3 mb-3">
-                <button type="submit" class="btn btn-info">Đăng nhập</button>
-            </div>
-        </form>
-    </main>
-
-    <div th:replace="base :: footer"></div>
+  <form method="post" th:action="@{/login}">
+    <div class="mb-3">
+      <label class="form-label">Tên đăng nhập</label>
+      <input name="username" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Mật khẩu</label>
+      <input name="password" type="password" class="form-control" required>
+    </div>
+    <button class="btn btn-primary w-100">Đăng nhập</button>
+  </form>
+</main>
+<div th:replace="base :: footer"></div>
 </body>
 </html>
