@@ -23,8 +23,6 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
     @Autowired
     private LocalSessionFactoryBean factory;
 
-    private static final int PAGE_SIZE = 10;
-
     @Override
     public long countAll() {
         Session s = factory.getObject().getCurrentSession();
@@ -53,7 +51,7 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
     @Override
     public List<Exercises> findAll() {
         Session s = factory.getObject().getCurrentSession();
-        TypedQuery<Exercises> q = s.createNamedQuery("Exercises.findAll", Exercises.class); // << TypedQuery
+        TypedQuery<Exercises> q = s.createNamedQuery("Exercises.findAll", Exercises.class);
         return q.getResultList();
     }
 
@@ -75,7 +73,7 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
         String kw = params != null ? params.get("kw") : null;
         if (kw != null && !kw.trim().isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("name")), "%" + kw.trim().toLowerCase() + "%"));
-            // (Tuỳ chọn) mở rộng tìm cả muscleGroup/targetGoal:
+            // Optional: mở rộng tìm theo muscleGroup/targetGoal
             // String p = "%" + kw.trim().toLowerCase() + "%";
             // predicates.add(cb.or(
             //     cb.like(cb.lower(root.get("name")), p),
@@ -88,26 +86,31 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
             cq.where(predicates.toArray(Predicate[]::new));
         }
 
-        // Sắp xếp mặc định: mới nhất trước (fallback theo id nếu thiếu createdAt)
         try {
             cq.orderBy(cb.desc(root.get("createdAt")));
         } catch (Exception ignore) {
             cq.orderBy(cb.desc(root.get("exercisesId")));
         }
 
-        TypedQuery<Exercises> q = s.createQuery(cq); // << TypedQuery
+        TypedQuery<Exercises> q = s.createQuery(cq);
 
-        // page 1-based
+        // ✅ đọc page & pageSize động từ params
         int page = 1;
         if (params != null && params.get("page") != null) {
             try {
                 page = Math.max(Integer.parseInt(params.get("page")), 1);
-            } catch (NumberFormatException ignore) {
-            }
+            } catch (NumberFormatException ignore) {}
         }
-        int start = (page - 1) * PAGE_SIZE;
+        int pageSize = 10;
+        if (params != null && params.get("pageSize") != null) {
+            try {
+                pageSize = Math.max(Integer.parseInt(params.get("pageSize")), 1);
+            } catch (NumberFormatException ignore) {}
+        }
+
+        int start = (page - 1) * pageSize;
         q.setFirstResult(start);
-        q.setMaxResults(PAGE_SIZE);
+        q.setMaxResults(pageSize);
 
         return q.getResultList();
     }
@@ -124,13 +127,6 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
         String kw = params != null ? params.get("kw") : null;
         if (kw != null && !kw.trim().isEmpty()) {
             predicates.add(cb.like(cb.lower(root.get("name")), "%" + kw.trim().toLowerCase() + "%"));
-            // (Tuỳ chọn) đồng bộ với getExercises nếu mở rộng tìm kiếm:
-            // String p = "%" + kw.trim().toLowerCase() + "%";
-            // predicates.add(cb.or(
-            //     cb.like(cb.lower(root.get("name")), p),
-            //     cb.like(cb.lower(root.get("muscleGroup")), p),
-            //     cb.like(cb.lower(root.get("targetGoal")), p)
-            // ));
         }
 
         if (!predicates.isEmpty()) {
@@ -138,7 +134,7 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
         }
 
         cq.select(cb.count(root));
-        TypedQuery<Long> q = s.createQuery(cq); // << TypedQuery
+        TypedQuery<Long> q = s.createQuery(cq);
         return q.getSingleResult();
     }
 }

@@ -319,5 +319,4 @@ public class UserServiceImpl implements UserService {
         }
         userRepo.delete(u);
     }
-
 }

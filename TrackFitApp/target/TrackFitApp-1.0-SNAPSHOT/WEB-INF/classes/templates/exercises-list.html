@@ -14,32 +14,69 @@
   </div>
 
   <div th:if="${msg}" class="alert alert-success" th:text="${msg}"></div>
+  <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
   <table class="table table-hover align-middle">
-    <thead><tr>
-      <th>ID</th><th>Tên</th><th>Nhóm cơ</th><th>Mục tiêu</th><th>Video</th><th></th>
-    </tr></thead>
+    <thead>
+      <tr>
+        <th>ID</th><th>Tên</th><th>Nhóm cơ</th><th>Mục tiêu</th><th>Video</th><th></th>
+      </tr>
+    </thead>
     <tbody>
-    <tr th:each="e : ${items}">
-      <td th:text="${e.exercisesId}">1</td>
-      <td th:text="${e.name}">Push Up</td>
-      <td th:text="${e.muscleGroup}">Chest</td>
-      <td th:text="${e.targetGoal}">Tăng cơ</td>
-      <td>
-        <a th:if="${e.videoUrl}" th:href="${e.videoUrl}" target="_blank">Xem</a>
-      </td>
-      <td class="text-end">
-        <a th:href="@{'/exercises/' + ${e.exercisesId}}" class="btn btn-sm btn-outline-primary">Sửa</a>
-        <button class="btn btn-sm btn-outline-danger"
-                th:onclick="'confirmDelete(\'/exercises/' + ${e.exercisesId} + '/delete\')'">
-          Xoá
-        </button>
-      </td>
-    </tr>
+      <tr th:each="e : ${items}" th:if="${items != null and not #lists.isEmpty(items)}">
+        <td th:text="${e.exercisesId}">1</td>
+        <td th:text="${e.name}">Push Up</td>
+        <td th:text="${e.muscleGroup}">Chest</td>
+        <td th:text="${e.targetGoal}">Tăng cơ</td>
+        <td>
+          <a th:if="${e.videoUrl}" th:href="${e.videoUrl}" target="_blank">Xem</a>
+        </td>
+        <td class="text-end">
+          <a th:href="@{'/exercises/' + ${e.exercisesId}}" class="btn btn-sm btn-outline-primary">Sửa</a>
+          <!-- ✅ Sửa onclick: dùng |...| để tránh vỡ dấu nháy -->
+          <button class="btn btn-sm btn-outline-danger"
+                  th:onclick="|confirmDelete('/exercises/${e.exercisesId}/delete')|">
+            Xoá
+          </button>
+        </td>
+      </tr>
+
+      <tr th:if="${items == null or #lists.isEmpty(items)}">
+        <td colspan="6" class="text-center">Không có bài tập nào.</td>
+      </tr>
     </tbody>
   </table>
+
+  <nav th:if="${totalPages > 1}">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" th:classappend="${page == null or page <= 1} ? ' disabled'">
+        <a class="page-link" th:href="@{/exercises(page=${page - 1}, pageSize=${pageSize}, kw=${kw})}">Trước</a>
+      </li>
+
+      <li th:each="i : ${#numbers.sequence(1, totalPages)}"
+          class="page-item" th:classappend="${i == page} ? ' active'">
+        <a class="page-link" th:href="@{/exercises(page=${i}, pageSize=${pageSize}, kw=${kw})}" th:text="${i}"></a>
+      </li>
+
+      <li class="page-item" th:classappend="${page == null or page >= totalPages} ? ' disabled'">
+        <a class="page-link" th:href="@{/exercises(page=${page + 1}, pageSize=${pageSize}, kw=${kw})}">Sau</a>
+      </li>
+    </ul>
+  </nav>
 </main>
 
 <div th:replace="base :: footer"></div>
+
+<script>
+  function confirmDelete(url) {
+    if (confirm('Bạn có chắc muốn xóa bài tập này?')) {
+      const form = document.createElement('form');
+      form.method = 'post';
+      form.action = url;
+      document.body.appendChild(form);
+      form.submit();
+    }
+  }
+</script>
 </body>
 </html>

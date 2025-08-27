@@ -39,9 +39,9 @@ public class UsersPageController {
         form.setFirstName(dto.getFirstName());
         form.setLastName(dto.getLastName());
         form.setRole(dto.getRole());
-        form.setGender(dto.getGender());      // service đã normalize
+        form.setGender(dto.getGender() != null ? dto.getGender().trim() : null);
         form.setBirthDate(dto.getBirthDate());
-        form.setAvatarUrl(dto.getAvatarUrl()); // để xem trước
+        form.setAvatarUrl(dto.getAvatarUrl());
 
         model.addAttribute("form", form);
         model.addAttribute("userId", id);
@@ -69,7 +69,6 @@ public class UsersPageController {
             BindingResult br,
             RedirectAttributes ra,
             Model model) {
-
 
         if (br.hasErrors()) {
             model.addAttribute("mode", "edit");

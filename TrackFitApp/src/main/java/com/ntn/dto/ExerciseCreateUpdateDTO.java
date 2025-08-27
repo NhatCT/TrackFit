@@ -64,3 +64,4 @@ public class ExerciseCreateUpdateDTO {
         this.description = description;
     }
 }
+ 

@@ -19,19 +19,19 @@ public class ExercisesPageController {
     @Autowired
     private ExercisesService exercisesService;
 
-    // LIST PAGE (dùng listPaged; nếu pageSize null => trả toàn bộ)
+    // LIST
     @GetMapping("/exercises")
     public String list(Model model,
-                       @RequestParam(value = "page", required = false) Integer page,
-                       @RequestParam(value = "pageSize", required = false) Integer pageSize,
-                       @RequestParam(value = "kw", required = false) String kw) {
+                       @RequestParam(name = "page", defaultValue = "1") Integer page,
+                       @RequestParam(name = "pageSize", defaultValue = "10") Integer pageSize,
+                       @RequestParam(name = "kw", required = false) String kw) {
 
         Map<String, Object> res = exercisesService.list(page, pageSize, kw);
 
-        model.addAttribute("items",       res.get("items"));
-        model.addAttribute("page",        res.get("page"));
-        model.addAttribute("pageSize",    res.get("pageSize"));
-        model.addAttribute("totalPages",  res.get("totalPages"));
+        model.addAttribute("items",         res.get("items"));
+        model.addAttribute("page",          res.get("page"));
+        model.addAttribute("pageSize",      res.get("pageSize"));
+        model.addAttribute("totalPages",    res.get("totalPages"));
         model.addAttribute("totalElements", res.get("totalElements"));
         model.addAttribute("kw", kw);
 
@@ -48,8 +48,9 @@ public class ExercisesPageController {
 
     // EDIT FORM
     @GetMapping("/exercises/{id}")
-    public String editForm(@PathVariable Integer id, Model model) {
+    public String editForm(@PathVariable("id") Integer id, Model model) {
         ExerciseDTO dto = exercisesService.get(id);
+
         ExerciseCreateUpdateDTO form = new ExerciseCreateUpdateDTO();
         form.setName(dto.getName());
         form.setTargetGoal(dto.getTargetGoal());
@@ -67,8 +68,12 @@ public class ExercisesPageController {
     @PostMapping("/exercises")
     public String create(@Valid @ModelAttribute("form") ExerciseCreateUpdateDTO form,
                          BindingResult br,
-                         RedirectAttributes ra) {
-        if (br.hasErrors()) return "exercises-form";
+                         RedirectAttributes ra,
+                         Model model) {
+        if (br.hasErrors()) {
+            model.addAttribute("mode", "create");
+            return "exercises-form";
+        }
         exercisesService.create(form);
         ra.addFlashAttribute("msg", "Thêm bài tập thành công");
         return "redirect:/exercises";
@@ -76,13 +81,33 @@ public class ExercisesPageController {
 
     // SUBMIT UPDATE
     @PostMapping("/exercises/{id}")
-    public String update(@PathVariable Integer id,
+    public String update(@PathVariable("id") Integer id,
                          @Valid @ModelAttribute("form") ExerciseCreateUpdateDTO form,
                          BindingResult br,
-                         RedirectAttributes ra) {
-        if (br.hasErrors()) return "exercises-form";
+                         RedirectAttributes ra,
+                         Model model) {
+        if (br.hasErrors()) {
+            model.addAttribute("mode", "edit");
+            model.addAttribute("exerciseId", id);
+            return "exercises-form";
+        }
         exercisesService.update(id, form);
         ra.addFlashAttribute("msg", "Cập nhật bài tập thành công");
+        return "redirect:/exercises";
+    }
+
+    // DELETE
+    @PostMapping("/exercises/{id}/delete")
+    public String delete(@PathVariable("id") Integer id, RedirectAttributes ra) {
+        exercisesService.delete(id);
+        ra.addFlashAttribute("msg", "Đã xoá bài tập");
+        return "redirect:/exercises";
+    }
+
+    // GLOBAL ERROR -> quay về list với flash error
+    @ExceptionHandler(Exception.class)
+    public String handleError(Exception ex, RedirectAttributes ra) {
+        ra.addFlashAttribute("error", "Đã xảy ra lỗi: " + ex.getMessage());
         return "redirect:/exercises";
     }
 }

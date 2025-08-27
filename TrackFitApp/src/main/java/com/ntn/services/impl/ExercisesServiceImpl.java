@@ -43,40 +43,31 @@ public class ExercisesServiceImpl implements ExercisesService {
 
     @Override
     public Map<String, Object> list(Integer page, Integer pageSize, String kw) {
-        // Lấy tất cả rồi lọc/sort/cắt trang ở service (đơn giản, linh hoạt)
-        List<ExerciseDTO> all = repo.findAll().stream()
-                .filter(e -> kw == null || kw.isBlank()
-                        || (e.getName() != null && e.getName().toLowerCase().contains(kw.toLowerCase())))
-                .sorted(Comparator.comparing(Exercises::getCreatedAt,
-                        Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+        // ✅ đảm bảo có mặc định và truyền pageSize xuống repo
+        int pageNum = (page != null && page > 0) ? page : 1;
+        int ps = (pageSize != null && pageSize > 0) ? pageSize : 10;
+
+        Map<String, String> params = new HashMap<>();
+        if (kw != null && !kw.isBlank()) {
+            params.put("kw", kw.trim());
+        }
+        params.put("page", String.valueOf(pageNum));
+        params.put("pageSize", String.valueOf(ps));
+
+        List<ExerciseDTO> items = repo.getExercises(params).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
 
-        if (page == null || pageSize == null) {
-            return Map.of(
-                "page", null,
-                "pageSize", null,
-                "totalPages", 1,
-                "totalElements", all.size(),
-                "items", all
-            );
-        }
-
-        int p = Math.max(page, 1);
-        int ps = Math.max(pageSize, 1);
-        int total = all.size();
+        long total = repo.countExercises(params);
         int totalPages = (int) Math.ceil(total * 1.0 / ps);
-        int start = (p - 1) * ps;
-        int end = Math.min(start + ps, total);
-        List<ExerciseDTO> items = (start >= total) ? List.of() : all.subList(start, end);
 
-        Map<String, Object> res = new HashMap<>();
-        res.put("page", p);
-        res.put("pageSize", ps);
-        res.put("totalPages", totalPages);
-        res.put("totalElements", total);
-        res.put("items", items);
-        return res;
+        return Map.of(
+            "page", pageNum,
+            "pageSize", ps,
+            "totalPages", Math.max(totalPages, 1),
+            "totalElements", total,
+            "items", items
+        );
     }
 
     @Override
@@ -92,6 +83,9 @@ public class ExercisesServiceImpl implements ExercisesService {
     }
 
     private void apply(Exercises e, ExerciseCreateUpdateDTO req) {
+        if (req.getName() == null || req.getName().isBlank()) {
+            throw new IllegalArgumentException("Tên bài tập không được để trống");
+        }
         e.setName(req.getName());
         e.setTargetGoal(req.getTargetGoal());
         e.setMuscleGroup(req.getMuscleGroup());

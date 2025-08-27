@@ -8,7 +8,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.security.Principal;
 import java.util.Date;
 
 @Controller
@@ -22,11 +21,9 @@ public class StatsPageController {
                         @DateTimeFormat(pattern = "yyyy-MM-dd") Date from,
                         @RequestParam(value = "to", required = false)
                         @DateTimeFormat(pattern = "yyyy-MM-dd") Date to,
-                        Principal principal,
                         Model model) {
-        var summary = statsService.summary(principal.getName(), from, to);
+        var summary = statsService.summarySystem(from, to); // ✅ toàn hệ thống
         model.addAttribute("summary", summary);
         return "stats";
     }
 }
-
