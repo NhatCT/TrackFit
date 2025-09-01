@@ -122,7 +122,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean authenticate(String username, String password) {
-        return this.userRepo.authenticate(username, password);
+        // SỬA: Dùng BCrypt để so khớp thay vì repo.authenticate(plain)
+        User user = this.userRepo.getUserByUsername(username);
+        if (user == null) {
+            return false;
+        }
+        return this.passwordEncoder.matches(password, user.getPassword());
     }
 
     @Override
@@ -247,7 +252,6 @@ public class UserServiceImpl implements UserService {
         u.setBirthDate(form.getBirthDate());
         u.setCreatedAt(java.time.LocalDateTime.now());
 
-        // Upload avatar nếu có
         if (form.getAvatarFile() != null && !form.getAvatarFile().isEmpty()) {
             try {
                 var res = cloudinary.uploader().upload(
@@ -293,7 +297,6 @@ public class UserServiceImpl implements UserService {
             u.setPassword(passwordEncoder.encode(form.getPassword()));
         }
 
-        // Upload avatar mới nếu có
         if (form.getAvatarFile() != null && !form.getAvatarFile().isEmpty()) {
             try {
                 var res = cloudinary.uploader().upload(

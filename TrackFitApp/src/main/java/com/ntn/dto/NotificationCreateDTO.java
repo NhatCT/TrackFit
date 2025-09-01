@@ -14,6 +14,15 @@ public class NotificationCreateDTO {
             message = "type phải là ADVICE, SYSTEM hoặc REMINDER")
     private String type;
 
+    @Size(max = 32)
+    @Pattern(regexp = "^(SYSTEM|AI|ADMIN|USER|EXTERNAL)?$",
+            message = "source phải là SYSTEM, AI, ADMIN, USER hoặc EXTERNAL")
+    private String source; // optional
+
+    @Size(max = 255)
+    private String sender; // optional
+
+    // getters/setters
     public String getMessage() {
         return message;
     }
@@ -28,5 +37,21 @@ public class NotificationCreateDTO {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getSender() {
+        return sender;
+    }
+
+    public void setSender(String sender) {
+        this.sender = sender;
     }
 }

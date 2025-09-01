@@ -1,14 +1,14 @@
 package com.ntn.dto;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 public class GoalDTO {
 
+    // Dành cho hiển thị
+    private Integer goalId;
+    private String name;
+
+    // Dành cho tạo/cập nhật
     @NotBlank(message = "{goal.goalType.notBlank}")
     @Size(max = 50, message = "{goal.goalType.size}")
     private String goalType;
@@ -21,6 +21,23 @@ public class GoalDTO {
     @NotBlank(message = "{goal.intensity.notBlank}")
     @Pattern(regexp = "^(Low|Medium|High)$", message = "{goal.intensity.pattern}")
     private String intensity;
+
+    // Getters & Setters
+    public Integer getGoalId() {
+        return goalId;
+    }
+
+    public void setGoalId(Integer goalId) {
+        this.goalId = goalId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getGoalType() {
         return goalType;

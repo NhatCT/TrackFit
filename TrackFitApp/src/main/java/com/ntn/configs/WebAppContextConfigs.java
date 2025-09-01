@@ -20,7 +20,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @ComponentScan(basePackages = {
     "com.ntn.controllers",
     "com.ntn.repositories",
-    "com.ntn.services"
+    "com.ntn.services",
+    "com.ntn.agent"
 })
 public class WebAppContextConfigs implements WebMvcConfigurer {
 

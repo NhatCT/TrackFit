@@ -1,8 +1,6 @@
 package com.ntn.services.impl;
 
-import com.ntn.dto.StatsByGoalDTO;
-import com.ntn.dto.StatsDailyPointDTO;
-import com.ntn.dto.StatsSummaryDTO;
+import com.ntn.dto.*;
 import com.ntn.pojo.User;
 import com.ntn.pojo.UserWorkoutHistory;
 import com.ntn.repositories.PlanDetailRepository;
@@ -23,13 +21,13 @@ public class StatsServiceImpl implements StatsService {
 
     @Autowired private UserWorkoutHistoryRepository historyRepo;
     @Autowired private PlanDetailRepository planDetailRepo;
-    @Autowired private UserRepository userRepo; // <-- thêm
+    @Autowired private UserRepository userRepo;
 
     private static final ZoneId VN = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @Override
     public StatsSummaryDTO summarySystem(Date from, Date to) {
-        return computeSummary(/*userId=*/null, from, to);
+        return computeSummary(null, from, to);
     }
 
     @Override
@@ -40,12 +38,10 @@ public class StatsServiceImpl implements StatsService {
         User u = userRepo.getUserByUsername(username);
         if (u == null) throw new IllegalArgumentException("Không tìm thấy người dùng: " + username);
 
-        return computeSummary(u.getUserId(), from, to); // <-- map sang userId rồi gọi core
+        return computeSummary(u.getUserId(), from, to);
     }
 
-    // ===== Core tính toán chung cho cả system & user =====
     private StatsSummaryDTO computeSummary(Integer userId, Date from, Date to) {
-        // Khoảng thời gian mặc định: 30 ngày gần nhất theo VN
         LocalDate toDay = (to != null)
                 ? to.toInstant().atZone(VN).toLocalDate()
                 : LocalDate.now(VN);
@@ -54,9 +50,8 @@ public class StatsServiceImpl implements StatsService {
                 : toDay.minusDays(30);
 
         Date startDate = Date.from(fromDay.atStartOfDay(VN).toInstant());
-        Date endDate   = Date.from(toDay.plusDays(1).atStartOfDay(VN).toInstant()); // [from, to+1) exclusive
+        Date endDate   = Date.from(toDay.plusDays(1).atStartOfDay(VN).toInstant());
 
-        // Repo cần hỗ trợ: nếu userId == null thì KHÔNG lọc theo user
         List<UserWorkoutHistory> all = historyRepo.findBetween(userId, startDate, endDate, null);
 
         long totalSessions = all.size();
@@ -65,11 +60,9 @@ public class StatsServiceImpl implements StatsService {
                 .toList();
         long totalCompleted = completed.size();
 
-        // Cache duration theo (planId, exId) để tránh N+1
         Map<String, Integer> durationCache = new HashMap<>();
         long totalMinutes = 0L;
 
-        // Gom theo ngày (VN)
         Map<LocalDate, List<UserWorkoutHistory>> byDay = new HashMap<>();
         for (UserWorkoutHistory h : all) {
             Date d = (h.getCompletedAt() != null) ? h.getCompletedAt() : new Date();
@@ -77,7 +70,6 @@ public class StatsServiceImpl implements StatsService {
             byDay.computeIfAbsent(ld, k -> new ArrayList<>()).add(h);
         }
 
-        // Lấp đủ ngày từ fromDay → toDay
         List<StatsDailyPointDTO> daily = new ArrayList<>();
         for (LocalDate day = fromDay; !day.isAfter(toDay); day = day.plusDays(1)) {
             List<UserWorkoutHistory> list = byDay.getOrDefault(day, Collections.emptyList());
@@ -107,7 +99,7 @@ public class StatsServiceImpl implements StatsService {
             daily.add(p);
         }
 
-        // byGoal: chỉ đếm completed
+        // byGoal
         Map<String, Long> byGoalMap = new HashMap<>();
         for (UserWorkoutHistory h : completed) {
             if (h.getPlanId() != null && h.getPlanId().getGoalId() != null) {
@@ -120,12 +112,30 @@ public class StatsServiceImpl implements StatsService {
                 .sorted(Comparator.comparing(StatsByGoalDTO::getCompletedCount).reversed())
                 .collect(Collectors.toList());
 
+        // byExercise
+        Map<String, Long> byExerciseMap = new HashMap<>();
+        for (UserWorkoutHistory h : completed) {
+            if (h.getExercisesId() != null && h.getExercisesId().getName() != null) {
+                String name = h.getExercisesId().getName().trim();
+                if (!name.isEmpty()) byExerciseMap.merge(name, 1L, Long::sum);
+            }
+        }
+        List<StatsByExerciseDTO> byExercise = byExerciseMap.entrySet().stream()
+                .map(e -> new StatsByExerciseDTO(e.getKey(), e.getValue()))
+                .sorted((a, b) -> Long.compare(b.getCompletedCount(), a.getCompletedCount()))
+                .collect(Collectors.toList());
+
+        String topExerciseName = byExercise.isEmpty() ? null : byExercise.get(0).getName();
+
         StatsSummaryDTO out = new StatsSummaryDTO();
         out.setTotalSessions(totalSessions);
         out.setTotalCompleted(totalCompleted);
         out.setTotalMinutes(totalMinutes);
         out.setDaily(daily);
         out.setByGoal(byGoal);
+        out.setByExercise(byExercise);
+        out.setTopExerciseName(topExerciseName);
+
         return out;
     }
 }

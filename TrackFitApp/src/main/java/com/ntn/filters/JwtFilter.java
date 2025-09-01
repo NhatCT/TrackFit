@@ -13,11 +13,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class JwtFilter implements Filter {
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
+
         HttpServletRequest httpRequest = (HttpServletRequest) request;
 
+        // Chỉ check các URL bảo vệ /api/secure/**
         if (httpRequest.getRequestURI().startsWith(httpRequest.getContextPath() + "/api/secure")) {
             String header = httpRequest.getHeader("Authorization");
 
@@ -34,7 +37,7 @@ public class JwtFilter implements Filter {
 
                 if (username != null) {
                     var authorities = roles.stream()
-                            .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+                            .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r) // map -> ROLE_*
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());
 

@@ -1,5 +1,6 @@
 package com.ntn.repositories.impl;
 
+import com.ntn.dto.ExerciseShare;
 import com.ntn.pojo.UserWorkoutHistory;
 import com.ntn.repositories.UserWorkoutHistoryRepository;
 import jakarta.persistence.criteria.*;
@@ -44,53 +45,49 @@ public class UserWorkoutHistoryRepositoryImpl implements UserWorkoutHistoryRepos
 
         return s.createQuery(cq).getResultList();
     }
-@Override
-public UserWorkoutHistory save(UserWorkoutHistory h) {
+
+    @Override
+    public UserWorkoutHistory save(UserWorkoutHistory h) {
         Session s = factory.getObject().getCurrentSession();
-        if (h.getHistoryId() == null) { s.persist(h); return h; }
+        if (h.getHistoryId() == null) {
+            s.persist(h);
+            return h;
+        }
         return (UserWorkoutHistory) s.merge(h);
     }
 
     @Override
-public UserWorkoutHistory
-
-findById(Integer id) {
-        return factory.getObject().getCurrentSession().get(UserWorkoutHistory.class  
-
-, id);
+    public UserWorkoutHistory
+            findById(Integer id) {
+        return factory.getObject().getCurrentSession().get(UserWorkoutHistory.class,
+                 id);
     }
 
     @Override
-public void delete(UserWorkoutHistory h) {
+    public void delete(UserWorkoutHistory h) {
         Session s = factory.getObject().getCurrentSession();
         s.remove(s.contains(h) ? h : s.merge(h));
     }
 
     @Override
-public List<UserWorkoutHistory> findByUserIdFiltered(Integer userId, Integer planId, Integer exerciseId, String status) {
+    public List<UserWorkoutHistory> findByUserIdFiltered(Integer userId, Integer planId, Integer exerciseId, String status) {
         return queryBase(userId, planId, exerciseId, status, null, null);
     }
 
     @Override
-public List<UserWorkoutHistory> findByUserIdPaged(Integer userId, Integer planId, Integer exerciseId, String status, int page, int pageSize) {
+    public List<UserWorkoutHistory> findByUserIdPaged(Integer userId, Integer planId, Integer exerciseId, String status, int page, int pageSize) {
         int start = Math.max(page, 1) - 1;
         return queryBase(userId, planId, exerciseId, status, start * pageSize, pageSize);
     }
 
     @Override
-public long countByUserId(Integer userId, Integer planId, Integer exerciseId, String status) {
+    public long countByUserId(Integer userId, Integer planId, Integer exerciseId, String status) {
         Session s = factory.getObject().getCurrentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
-        CriteriaQuery
-
-<Long> cq = cb.createQuery(Long.class  
-
-);
-        Root
-
-<UserWorkoutHistory> root = cq.from(UserWorkoutHistory.class  
-
-);
+        CriteriaQuery<Long> cq = cb.createQuery(Long.class
+        );
+        Root<UserWorkoutHistory> root = cq.from(UserWorkoutHistory.class
+        );
 
         List<Predicate> ps = buildPreds(cb, root, userId, planId, exerciseId, status, null, null);
 
@@ -99,19 +96,13 @@ public long countByUserId(Integer userId, Integer planId, Integer exerciseId, St
     }
 
     @Override
-public long countCompletedBetween(Integer userId, Date from, Date to) {
+    public long countCompletedBetween(Integer userId, Date from, Date to) {
         Session s = factory.getObject().getCurrentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
-        CriteriaQuery
-
-<Long> cq = cb.createQuery(Long.class  
-
-);
-        Root
-
-<UserWorkoutHistory> root = cq.from(UserWorkoutHistory.class  
-
-);
+        CriteriaQuery<Long> cq = cb.createQuery(Long.class
+        );
+        Root<UserWorkoutHistory> root = cq.from(UserWorkoutHistory.class
+        );
 
         List<Predicate> ps = buildPreds(cb, root, userId, null, null, "COMPLETED", from, to);
         cq.select(cb.count(root)).where(ps.toArray(Predicate[]::new));
@@ -119,19 +110,13 @@ public long countCompletedBetween(Integer userId, Date from, Date to) {
     }
 
     @Override
-public List<UserWorkoutHistory> findBetween(Integer userId, Date from, Date to, String status) {
+    public List<UserWorkoutHistory> findBetween(Integer userId, Date from, Date to, String status) {
         Session s = factory.getObject().getCurrentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
-        CriteriaQuery
-
-<UserWorkoutHistory> cq = cb.createQuery(UserWorkoutHistory.class  
-
-);
-        Root
-
-<UserWorkoutHistory> root = cq.from(UserWorkoutHistory.class  
-
-);
+        CriteriaQuery<UserWorkoutHistory> cq = cb.createQuery(UserWorkoutHistory.class
+        );
+        Root<UserWorkoutHistory> root = cq.from(UserWorkoutHistory.class
+        );
 
         List<Predicate> ps = buildPreds(cb, root, userId, null, null, status, from, to);
         cq.select(root).where(ps.toArray(Predicate[]::new));
@@ -144,16 +129,10 @@ public List<UserWorkoutHistory> findBetween(Integer userId, Date from, Date to, 
     private List<UserWorkoutHistory> queryBase(Integer userId, Integer planId, Integer exerciseId, String status, Integer first, Integer max) {
         Session s = factory.getObject().getCurrentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
-        CriteriaQuery
-
-<UserWorkoutHistory> cq = cb.createQuery(UserWorkoutHistory.class  
-
-);
-        Root
-
-<UserWorkoutHistory> root = cq.from(UserWorkoutHistory.class  
-
-);
+        CriteriaQuery<UserWorkoutHistory> cq = cb.createQuery(UserWorkoutHistory.class
+        );
+        Root<UserWorkoutHistory> root = cq.from(UserWorkoutHistory.class
+        );
 
         List<Predicate> ps = buildPreds(cb, root, userId, planId, exerciseId, status, null, null);
         cq.select(root).where(ps.toArray(Predicate[]::new));
@@ -167,16 +146,81 @@ public List<UserWorkoutHistory> findBetween(Integer userId, Date from, Date to, 
         return q.getResultList();
     }
 
-    private List<Predicate> buildPreds(CriteriaBuilder cb, Root<UserWorkoutHistory> root,
-                                       Integer userId, Integer planId, Integer exerciseId, String status,
-                                       Date from, Date to) {
+    @Override
+    public List<Integer> findRecentExerciseIds(Integer userId, int limit) {
+        Session s = factory.getObject().getCurrentSession();
+        CriteriaBuilder cb = s.getCriteriaBuilder();
+        CriteriaQuery<Integer> cq = cb.createQuery(Integer.class);
+        Root<UserWorkoutHistory> root = cq.from(UserWorkoutHistory.class);
+
         List<Predicate> ps = new ArrayList<>();
-        if (userId != null) ps.add(cb.equal(root.get("userId").get("userId"), userId));
-        if (planId != null) ps.add(cb.equal(root.get("planId").get("planId"), planId));
-        if (exerciseId != null) ps.add(cb.equal(root.get("exercisesId").get("exercisesId"), exerciseId));
-        if (status != null && !status.isBlank()) ps.add(cb.equal(root.get("status"), status));
-        if (from != null) ps.add(cb.greaterThanOrEqualTo(root.get("completedAt"), from));
-        if (to != null) ps.add(cb.lessThanOrEqualTo(root.get("completedAt"), to));
+        if (userId != null) {
+            ps.add(cb.equal(root.get("userId").get("userId"), userId));
+        }
+        // chỉ lấy những buổi đã hoàn thành
+        ps.add(cb.equal(cb.upper(root.get("status")), "COMPLETED"));
+
+        cq.select(root.get("exercisesId").get("exercisesId")).where(ps.toArray(Predicate[]::new)).distinct(true);
+        cq.orderBy(cb.desc(root.get("completedAt")), cb.desc(root.get("historyId")));
+
+        Query<Integer> q = s.createQuery(cq);
+        q.setMaxResults(Math.max(1, Math.min(limit, 100))); // chặn 1..100
+        return q.getResultList();
+    }
+
+    @Override
+    public List<ExerciseShare> countByExercise(Integer userId, Date from, Date toExclusive) {
+        var s = factory.getObject().getCurrentSession();
+
+        String jpql
+                = "select new com.ntn.dto.ExerciseShare("
+                + "  e.exercisesId, e.name, "
+                + "  count(distinct h.historyId), "
+                + "  coalesce(sum(h.duration),0) "
+                + ") "
+                + "from UserWorkoutHistory h join h.exercisesId e "
+                + "where upper(h.status) = 'COMPLETED' "
+                + (userId != null ? "and h.userId.userId = :uid " : "")
+                + (from != null ? "and h.completedAt >= :from " : "")
+                + (toExclusive != null ? "and h.completedAt < :to " : "")
+                + "group by e.exercisesId, e.name "
+                + "order by count(distinct h.historyId) desc";
+
+        var q = s.createQuery(jpql, com.ntn.dto.ExerciseShare.class);
+        if (userId != null) {
+            q.setParameter("uid", userId);
+        }
+        if (from != null) {
+            q.setParameter("from", from);
+        }
+        if (toExclusive != null) {
+            q.setParameter("to", toExclusive);
+        }
+        return q.getResultList();
+    }
+
+    private List<Predicate> buildPreds(CriteriaBuilder cb, Root<UserWorkoutHistory> root,
+            Integer userId, Integer planId, Integer exerciseId, String status,
+            Date from, Date to) {
+        List<Predicate> ps = new ArrayList<>();
+        if (userId != null) {
+            ps.add(cb.equal(root.get("userId").get("userId"), userId));
+        }
+        if (planId != null) {
+            ps.add(cb.equal(root.get("planId").get("planId"), planId));
+        }
+        if (exerciseId != null) {
+            ps.add(cb.equal(root.get("exercisesId").get("exercisesId"), exerciseId));
+        }
+        if (status != null && !status.isBlank()) {
+            ps.add(cb.equal(root.get("status"), status));
+        }
+        if (from != null) {
+            ps.add(cb.greaterThanOrEqualTo(root.get("completedAt"), from));
+        }
+        if (to != null) {
+            ps.add(cb.lessThanOrEqualTo(root.get("completedAt"), to));
+        }
         return ps;
     }
 }

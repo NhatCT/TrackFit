@@ -32,29 +32,47 @@ import java.util.Date;
     @NamedQuery(name = "Notification.findByNotificationId", query = "SELECT n FROM Notification n WHERE n.notificationId = :notificationId"),
     @NamedQuery(name = "Notification.findByType", query = "SELECT n FROM Notification n WHERE n.type = :type"),
     @NamedQuery(name = "Notification.findByIsRead", query = "SELECT n FROM Notification n WHERE n.isRead = :isRead"),
-    @NamedQuery(name = "Notification.findByCreatedAt", query = "SELECT n FROM Notification n WHERE n.createdAt = :createdAt")})
+    @NamedQuery(name = "Notification.findByCreatedAt", query = "SELECT n FROM Notification n WHERE n.createdAt = :createdAt"),
+    @NamedQuery(name = "Notification.findBySource", query = "SELECT n FROM Notification n WHERE n.source = :source"),
+    @NamedQuery(name = "Notification.findBySender", query = "SELECT n FROM Notification n WHERE n.sender = :sender")
+})
 public class Notification implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Basic(optional = false)
     @Column(name = "notification_id")
     private Integer notificationId;
+
     @Basic(optional = false)
     @jakarta.validation.constraints.NotNull
     @Lob
     @jakarta.validation.constraints.Size(min = 1, max = 65535)
     @Column(name = "message")
     private String message;
+
     @jakarta.validation.constraints.Size(max = 8)
     @Column(name = "type")
     private String type;
+
+    // ✅ thêm field mới
+    @jakarta.validation.constraints.Size(max = 32)
+    @Column(name = "source")
+    private String source;
+
+    @jakarta.validation.constraints.Size(max = 255)
+    @Column(name = "sender")
+    private String sender;
+
     @Column(name = "is_read")
     private Boolean isRead;
+
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
+
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
     @ManyToOne(optional = false)
     private User userId;
@@ -95,6 +113,22 @@ public class Notification implements Serializable {
         this.type = type;
     }
 
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getSender() {
+        return sender;
+    }
+
+    public void setSender(String sender) {
+        this.sender = sender;
+    }
+
     public Boolean getIsRead() {
         return isRead;
     }
@@ -128,20 +162,17 @@ public class Notification implements Serializable {
 
     @Override
     public boolean equals(Object object) {
-        // TODO: Warning - this method won't work in the case the id fields are not set
         if (!(object instanceof Notification)) {
             return false;
         }
         Notification other = (Notification) object;
-        if ((this.notificationId == null && other.notificationId != null) || (this.notificationId != null && !this.notificationId.equals(other.notificationId))) {
-            return false;
-        }
-        return true;
+        return !((this.notificationId == null && other.notificationId != null) || 
+                 (this.notificationId != null && !this.notificationId.equals(other.notificationId)));
     }
 
     @Override
     public String toString() {
         return "com.ntn.pojo.Notification[ notificationId=" + notificationId + " ]";
     }
-    
+
 }

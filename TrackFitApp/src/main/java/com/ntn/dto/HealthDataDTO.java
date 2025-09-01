@@ -1,46 +1,35 @@
 package com.ntn.dto;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.Past;
+import java.util.Date;
 import java.time.LocalDate;
 
 public class HealthDataDTO {
 
-    @NotNull(message = "{healthData.height.notNull}")
-    @Positive(message = "{healthData.height.positive}")
-    private Double height;
+    // FE cần để hiển thị/xóa
+    private Integer healthId;
 
-    @NotNull(message = "{healthData.weight.notNull}")
-    @Positive(message = "{healthData.weight.positive}")
-    private Double weight;
+    private Double height;          // cm
+    private Double weight;          // kg
+    private String bloodPressure;   // "120/80"
+    private String notes;
 
-    @NotBlank(message = "{healthData.gender.notBlank}")
-    @Pattern(regexp = "^(Male|Female|Other)$", message = "{healthData.gender.pattern}")
+    private Date createdAt;
+    private Date updatedAt;
+
+    // Tham khảo từ bảng user (tuỳ form)
     private String gender;
-
-    @NotBlank(message = "{healthData.goalType.notBlank}")
-    @Size(max = 50, message = "{healthData.goalType.size}")
-    private String goalType;
-
-    @NotNull(message = "{healthData.workoutDays.notNull}")
-    @Min(value = 1, message = "{healthData.workoutDays.min}")
-    @Max(value = 7, message = "{healthData.workoutDays.max}")
-    private Integer workoutDays;
-
-    @NotNull(message = "{healthData.birthDate.notNull}")
-    @Past(message = "{healthData.birthDate.past}")
     private LocalDate birthDate;
+
+    public Integer getHealthId() {
+        return healthId;
+    }
+    public void setHealthId(Integer healthId) {
+        this.healthId = healthId;
+    }
 
     public Double getHeight() {
         return height;
     }
-
     public void setHeight(Double height) {
         this.height = height;
     }
@@ -48,39 +37,48 @@ public class HealthDataDTO {
     public Double getWeight() {
         return weight;
     }
-
     public void setWeight(Double weight) {
         this.weight = weight;
+    }
+
+    public String getBloodPressure() {
+        return bloodPressure;
+    }
+    public void setBloodPressure(String bloodPressure) {
+        this.bloodPressure = bloodPressure;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    public Date getCreatedAt() {
+        return createdAt;
+    }
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return updatedAt;
+    }
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public String getGender() {
         return gender;
     }
-
     public void setGender(String gender) {
         this.gender = gender;
-    }
-
-    public String getGoalType() {
-        return goalType;
-    }
-
-    public void setGoalType(String goalType) {
-        this.goalType = goalType;
-    }
-
-    public Integer getWorkoutDays() {
-        return workoutDays;
-    }
-
-    public void setWorkoutDays(Integer workoutDays) {
-        this.workoutDays = workoutDays;
     }
 
     public LocalDate getBirthDate() {
         return birthDate;
     }
-
     public void setBirthDate(LocalDate birthDate) {
         this.birthDate = birthDate;
     }

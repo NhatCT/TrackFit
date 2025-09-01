@@ -17,8 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class GoalServiceImpl implements GoalService {
 
-    @Autowired private UserRepository userRepo;
-    @Autowired private GoalRepository goalRepo;
+    @Autowired
+    private UserRepository userRepo;
+    @Autowired
+    private GoalRepository goalRepo;
 
     @Override
     public void create(String username, GoalDTO dto) {
@@ -37,6 +39,18 @@ public class GoalServiceImpl implements GoalService {
         User user = mustGetUser(username);
         return goalRepo.findByUserId(user.getUserId()).stream().map(g -> {
             GoalDTO d = new GoalDTO();
+            d.setGoalId(g.getGoalId());
+
+            // Tạo tên gợi nghĩa cho dropdown
+            String label = String.format(
+                    "%s%s%s",
+                    g.getGoalType() != null ? g.getGoalType() : "Goal",
+                    g.getWorkoutDuration() != null ? " • " + g.getWorkoutDuration() + "p" : "",
+                    g.getIntensity() != null ? " • " + g.getIntensity() : ""
+            );
+            d.setName(label.trim());
+
+            // các field gốc
             d.setGoalType(g.getGoalType());
             d.setWorkoutDuration(g.getWorkoutDuration());
             d.setIntensity(g.getIntensity());
@@ -49,9 +63,15 @@ public class GoalServiceImpl implements GoalService {
         User user = mustGetUser(username);
         Goal g = mustGetOwnedGoal(user, goalId);
 
-        if (dto.getGoalType() != null) g.setGoalType(dto.getGoalType());
-        if (dto.getWorkoutDuration() != null) g.setWorkoutDuration(dto.getWorkoutDuration());
-        if (dto.getIntensity() != null) g.setIntensity(dto.getIntensity());
+        if (dto.getGoalType() != null) {
+            g.setGoalType(dto.getGoalType());
+        }
+        if (dto.getWorkoutDuration() != null) {
+            g.setWorkoutDuration(dto.getWorkoutDuration());
+        }
+        if (dto.getIntensity() != null) {
+            g.setIntensity(dto.getIntensity());
+        }
         goalRepo.saveGoal(g);
     }
 
@@ -64,14 +84,17 @@ public class GoalServiceImpl implements GoalService {
 
     private User mustGetUser(String username) {
         User u = userRepo.getUserByUsername(username);
-        if (u == null) throw new IllegalArgumentException("Không tìm thấy người dùng");
+        if (u == null) {
+            throw new IllegalArgumentException("Không tìm thấy người dùng");
+        }
         return u;
     }
 
     private Goal mustGetOwnedGoal(User u, Integer id) {
         Goal g = goalRepo.findById(id);
-        if (g == null || !g.getUserId().getUserId().equals(u.getUserId()))
+        if (g == null || !g.getUserId().getUserId().equals(u.getUserId())) {
             throw new IllegalArgumentException("Mục tiêu không tồn tại hoặc không thuộc về bạn");
+        }
         return g;
     }
 

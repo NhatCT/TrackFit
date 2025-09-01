@@ -1,0 +1,61 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: trackfit-mysql
+    environment:
+      MYSQL_DATABASE: trackfitdb
+      MYSQL_ROOT_PASSWORD: "Nhat#1908"
+      MYSQL_USER: trackfit
+      MYSQL_PASSWORD: "Nhat#1908"
+      TZ: "Asia/Ho_Chi_Minh"
+    command: >-
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      # dùng $$ để tránh Compose expand trên host (Windows)
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 120s
+    restart: unless-stopped
+
+  ai:
+    build: ./ai-reco
+    container_name: trackfit-ai
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  backend:
+    build: ./TrackFitApp
+    container_name: trackfit-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ai:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/trackfitdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: trackfit
+      SPRING_DATASOURCE_PASSWORD: "Nhat#1908"
+      TZ: "Asia/Ho_Chi_Minh"
+    restart: unless-stopped
+
+  frontend:
+    build: ./trackfitweb
+    container_name: trackfit-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mysql_data: {}

@@ -1,10 +1,13 @@
 package com.ntn.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.util.Date;
 
 public class StatsDailyPointDTO {
 
-    private Date date;       // ngày (00:00)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "Asia/Ho_Chi_Minh")
+    private Date date;       // ngày (00:00 VN)
     private long sessions;   // tổng buổi
     private long completed;  // buổi COMPLETED
     private long minutes;    // tổng phút ước tính

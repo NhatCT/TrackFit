@@ -1,5 +1,9 @@
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\agent\RecommendationAgentJob.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\configs\CacheConfig.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\configs\DispatcherServletInit.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\configs\HibernateConfigs.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\configs\RestClientConfigs.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\configs\SchedulingConfig.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\configs\SecurityWebApplicationInitializer.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\configs\SpringSecurityConfigs.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\configs\ThymeleafConfigs.java
@@ -28,6 +32,8 @@ E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\AiRankRequest.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\ChangePasswordDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\ExerciseCreateUpdateDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\ExerciseDTO.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\ExerciseSessionsDTO.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\ExerciseShare.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\GoalDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\GoalStatsDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\HealthDataDTO.java
@@ -40,7 +46,9 @@ E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\PlanDetailItemDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\PlanDetailViewDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\RecommendationItemDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\RecommendationParamsDTO.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\StatsByExerciseDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\StatsByGoalDTO.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\StatsDailyMinutesDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\StatsDailyPointDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\StatsSummaryDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\UserRegistrationDTO.java

@@ -2,11 +2,11 @@ package com.ntn.dto;
 
 public class RecommendationParamsDTO {
 
-    private Integer size;              // số item trả về, mặc định 10
-    private String kw;                 // tìm theo tên bài tập (optional)
-    private Integer availableMinutes;  // thời lượng rảnh, mặc định 25
-    private String intensity;          // Low/Medium/High (optional)
-    private String goalType;           // lose_weight/gain_muscle... (optional)
+    private Integer size;
+    private String kw;
+    private Integer availableMinutes;
+    private String intensity;
+    private String goalType;
 
     public Integer getSize() {
         return size;

@@ -1,5 +1,7 @@
+// src/main/java/com/ntn/services/impl/UserWorkoutHistoryServiceImpl.java
 package com.ntn.services.impl;
 
+import com.ntn.dto.ExerciseShare;
 import com.ntn.dto.HistoryCreateUpdateDTO;
 import com.ntn.dto.HistoryDTO;
 import com.ntn.pojo.Exercises;
@@ -15,7 +17,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,16 +33,25 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
 
     @Override
     public HistoryDTO create(String username, HistoryCreateUpdateDTO req) {
-        User u = mustUser(username);
+        User u  = mustUser(username);
         Exercises ex = mustExercise(req.getExerciseId());
-        WorkoutPlan plan = mustPlan(req.getPlanId(), u);
+
+        // KHÔNG bắt buộc có plan
+        WorkoutPlan plan = null;
+        if (req.getPlanId() != null) plan = mustPlan(req.getPlanId(), u);
 
         UserWorkoutHistory h = new UserWorkoutHistory();
         h.setUserId(u);
         h.setExercisesId(ex);
         h.setPlanId(plan);
-        h.setStatus(req.getStatus());
+        if (req.getStatus() != null) h.setStatus(req.getStatus());
         h.setCompletedAt(req.getCompletedAt() != null ? req.getCompletedAt() : new Date());
+
+        // Ghi duration để thống kê đúng
+        if (req.getDuration() != null && req.getDuration() >= 0) {
+            h.setDuration(req.getDuration());
+        }
+
         h = repo.save(h);
         return toDTO(h);
     }
@@ -60,9 +73,10 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
             throw new IllegalArgumentException("Lịch sử không tồn tại hoặc không thuộc về bạn");
 
         if (req.getExerciseId() != null) h.setExercisesId(mustExercise(req.getExerciseId()));
-        if (req.getPlanId() != null)     h.setPlanId(mustPlan(req.getPlanId(), u));
-        if (req.getStatus() != null)     h.setStatus(req.getStatus());
+        if (req.getPlanId() != null)  h.setPlanId(mustPlan(req.getPlanId(), u));
+        if (req.getStatus() != null)  h.setStatus(req.getStatus());
         if (req.getCompletedAt() != null) h.setCompletedAt(req.getCompletedAt());
+        if (req.getDuration() != null && req.getDuration() >= 0) h.setDuration(req.getDuration());
 
         h = repo.save(h);
         return toDTO(h);
@@ -97,10 +111,18 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
         var items = repo.findByUserIdPaged(u.getUserId(), planId, exerciseId, status, p, pageSize)
                 .stream().map(this::toDTO).collect(Collectors.toList());
 
-        return Map.of("page", p, "pageSize", pageSize, "totalPages", totalPages, "totalElements", total, "items", items);
+        return Map.of("page", p, "pageSize", pageSize, "totalPages", totalPages,
+                "totalElements", total, "items", items);
     }
 
-    // helpers
+    // ✨ Tổng hợp cho biểu đồ: sessions & minutes theo bài tập
+    @Override
+    public List<ExerciseShare> aggregateExerciseShare(String username, Date from, Date toExclusive) {
+        User u = mustUser(username);
+        return repo.countByExercise(u.getUserId(), from, toExclusive);
+    }
+
+    // --------- helpers ----------
     private User mustUser(String username) {
         User u = userRepo.getUserByUsername(username);
         if (u == null) throw new IllegalArgumentException("Không tìm thấy người dùng");
@@ -125,10 +147,13 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
         d.setHistoryId(h.getHistoryId());
         d.setExerciseId(h.getExercisesId().getExercisesId());
         d.setExerciseName(h.getExercisesId().getName());
-        d.setPlanId(h.getPlanId().getPlanId());
-        d.setPlanName(h.getPlanId().getPlanName());
+        if (h.getPlanId() != null) {
+            d.setPlanId(h.getPlanId().getPlanId());
+            d.setPlanName(h.getPlanId().getPlanName());
+        }
         d.setStatus(h.getStatus());
         d.setCompletedAt(h.getCompletedAt());
+        d.setDuration(h.getDuration());
         return d;
     }
 }

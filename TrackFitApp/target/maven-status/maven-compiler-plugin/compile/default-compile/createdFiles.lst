@@ -15,11 +15,15 @@ com\ntn\services\StatsService.class
 com\ntn\repositories\impl\GoalRepositoryImpl.class
 com\ntn\dto\NotificationDTO.class
 EncodePassword.class
+com\ntn\agent\RecommendationAgentJob.class
 com\ntn\dto\AiRankedExercise.class
+com\ntn\configs\RestClientConfigs.class
+com\ntn\configs\CacheConfig.class
 com\ntn\services\ExercisesService.class
 com\ntn\dto\GoalDTO.class
 com\ntn\dto\WorkoutPlanListItemDTO.class
 com\ntn\services\impl\HealthDataServiceImpl.class
+com\ntn\dto\StatsDailyMinutesDTO.class
 com\ntn\services\UserWorkoutHistoryService.class
 com\ntn\dto\AiRankRequest$Candidate.class
 com\ntn\dto\RecommendationItemDTO.class
@@ -52,10 +56,12 @@ com\ntn\dto\PlanDetailViewDTO.class
 com\ntn\controllers\StatsPageController.class
 com\ntn\repositories\impl\NotificationRepositoryImpl.class
 com\ntn\dto\LoginDTO.class
+com\ntn\dto\StatsByExerciseDTO.class
 com\ntn\repositories\HealthDataRepository.class
 com\ntn\services\impl\GoalServiceImpl.class
 com\ntn\dto\GoalStatsDTO.class
 com\ntn\configs\ThymeleafConfigs.class
+com\ntn\dto\ExerciseShare.class
 com\ntn\repositories\GoalRepository.class
 com\ntn\services\impl\StatsServiceImpl.class
 com\ntn\utils\JwtUtils.class
@@ -67,6 +73,7 @@ com\ntn\services\NotificationService.class
 com\ntn\repositories\UserRepository.class
 com\ntn\services\impl\WorkoutPlanServiceImpl.class
 com\ntn\controllers\HomeController.class
+com\ntn\configs\SchedulingConfig.class
 com\ntn\dto\HistoryCreateUpdateDTO.class
 com\ntn\dto\AdminStatsSummaryDTO.class
 com\ntn\services\impl\RecommendationServiceImpl.class
@@ -78,6 +85,7 @@ com\ntn\dto\UserRegistrationDTO.class
 com\ntn\controllers\ApiExceptionHandler.class
 com\ntn\dto\ChangePasswordDTO.class
 com\ntn\services\AdminStatsService.class
+com\ntn\dto\ExerciseSessionsDTO.class
 com\ntn\dto\StatsDailyPointDTO.class
 com\ntn\configs\SpringSecurityConfigs.class
 com\ntn\dto\StatsByGoalDTO.class

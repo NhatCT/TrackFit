@@ -54,6 +54,8 @@ public class UserWorkoutHistory implements Serializable {
     @JoinColumn(name = "plan_id", referencedColumnName = "plan_id")
     @ManyToOne(optional = false)
     private WorkoutPlan planId;
+    @Column(name = "duration")
+    private Integer duration;
 
     public UserWorkoutHistory() {
     }
@@ -110,6 +112,14 @@ public class UserWorkoutHistory implements Serializable {
         this.planId = planId;
     }
 
+    public Integer getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Integer duration) {
+        this.duration = duration;
+    }
+
     @Override
     public int hashCode() {
         int hash = 0;
@@ -134,5 +144,5 @@ public class UserWorkoutHistory implements Serializable {
     public String toString() {
         return "com.ntn.pojo.UserWorkoutHistory[ historyId=" + historyId + " ]";
     }
-    
+
 }

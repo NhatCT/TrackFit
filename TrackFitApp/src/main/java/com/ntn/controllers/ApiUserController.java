@@ -13,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -43,8 +44,19 @@ public class ApiUserController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> login(@Valid @RequestBody LoginDTO loginDTO) throws Exception {
         if (this.userDetailsService.authenticate(loginDTO.getUsername(), loginDTO.getPassword())) {
-            String token = JwtUtils.generateToken(loginDTO.getUsername());
-            return ResponseEntity.ok(Map.of("token", token));
+            // Lấy user để lấy role từ DB
+            UserResponseDTO user = this.userDetailsService.getUserByUsername(loginDTO.getUsername());
+            String rawRole = user.getRole(); // "ROLE_USER" hoặc "ROLE_ADMIN"
+            String role = (rawRole != null && rawRole.startsWith("ROLE_")) ? rawRole.substring(5) : rawRole;
+
+            String token = JwtUtils.generateToken(user.getUsername(), List.of(role));
+
+            return ResponseEntity.ok(Map.of(
+                    "token", token,
+                    "userId", user.getUserId(),
+                    "username", user.getUsername(),
+                    "roles", List.of(role)
+            ));
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("message", "Tên người dùng hoặc mật khẩu không đúng"));

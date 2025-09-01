@@ -1,4 +1,3 @@
-
 package com.ntn.dto;
 
 import jakarta.validation.constraints.*;
@@ -19,6 +18,10 @@ public class HistoryCreateUpdateDTO {
     private String status;
 
     private Date completedAt;
+
+    // ➕ Thêm duration (tuỳ chọn)
+    @Min(0)
+    private Integer duration;
 
     public Integer getExerciseId() {
         return exerciseId;
@@ -50,5 +53,13 @@ public class HistoryCreateUpdateDTO {
 
     public void setCompletedAt(Date completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public Integer getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Integer duration) {
+        this.duration = duration;
     }
 }

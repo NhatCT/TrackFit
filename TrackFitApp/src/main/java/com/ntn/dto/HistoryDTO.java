@@ -11,6 +11,7 @@ public class HistoryDTO {
     private String planName;
     private String status;
     private Date completedAt;
+    private Integer duration;
 
     public Integer getHistoryId() {
         return historyId;
@@ -66,5 +67,13 @@ public class HistoryDTO {
 
     public void setCompletedAt(Date completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public Integer getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Integer duration) {
+        this.duration = duration;
     }
 }

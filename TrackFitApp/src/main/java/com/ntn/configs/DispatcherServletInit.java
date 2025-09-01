@@ -21,7 +21,10 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
         return new Class[]{
             ThymeleafConfigs.class,
             HibernateConfigs.class,
-            SpringSecurityConfigs.class
+            SpringSecurityConfigs.class,
+            RestClientConfigs.class,
+            SchedulingConfig.class,
+            CacheConfig.class
         };
     }
 
@@ -49,6 +52,7 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected Filter[] getServletFilters() {
-        return new Filter[]{new JwtFilter()};
+        return new Filter[]{}; // ✅ KHÔNG đăng ký ở đây
     }
+
 }

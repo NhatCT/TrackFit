@@ -31,10 +31,13 @@ public class HealthDataServiceImpl implements HealthDataService {
         h.setUserId(user);
         h.setHeight(dto.getHeight() != null ? new BigDecimal(dto.getHeight()) : null);
         h.setWeight(dto.getWeight() != null ? new BigDecimal(dto.getWeight()) : null);
+        h.setBloodPressure(dto.getBloodPressure());  // ➕
+        h.setNotes(dto.getNotes());                  // ➕
+        h.setCreatedAt(new Date());                  // ➕
         h.setUpdatedAt(new Date());
         healthRepo.saveHealthData(h);
 
-        // (Tuỳ chọn) đồng bộ field tĩnh từ form vào bảng user
+        // (tuỳ chọn) đồng bộ 1 số trường sang user
         if (dto.getGender() != null) user.setGender(dto.getGender());
         if (dto.getBirthDate() != null) user.setBirthDate(dto.getBirthDate());
         user.setUpdatedAt(LocalDateTime.now());
@@ -46,14 +49,20 @@ public class HealthDataServiceImpl implements HealthDataService {
         User user = mustGetUser(username);
         return healthRepo.findByUserId(user.getUserId()).stream().map(h -> {
             HealthDataDTO d = new HealthDataDTO();
+            d.setHealthId(h.getHealthId());                                  // ➕
             d.setHeight(h.getHeight() != null ? h.getHeight().doubleValue() : null);
             d.setWeight(h.getWeight() != null ? h.getWeight().doubleValue() : null);
-            d.setGender(user.getGender());          // lấy từ bảng user
-            d.setBirthDate(user.getBirthDate());    // lấy từ bảng user
-            // Không set updatedAt vì DTO không có field này
-            // Không set goalType/workoutDays vì không nằm trong health_data (tuỳ form gửi vào)
+            d.setBloodPressure(h.getBloodPressure());                        // ➕
+            d.setNotes(h.getNotes());                                        // ➕
+            d.setCreatedAt(h.getCreatedAt());                                // ➕
+            d.setUpdatedAt(h.getUpdatedAt());
+
+            d.setGender(user.getGender());
+            d.setBirthDate(user.getBirthDate());
             return d;
-        }).collect(Collectors.toList());
+        }).sorted(Comparator.comparing(HealthDataDTO::getCreatedAt,
+                        Comparator.nullsLast(Date::compareTo)).reversed())
+          .collect(Collectors.toList());
     }
 
     @Override
@@ -61,8 +70,10 @@ public class HealthDataServiceImpl implements HealthDataService {
         User user = mustGetUser(username);
         HealthData h = mustGetOwnedHealth(user, healthId);
 
-        h.setHeight(dto.getHeight() != null ? new BigDecimal(dto.getHeight()) : null);
-        h.setWeight(dto.getWeight() != null ? new BigDecimal(dto.getWeight()) : null);
+        if (dto.getHeight() != null) h.setHeight(new BigDecimal(dto.getHeight()));
+        if (dto.getWeight() != null) h.setWeight(new BigDecimal(dto.getWeight()));
+        if (dto.getBloodPressure() != null) h.setBloodPressure(dto.getBloodPressure()); // ➕
+        if (dto.getNotes() != null) h.setNotes(dto.getNotes());                         // ➕
         h.setUpdatedAt(new Date());
         healthRepo.saveHealthData(h);
 
@@ -82,9 +93,9 @@ public class HealthDataServiceImpl implements HealthDataService {
     @Override
     public HealthData getLatestEntity(String username) {
         User user = mustGetUser(username);
-        List<HealthData> list = healthRepo.findByUserId(user.getUserId());
-        return list.stream().sorted(Comparator.comparing(HealthData::getUpdatedAt).reversed())
-                   .findFirst().orElse(null);
+        return healthRepo.findByUserId(user.getUserId()).stream()
+                .sorted(Comparator.comparing(HealthData::getUpdatedAt).reversed())
+                .findFirst().orElse(null);
     }
 
     private User mustGetUser(String username) {
@@ -100,5 +111,3 @@ public class HealthDataServiceImpl implements HealthDataService {
         return h;
     }
 }
-
-

@@ -1,15 +1,16 @@
 package com.ntn.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class WorkoutPlanCreateRequest {
 
-    // ➕ Dùng cho trang admin khi tạo kế hoạch cho user cụ thể
-    @NotNull(message = "{plan.userId.notNull}")
+    // Admin có thể set để tạo hộ user; user thường để null
     private Integer userId;
 
     @NotBlank(message = "{plan.planName.notBlank}")
@@ -17,16 +18,19 @@ public class WorkoutPlanCreateRequest {
     private String planName;
 
     private Integer goalId;
-    private Boolean isTemplate;
+
+    @JsonProperty("isTemplate")
+    private Boolean isTemplate; // null => xử lý default ở service
 
     @Valid
     @Size(max = 100, message = "{plan.details.size}")
     private List<PlanDetailItemDTO> details;
 
-    // ===== getters/setters =====
+    // getters/setters
     public Integer getUserId() {
         return userId;
     }
+
     public void setUserId(Integer userId) {
         this.userId = userId;
     }
@@ -34,6 +38,7 @@ public class WorkoutPlanCreateRequest {
     public String getPlanName() {
         return planName;
     }
+
     public void setPlanName(String planName) {
         this.planName = planName;
     }
@@ -41,13 +46,17 @@ public class WorkoutPlanCreateRequest {
     public Integer getGoalId() {
         return goalId;
     }
+
     public void setGoalId(Integer goalId) {
         this.goalId = goalId;
     }
 
+    @JsonProperty("isTemplate")
     public Boolean getIsTemplate() {
         return isTemplate;
     }
+
+    @JsonProperty("isTemplate")
     public void setIsTemplate(Boolean isTemplate) {
         this.isTemplate = isTemplate;
     }
@@ -55,6 +64,7 @@ public class WorkoutPlanCreateRequest {
     public List<PlanDetailItemDTO> getDetails() {
         return details;
     }
+
     public void setDetails(List<PlanDetailItemDTO> details) {
         this.details = details;
     }
