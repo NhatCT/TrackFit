@@ -11,9 +11,7 @@ import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Repository
 @Transactional
@@ -25,7 +23,10 @@ public class NotificationRepositoryImpl implements NotificationRepository {
     @Override
     public Notification save(Notification n) {
         Session s = factory.getObject().getCurrentSession();
-        if (n.getNotificationId() == null) { s.persist(n); return n; }
+        if (n.getNotificationId() == null) {
+            s.persist(n);
+            return n;
+        }
         return (Notification) s.merge(n);
     }
 
@@ -40,6 +41,25 @@ public class NotificationRepositoryImpl implements NotificationRepository {
         s.remove(s.contains(n) ? n : s.merge(n));
     }
 
+    private void applyFilters(Integer userId, Boolean isRead, String type, String kw,
+                              CriteriaBuilder cb, Root<Notification> root, List<Predicate> preds) {
+        preds.add(cb.equal(root.get("userId").get("userId"), userId));
+        if (isRead != null) {
+            preds.add(cb.equal(root.get("isRead"), isRead));
+        }
+        if (type != null && !type.isBlank()) {
+            preds.add(cb.equal(cb.upper(root.get("type")), type.toUpperCase()));
+        }
+        if (kw != null && !kw.isBlank()) {
+            // MySQL collation *_ci mặc định đã không phân biệt hoa-thường
+            String like = "%" + kw.trim() + "%";
+            preds.add(cb.or(
+                    cb.like(root.get("message"), like),
+                    cb.like(root.get("sender"), like)
+            ));
+        }
+    }
+
     @Override
     public List<Notification> findByUserIdFiltered(Integer userId, Boolean isRead, String type, String kw) {
         Session s = factory.getObject().getCurrentSession();
@@ -48,16 +68,7 @@ public class NotificationRepositoryImpl implements NotificationRepository {
         Root<Notification> root = cq.from(Notification.class);
 
         List<Predicate> preds = new ArrayList<>();
-        preds.add(cb.equal(root.get("userId").get("userId"), userId));
-        if (isRead != null) preds.add(cb.equal(root.get("isRead"), isRead));
-        if (type != null && !type.isBlank()) preds.add(cb.equal(cb.upper(root.get("type")), type.toUpperCase()));
-        if (kw != null && !kw.isBlank()) {
-            String like = "%" + kw.trim().toLowerCase() + "%";
-            preds.add(cb.or(
-                    cb.like(cb.lower(root.get("message")), like),
-                    cb.like(cb.lower(root.get("sender")), like)
-            ));
-        }
+        applyFilters(userId, isRead, type, kw, cb, root, preds);
 
         cq.where(preds.toArray(Predicate[]::new));
         cq.orderBy(cb.desc(root.get("createdAt")), cb.desc(root.get("notificationId")));
@@ -72,16 +83,7 @@ public class NotificationRepositoryImpl implements NotificationRepository {
         Root<Notification> root = cq.from(Notification.class);
 
         List<Predicate> preds = new ArrayList<>();
-        preds.add(cb.equal(root.get("userId").get("userId"), userId));
-        if (isRead != null) preds.add(cb.equal(root.get("isRead"), isRead));
-        if (type != null && !type.isBlank()) preds.add(cb.equal(cb.upper(root.get("type")), type.toUpperCase()));
-        if (kw != null && !kw.isBlank()) {
-            String like = "%" + kw.trim().toLowerCase() + "%";
-            preds.add(cb.or(
-                    cb.like(cb.lower(root.get("message")), like),
-                    cb.like(cb.lower(root.get("sender")), like)
-            ));
-        }
+        applyFilters(userId, isRead, type, kw, cb, root, preds);
 
         cq.where(preds.toArray(Predicate[]::new));
         cq.orderBy(cb.desc(root.get("createdAt")), cb.desc(root.get("notificationId")));
@@ -101,23 +103,13 @@ public class NotificationRepositoryImpl implements NotificationRepository {
         Root<Notification> root = cq.from(Notification.class);
 
         List<Predicate> preds = new ArrayList<>();
-        preds.add(cb.equal(root.get("userId").get("userId"), userId));
-        if (isRead != null) preds.add(cb.equal(root.get("isRead"), isRead));
-        if (type != null && !type.isBlank()) preds.add(cb.equal(cb.upper(root.get("type")), type.toUpperCase()));
-        if (kw != null && !kw.isBlank()) {
-            String like = "%" + kw.trim().toLowerCase() + "%";
-            preds.add(cb.or(
-                    cb.like(cb.lower(root.get("message")), like),
-                    cb.like(cb.lower(root.get("sender")), like)
-            ));
-        }
+        applyFilters(userId, isRead, type, kw, cb, root, preds);
 
         cq.where(preds.toArray(Predicate[]::new));
         cq.select(cb.count(root));
         return s.createQuery(cq).getSingleResult();
     }
 
-    // ====== mở rộng ======
     @Override
     public long countUnread(Integer userId) {
         Session s = factory.getObject().getCurrentSession();
@@ -128,7 +120,8 @@ public class NotificationRepositoryImpl implements NotificationRepository {
     @Override
     public int markAllRead(Integer userId) {
         Session s = factory.getObject().getCurrentSession();
-        Query<?> q = s.createQuery("update Notification n set n.isRead=true where n.userId.userId=:uid and n.isRead=false");
+        Query<?> q = s.createQuery(
+                "update Notification n set n.isRead=true where n.userId.userId=:uid and n.isRead=false");
         q.setParameter("uid", userId);
         return q.executeUpdate();
     }
@@ -136,9 +129,28 @@ public class NotificationRepositoryImpl implements NotificationRepository {
     @Override
     public int cleanupReadOlderThan(Integer userId, Date olderThan) {
         Session s = factory.getObject().getCurrentSession();
-        Query<?> q = s.createQuery("delete from Notification n where n.userId.userId=:uid and n.isRead=true and n.createdAt < :d");
+        Query<?> q = s.createQuery(
+                "delete from Notification n where n.userId.userId=:uid and n.isRead=true and n.createdAt < :d");
         q.setParameter("uid", userId);
         q.setParameter("d", olderThan);
         return q.executeUpdate();
+    }
+
+    @Override
+    public long countSimilarMessageSince(Integer userId, String message, Date since) {
+        // ❗ KHÔNG dùng lower(n.message) vì 'message' là TEXT/CLOB → gây FunctionArgumentException
+        // Dựa vào collation *_ci của MySQL để so sánh không phân biệt hoa-thường.
+        Session s = factory.getObject().getCurrentSession();
+        String jpql = """
+            select count(n) from Notification n
+            where n.userId.userId = :uid
+              and n.message = :msg
+              and n.createdAt >= :since
+        """;
+        return s.createQuery(jpql, Long.class)
+                .setParameter("uid", userId)
+                .setParameter("msg", message)
+                .setParameter("since", since)
+                .getSingleResult();
     }
 }

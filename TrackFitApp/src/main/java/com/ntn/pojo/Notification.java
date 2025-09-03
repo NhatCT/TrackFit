@@ -1,40 +1,13 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.ntn.pojo;
 
-import jakarta.persistence.Basic;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.Lob;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.NamedQueries;
-import jakarta.persistence.NamedQuery;
-import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
 
-/**
- *
- * @author Thanh Nhat
- */
 @Entity
 @Table(name = "notification")
 @NamedQueries({
-    @NamedQuery(name = "Notification.findAll", query = "SELECT n FROM Notification n"),
-    @NamedQuery(name = "Notification.findByNotificationId", query = "SELECT n FROM Notification n WHERE n.notificationId = :notificationId"),
-    @NamedQuery(name = "Notification.findByType", query = "SELECT n FROM Notification n WHERE n.type = :type"),
-    @NamedQuery(name = "Notification.findByIsRead", query = "SELECT n FROM Notification n WHERE n.isRead = :isRead"),
-    @NamedQuery(name = "Notification.findByCreatedAt", query = "SELECT n FROM Notification n WHERE n.createdAt = :createdAt"),
-    @NamedQuery(name = "Notification.findBySource", query = "SELECT n FROM Notification n WHERE n.source = :source"),
-    @NamedQuery(name = "Notification.findBySender", query = "SELECT n FROM Notification n WHERE n.sender = :sender")
+    @NamedQuery(name = "Notification.findAll", query = "SELECT n FROM Notification n")
 })
 public class Notification implements Serializable {
 
@@ -47,30 +20,24 @@ public class Notification implements Serializable {
     private Integer notificationId;
 
     @Basic(optional = false)
-    @jakarta.validation.constraints.NotNull
     @Lob
-    @jakarta.validation.constraints.Size(min = 1, max = 65535)
     @Column(name = "message")
     private String message;
 
-    @jakarta.validation.constraints.Size(max = 8)
-    @Column(name = "type")
+    @Column(name = "type", length = 8)
     private String type;
 
-    // ✅ thêm field mới
-    @jakarta.validation.constraints.Size(max = 32)
-    @Column(name = "source")
+    @Column(name = "source", length = 32)
     private String source;
 
-    @jakarta.validation.constraints.Size(max = 255)
-    @Column(name = "sender")
+    @Column(name = "sender", length = 255)
     private String sender;
 
     @Column(name = "is_read")
     private Boolean isRead;
 
-    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "created_at")
     private Date createdAt;
 
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
@@ -80,15 +47,12 @@ public class Notification implements Serializable {
     public Notification() {
     }
 
-    public Notification(Integer notificationId) {
-        this.notificationId = notificationId;
-    }
-
-    public Notification(Integer notificationId, String message) {
-        this.notificationId = notificationId;
+    public Notification(Integer id, String message) {
+        this.notificationId = id;
         this.message = message;
     }
 
+    // getters/setters
     public Integer getNotificationId() {
         return notificationId;
     }
@@ -155,24 +119,19 @@ public class Notification implements Serializable {
 
     @Override
     public int hashCode() {
-        int hash = 0;
-        hash += (notificationId != null ? notificationId.hashCode() : 0);
-        return hash;
+        return notificationId != null ? notificationId.hashCode() : 0;
     }
 
     @Override
-    public boolean equals(Object object) {
-        if (!(object instanceof Notification)) {
+    public boolean equals(Object o) {
+        if (!(o instanceof Notification other)) {
             return false;
         }
-        Notification other = (Notification) object;
-        return !((this.notificationId == null && other.notificationId != null) || 
-                 (this.notificationId != null && !this.notificationId.equals(other.notificationId)));
+        return (this.notificationId != null) && this.notificationId.equals(other.notificationId);
     }
 
     @Override
     public String toString() {
-        return "com.ntn.pojo.Notification[ notificationId=" + notificationId + " ]";
+        return "Notification[id=" + notificationId + "]";
     }
-
 }

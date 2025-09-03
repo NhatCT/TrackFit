@@ -13,14 +13,12 @@ public class RestClientConfigs {
 
     @Bean
     public RestTemplate restTemplate() {
-        // Timeout "vừa miệng" cho service nội bộ
         var simple = new SimpleClientHttpRequestFactory();
-        simple.setConnectTimeout(2_000); // 2s
-        simple.setReadTimeout(2_000);    // 2s
+        simple.setConnectTimeout(2_000); 
+        simple.setReadTimeout(2_000);    
 
         var rt = new RestTemplate(new BufferingClientHttpRequestFactory(simple));
 
-        // Interceptor log đơn giản (DEBUG)
         rt.getInterceptors().add((request, body, execution) -> {
             long t0 = System.currentTimeMillis();
             try {
@@ -34,3 +32,4 @@ public class RestClientConfigs {
         return rt;
     }
 }
+    

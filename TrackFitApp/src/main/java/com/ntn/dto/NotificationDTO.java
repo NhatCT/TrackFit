@@ -13,11 +13,11 @@ public class NotificationDTO {
     private Boolean isRead;
     private Date createdAt;
 
-    // ====== Các alias để FE cũ dùng được (title/content/read) ======
+    // Alias để FE cũ dùng (title/content/read)
     @JsonProperty("title")
     public String getTitle() {
-        // có thể tùy biến hiển thị tiêu đề theo type/source
-        return switch (type == null ? "" : type.toUpperCase()) {
+        String t = type == null ? "" : type.toUpperCase();
+        return switch (t) {
             case "ADVICE" ->
                 "Lời khuyên";
             case "REMINDER" ->
@@ -39,7 +39,7 @@ public class NotificationDTO {
         return isRead;
     }
 
-    // ====== getters/setters gốc ======
+    // getters/setters gốc
     public Integer getNotificationId() {
         return notificationId;
     }

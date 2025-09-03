@@ -7,20 +7,25 @@ import java.util.Date;
 import java.util.Map;
 
 public interface NotificationService {
-    // đã có: gửi cho chính principal
+
     NotificationDTO createForUser(String username, NotificationCreateDTO req);
 
-    // thêm mới: gửi thay mặt tới user khác
     NotificationDTO createForUsername(String username, NotificationCreateDTO req);
+
     NotificationDTO createForUserId(Integer userId, NotificationCreateDTO req);
 
     NotificationDTO get(String username, Integer id);
-    Map<String,Object> listByUserPaged(String username, Integer page, Integer pageSize,
-                                       Boolean isRead, String type, String kw);
+
+    Map<String, Object> listByUserPaged(String username, Integer page, Integer pageSize,
+            Boolean isRead, String type, String kw);
+
     void markRead(String username, Integer id, boolean value);
+
     void delete(String username, Integer id);
 
     long unreadCount(String username);
+
     int markAllRead(String username);
+
     int cleanupReadOlderThan(String username, Date olderThan);
 }

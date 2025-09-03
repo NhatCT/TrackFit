@@ -1,3 +1,4 @@
+// com/ntn/filters/JwtFilter.java
 package com.ntn.filters;
 
 import com.ntn.utils.JwtUtils;
@@ -14,47 +15,42 @@ import java.util.stream.Collectors;
 
 public class JwtFilter implements Filter {
 
+    private boolean isPublic(HttpServletRequest req) {
+        String path = req.getRequestURI().substring(req.getContextPath().length());
+        if ("OPTIONS".equalsIgnoreCase(req.getMethod())) return true;
+        return path.startsWith("/api/login") || path.startsWith("/api/register");
+    }
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletRequest http = (HttpServletRequest) request;
+        HttpServletResponse resp = (HttpServletResponse) response;
 
-        // Chỉ check các URL bảo vệ /api/secure/**
-        if (httpRequest.getRequestURI().startsWith(httpRequest.getContextPath() + "/api/secure")) {
-            String header = httpRequest.getHeader("Authorization");
+        if (isPublic(http)) {
+            chain.doFilter(request, response);
+            return;
+        }
 
-            if (header == null || !header.startsWith("Bearer ")) {
-                ((HttpServletResponse) response)
-                        .sendError(HttpServletResponse.SC_UNAUTHORIZED, "Missing or invalid Authorization header.");
-                return;
-            }
-
-            String token = header.substring(7);
+        String auth = http.getHeader("Authorization");
+        if (auth != null && auth.startsWith("Bearer ")) {
+            String token = auth.substring(7);
             try {
                 String username = JwtUtils.validateTokenAndGetUsername(token);
                 List<String> roles = JwtUtils.getRoles(token);
-
                 if (username != null) {
                     var authorities = roles.stream()
-                            .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r) // map -> ROLE_*
+                            .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());
-
-                    UsernamePasswordAuthenticationToken authentication =
-                            new UsernamePasswordAuthenticationToken(username, null, authorities);
+                    var authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                    chain.doFilter(request, response);
-                    return;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT không hợp lệ / hết hạn");
+                return;
             }
-
-            ((HttpServletResponse) response)
-                    .sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token không hợp lệ hoặc hết hạn");
-            return;
         }
 
         chain.doFilter(request, response);

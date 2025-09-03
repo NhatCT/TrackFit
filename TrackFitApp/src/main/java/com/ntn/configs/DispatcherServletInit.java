@@ -4,7 +4,6 @@
  */
 package com.ntn.configs;
 
-import com.ntn.filters.JwtFilter;
 import jakarta.servlet.Filter;
 import jakarta.servlet.MultipartConfigElement;
 import jakarta.servlet.ServletRegistration;
