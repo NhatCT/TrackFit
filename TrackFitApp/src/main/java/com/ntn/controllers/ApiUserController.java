@@ -32,8 +32,6 @@ public class ApiUserController {
 
     @Autowired
     private UserService userDetailsService;
-
-    // Lưu Health/Goal mặc định sau khi đăng ký
     @Autowired private UserRepository userRepo;
     @Autowired private HealthDataRepository healthRepo;
     @Autowired private GoalRepository goalRepo;
@@ -47,13 +45,11 @@ public class ApiUserController {
             @Valid @ModelAttribute UserRegistrationDTO info,
             @RequestParam(value = "avatar", required = false) MultipartFile avatar,
 
-            // ====== Field TUỲ CHỌN để khởi tạo Health/Goal ======
-            @RequestParam(value = "height", required = false) BigDecimal height,     // cm
-            @RequestParam(value = "weight", required = false) BigDecimal weight,     // kg
-            @RequestParam(value = "goalType", required = false) String goalType,     // fat_loss | muscle_gain | ...
-            @RequestParam(value = "intensity", required = false) String intensity    // Low | Medium | High
+            @RequestParam(value = "height", required = false) BigDecimal height,     
+            @RequestParam(value = "weight", required = false) BigDecimal weight,     
+            @RequestParam(value = "goalType", required = false) String goalType,     
+            @RequestParam(value = "intensity", required = false) String intensity   
     ) {
-        // validate avatar
         if (avatar != null && !avatar.isEmpty()) {
             String contentType = avatar.getContentType();
             if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
@@ -61,11 +57,8 @@ public class ApiUserController {
                         .body(Map.of("message", "Chỉ hỗ trợ file JPEG hoặc PNG"));
             }
         }
-
-        // 1) Đăng ký user
         UserResponseDTO userDto = this.userDetailsService.register(info, avatar);
 
-        // 2) Lấy entity user để set vào Health/Goal
         User u = userRepo.findById(userDto.getUserId());
         if (u == null) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -74,7 +67,6 @@ public class ApiUserController {
 
         boolean createdAnything = false;
 
-        // 3) Khởi tạo HealthData (nếu có height/weight > 0)
         if (isPositive(height) || isPositive(weight)) {
             HealthData h = new HealthData();
             h.setUserId(u);
@@ -84,15 +76,13 @@ public class ApiUserController {
             healthRepo.saveHealthData(h);
             createdAnything = true;
         }
-
-        // 4) Khởi tạo Goal (nếu có goalType/intensity)
         if ((goalType != null && !goalType.isBlank()) || (intensity != null && !intensity.isBlank())) {
             Goal g = new Goal();
             g.setUserId(u);
             g.setGoalType(
                 goalType != null && !goalType.isBlank() ? goalType.trim() : "general_fitness"
             );
-            g.setIntensity(normalizeIntensity(intensity)); // Low/Medium/High (mặc định Medium)
+            g.setIntensity(normalizeIntensity(intensity)); 
             g.setCreatedAt(new Date());
             goalRepo.saveGoal(g);
             createdAnything = true;
@@ -128,7 +118,7 @@ public class ApiUserController {
     public ResponseEntity<?> login(@Valid @RequestBody LoginDTO loginDTO) throws Exception {
         if (this.userDetailsService.authenticate(loginDTO.getUsername(), loginDTO.getPassword())) {
             UserResponseDTO user = this.userDetailsService.getUserByUsername(loginDTO.getUsername());
-            String rawRole = user.getRole(); // "ROLE_USER" hoặc "ROLE_ADMIN"
+            String rawRole = user.getRole();
             String role = (rawRole != null && rawRole.startsWith("ROLE_")) ? rawRole.substring(5) : rawRole;
 
             String token = JwtUtils.generateToken(user.getUsername(), List.of(role));

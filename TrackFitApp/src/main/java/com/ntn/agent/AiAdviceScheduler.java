@@ -23,7 +23,7 @@ public class AiAdviceScheduler {
         this.adviceService = adviceService;
     }
 
-    @Scheduled(cron = "0 0 7 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 0 11 * * *", zone = "Asia/Ho_Chi_Minh")
     public void dailyAdvice() {
         if (!enabled) return;
         for (User u : userRepo.findAll()) {

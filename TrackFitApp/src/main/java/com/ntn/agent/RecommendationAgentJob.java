@@ -19,7 +19,7 @@ public class RecommendationAgentJob {
     @Value("${agent.autorun.enabled:true}")
     private boolean enabled;
 
-    @Value("${agent.autoad.enabled:false}") // 🔧 bật true để tự add 1 bài
+    @Value("${agent.autoad.enabled:true}") 
     private boolean autoAddEnabled;
 
     public RecommendationAgentJob(UserRepository userRepo, RecommendationService recoService) {
@@ -27,19 +27,18 @@ public class RecommendationAgentJob {
         this.recoService = recoService;
     }
 
-    @Scheduled(cron = "0 0 7 * * *", zone = "Asia/Ho_Chi_Minh")
+    @Scheduled(cron = "0 0 11 * * *", zone = "Asia/Ho_Chi_Minh")
     public void morningCoach() {
         if (!enabled) return;
         List<User> users = userRepo.findAll();
         for (User u : users) {
             try {
-                var p = new RecommendationParamsDTO(); // để trống: service tự suy luận goal/intensity/minutes
+                var p = new RecommendationParamsDTO(); 
                 var recs = recoService.recommendExercises(u.getUsername(), p);
                 System.out.printf("[AGENT] prepared %d suggestions for %s%n", recs.size(), u.getUsername());
 
                 if (autoAddEnabled && !recs.isEmpty()) {
-                    // TODO: gọi PlanService để add recs.get(0) vào kế hoạch hôm nay nếu trống
-                    // planService.addDetail(u.getUserId(), recs.get(0).getExerciseId(), dayOfWeek, duration);
+ 
                 }
             } catch (Exception e) {
                 System.err.printf("[AGENT] error for %s: %s%n", u.getUsername(), e.getMessage());
