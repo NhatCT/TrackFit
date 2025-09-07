@@ -8,16 +8,14 @@
 <div th:replace="~{base :: header}"></div>
 
 <main class="container py-4" style="max-width:900px">
+    
   <h3 class="mb-3" th:text="${mode=='edit'} ? 'Cập nhật kế hoạch' : 'Tạo kế hoạch'"></h3>
-
-  <!-- ========== CREATE MODE ========== -->
   <form th:if="${mode=='create'}"
         th:action="@{/plans}"
         method="post"
         th:object="${form}"
         id="planFormCreate">
-
-    <!-- UserId (bắt buộc cho admin tạo cho user cụ thể) -->
+      
     <div class="row g-3">
       <div class="col-md-4">
         <label class="form-label">User ID</label>
@@ -25,8 +23,7 @@
         <div class="text-danger small" th:if="${#fields.hasErrors('userId')}" th:errors="*{userId}"></div>
       </div>
     </div>
-
-    <!-- Tên + isTemplate -->
+      
     <div class="row g-3 mt-1">
       <div class="col-md-8">
         <label class="form-label">Tên kế hoạch</label>
@@ -41,7 +38,6 @@
       </div>
     </div>
 
-    <!-- Goal (tuỳ chọn) -->
     <div class="row g-3 mt-1">
       <div class="col-md-4">
         <label class="form-label">Goal ID (tuỳ chọn)</label>
@@ -52,7 +48,6 @@
 
     <hr class="my-4">
 
-    <!-- Chi tiết buổi tập (nhiều dòng trước khi lưu) -->
     <h5 class="mb-2">Chi tiết buổi tập</h5>
     <div class="table-responsive">
       <table class="table table-sm align-middle" id="detailsTable">
@@ -85,7 +80,6 @@
     </div>
   </form>
 
-  <!-- ========== EDIT MODE ========== -->
   <form th:if="${mode=='edit'}"
         th:action="@{'/plans/' + ${planId}}"
         method="post"
@@ -95,10 +89,9 @@
     <div class="row g-3">
       <div class="col-md-4">
         <label class="form-label">Plan ID</label>
-        <!-- dùng ${planId} để tránh lỗi khi object không có planId -->
+        
         <input class="form-control" th:value="${planId}" disabled>
-        <!-- nếu cần submit planId về server, có thể thêm hidden -->
-        <!-- <input type="hidden" name="planId" th:value="${planId}"> -->
+
       </div>
       <div class="col-md-4">
         <label class="form-label">User ID</label>

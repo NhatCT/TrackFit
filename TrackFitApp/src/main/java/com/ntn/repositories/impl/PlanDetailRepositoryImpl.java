@@ -1,11 +1,8 @@
-package com.ntn.repositories.impl;
+    package com.ntn.repositories.impl;
 
 import com.ntn.pojo.PlanDetail;
 import com.ntn.repositories.PlanDetailRepository;
 import jakarta.persistence.Query;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Root;
 import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
@@ -56,18 +53,16 @@ public Integer avgDurationByPlanAndExercise(Integer planId, Integer exerciseId) 
     Session s = factory.getObject().getCurrentSession();
     var cb = s.getCriteriaBuilder();
 
-    // AVG luôn trả về Double
     var cq = cb.createQuery(Double.class);
     var root = cq.from(PlanDetail.class);
 
-    // KHÔNG dùng .as(Number.class)
     cq.select(cb.avg(root.get("duration"))); 
     cq.where(
         cb.equal(root.get("planId").get("planId"), planId),
         cb.equal(root.get("exercisesId").get("exercisesId"), exerciseId)
     );
 
-    Double result = s.createQuery(cq).getSingleResult(); // có thể trả null nếu không có bản ghi
+    Double result = s.createQuery(cq).getSingleResult();
     return (result == null) ? 0 : (int) Math.round(result);
 }
 

@@ -1,4 +1,3 @@
-// src/main/java/com/ntn/services/impl/RecommendationServiceImpl.java
 package com.ntn.services.impl;
 
 import com.ntn.dto.*;
@@ -13,40 +12,43 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class RecommendationServiceImpl implements RecommendationService {
 
-    @Autowired
-    private UserRepository userRepo;
-    @Autowired
-    private GoalRepository goalRepo;
-    @Autowired
-    private ExercisesRepository exercisesRepo;
-    @Autowired
-    private UserWorkoutHistoryRepository historyRepo;
-    @Autowired
-    private HealthDataRepository healthRepo;
+    @Autowired private UserRepository userRepo;
+    @Autowired private GoalRepository goalRepo;
+    @Autowired private ExercisesRepository exercisesRepo;
+    @Autowired private UserWorkoutHistoryRepository historyRepo;
+    @Autowired private HealthDataRepository healthRepo;
 
     @Value("${ai.reco.url:}")
     private String aiRecoUrl;
+
+    @Value("${ai.http.retry.attempts:3}")
+    private int retryAttempts;
+
+    @Value("${ai.http.retry.backoff-ms:400}")
+    private long backoffMs;
 
     @Autowired(required = false)
     private RestTemplate rest;
 
     @Override
     @Cacheable(
-            value = "reco_exercises",
-            key = "#username + '_' + (#params.size==null?8:#params.size) + '_' + "
-            + "(#params.kw==null?'':#params.kw) + '_' + "
-            + "(#params.availableMinutes==null?25:#params.availableMinutes) + '_' + "
-            + "(#params.intensity==null?'':#params.intensity) + '_' + "
-            + "(#params.goalType==null?'':#params.goalType)"
+        value = "reco_exercises",
+        key = "#username + '_' + (#params.size==null?8:#params.size) + '_' + "
+             + "(#params.kw==null?'':#params.kw) + '_' + "
+             + "(#params.availableMinutes==null?25:#params.availableMinutes) + '_' + "
+             + "(#params.intensity==null?'':#params.intensity) + '_' + "
+             + "(#params.goalType==null?'':#params.goalType)"
     )
     public List<RecommendationItemDTO> recommendExercises(String username, RecommendationParamsDTO params) {
         User u = mustGetUser(username);
@@ -56,11 +58,16 @@ public class RecommendationServiceImpl implements RecommendationService {
         HealthData latestHealth = healthRepo.findByUserId(u.getUserId())
                 .stream().max(Comparator.comparing(HealthData::getUpdatedAt)).orElse(null);
 
-        String goalType = pick(params.getGoalType(), latestGoal != null ? latestGoal.getGoalType() : null, "general_fitness");
+        String goalType = pick(params.getGoalType(),
+                latestGoal != null ? latestGoal.getGoalType() : null,
+                "general_fitness");
+
         String intensity = adaptIntensity(
-                pick(params.getIntensity(), latestGoal != null ? latestGoal.getIntensity() : null, "Medium"),
+                pick(params.getIntensity(),
+                        latestGoal != null ? latestGoal.getIntensity() : null, "Medium"),
                 recentCompletionRate(u.getUserId(), 14)
         );
+
         int minutesPref = params.getAvailableMinutes() != null ? params.getAvailableMinutes() : 25;
         int size = params.getSize() != null && params.getSize() > 0 ? params.getSize() : 8;
 
@@ -77,47 +84,62 @@ public class RecommendationServiceImpl implements RecommendationService {
             return List.of();
         }
 
-        // === gọi AI service ===
+        // === gọi AI service (retry + backoff) ===
         Map<Integer, Double> scoreMap = new HashMap<>();
         Map<Integer, String> reasonMap = new HashMap<>();
+        boolean aiOk = false;
 
         if (rest != null && aiRecoUrl != null && !aiRecoUrl.isBlank()) {
             try {
-                AiRankRequest req = buildAiPayload(u, latestGoal, latestHealth, goalType, intensity, minutesPref, candidates);
-                AiRankedExercise[] ranked = rest.postForObject(aiRecoUrl + "/rank", req, AiRankedExercise[].class);
+                AiRankRequest req = buildAiPayload(u, latestGoal, latestHealth,
+                        goalType, intensity, minutesPref, candidates);
+
+                AiRankedExercise[] ranked = callWithRetry(
+                        () -> rest.postForObject(normalizeUrl(aiRecoUrl, "/rank"), req, AiRankedExercise[].class),
+                        retryAttempts,
+                        backoffMs
+                );
+
                 if (ranked != null) {
                     for (AiRankedExercise it : ranked) {
                         if (it.getExerciseId() != null) {
                             if (it.getScore() != null) {
                                 scoreMap.put(it.getExerciseId(), it.getScore());
                             }
-                            if (it.getReason() != null) {
+                            if (it.getReason() != null && !it.getReason().isBlank()) {
                                 reasonMap.put(it.getExerciseId(), it.getReason());
                             }
                         }
                     }
                 }
-            } catch (Exception ex) {
+                aiOk = true;
+            } catch (RuntimeException ex) {
                 System.err.println("AI service error: " + ex.getMessage());
+                // aiOk = false => fallback sắp xếp cục bộ phía dưới
             }
         }
 
         // === hybrid sort: score -> goal match -> createdAt desc ===
+        final boolean aiOkFinal = aiOk;
+        final String goalTypeFinal = goalType;
+        final String intensityFinal = intensity;
+
         candidates.sort(
-                Comparator.comparing((Exercises e) -> scoreMap.getOrDefault(e.getExercisesId(), 0.0)).reversed()
-                        .thenComparing(e -> e.getTargetGoal() != null && e.getTargetGoal().equalsIgnoreCase(goalType) ? 0 : 1)
-                        .thenComparing(e -> e.getCreatedAt() != null ? -e.getCreatedAt().getTime() : 0L)
+            Comparator.comparing((Exercises e) -> scoreMap.getOrDefault(e.getExercisesId(), 0.0)).reversed()
+                .thenComparing(e -> e.getTargetGoal() != null
+                        && e.getTargetGoal().equalsIgnoreCase(goalTypeFinal) ? 0 : 1)
+                .thenComparing(e -> e.getCreatedAt() != null ? -e.getCreatedAt().getTime() : 0L)
         );
 
-        // === map về DTO FE cần ===
+        // === map về DTO cho FE ===
         return candidates.stream().limit(size).map(e -> {
             RecommendationItemDTO dto = new RecommendationItemDTO();
             dto.setExercisesId(e.getExercisesId());
             dto.setName(e.getName());
             dto.setDescription(
-                    (e.getDescription() != null && !e.getDescription().isBlank())
+                (e.getDescription() != null && !e.getDescription().isBlank())
                     ? e.getDescription()
-                    : "Phù hợp với mục tiêu " + goalType
+                    : "Phù hợp với mục tiêu " + goalTypeFinal
             );
             dto.setMuscleGroup(e.getMuscleGroup());
             dto.setVideoUrl(e.getVideoUrl());
@@ -126,23 +148,23 @@ public class RecommendationServiceImpl implements RecommendationService {
             // AI data
             Double score = scoreMap.get(e.getExercisesId());
             dto.setScore(score);
-            dto.setReason(reasonMap.getOrDefault(
-                    e.getExercisesId(),
-                    "Phù hợp với mục tiêu " + goalType + " và cường độ " + intensity
-            ));
 
-            // estimatedMinutes: có thể parse từ targetGoal hoặc mặc định
+            String reason = reasonMap.get(e.getExercisesId());
+            if (reason == null || reason.isBlank()) {
+                reason = aiOkFinal
+                        ? ("Phù hợp với mục tiêu " + goalTypeFinal + " và cường độ " + intensityFinal)
+                        : "Fallback (DB) – Sắp xếp theo mục tiêu & thời gian tạo";
+            }
+            dto.setReason(reason);
+
+            // estimatedMinutes: parse từ targetGoal nếu có
             Integer estMinutes = parseMinutesFromTargetGoal(e.getTargetGoal());
             dto.setEstimatedMinutes(estMinutes);
 
-            // targetGoal = "15’ • AI 0.92"
+            // targetGoal hiển thị: "15’ • AI 0.92"
             List<String> tg = new ArrayList<>();
-            if (estMinutes != null) {
-                tg.add(estMinutes + "’");
-            }
-            if (score != null) {
-                tg.add("AI " + String.format(Locale.US, "%.2f", score));
-            }
+            if (estMinutes != null) tg.add(estMinutes + "’");
+            if (score != null)   tg.add("AI " + String.format(Locale.US, "%.2f", score));
             dto.setTargetGoal(tg.isEmpty() ? e.getTargetGoal() : String.join(" • ", tg));
 
             return dto;
@@ -152,17 +174,13 @@ public class RecommendationServiceImpl implements RecommendationService {
     // ================== helpers ==================
     private User mustGetUser(String username) {
         User u = userRepo.getUserByUsername(username);
-        if (u == null) {
-            throw new IllegalArgumentException("Không tìm thấy user");
-        }
+        if (u == null) throw new IllegalArgumentException("Không tìm thấy user");
         return u;
     }
 
     private String pick(String... opts) {
         for (String s : opts) {
-            if (s != null && !s.isBlank()) {
-                return s;
-            }
+            if (s != null && !s.isBlank()) return s;
         }
         return null;
     }
@@ -170,15 +188,9 @@ public class RecommendationServiceImpl implements RecommendationService {
     private String adaptIntensity(String cur, double completionRate) {
         List<String> scale = List.of("Low", "Medium", "High");
         int idx = scale.indexOf(cur);
-        if (idx < 0) {
-            idx = 1;
-        }
-        if (completionRate < 0.5 && idx > 0) {
-            idx--;
-        }
-        if (completionRate > 0.85 && idx < 2) {
-            idx++;
-        }
+        if (idx < 0) idx = 1;
+        if (completionRate < 0.5 && idx > 0) idx--;
+        if (completionRate > 0.85 && idx < 2) idx++;
         return scale.get(idx);
     }
 
@@ -190,9 +202,11 @@ public class RecommendationServiceImpl implements RecommendationService {
         return total == 0 ? 1.0 : Math.max(0.0, Math.min(1.0, (double) done / total));
     }
 
-    private AiRankRequest buildAiPayload(User u, Goal g, HealthData h,
+    private AiRankRequest buildAiPayload(
+            User u, Goal g, HealthData h,
             String goalType, String intensity,
-            int minutes, List<Exercises> cand) {
+            int minutes, List<Exercises> cand
+    ) {
         AiRankRequest req = new AiRankRequest();
 
         AiRankRequest.UserInfo ui = new AiRankRequest.UserInfo();
@@ -224,17 +238,38 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     private Integer parseMinutesFromTargetGoal(String targetGoal) {
-        if (targetGoal == null) {
-            return null;
-        }
+        if (targetGoal == null) return null;
         var matcher = java.util.regex.Pattern.compile("(\\d{1,3})[’']?").matcher(targetGoal);
         if (matcher.find()) {
             try {
                 return Integer.parseInt(matcher.group(1));
-            } catch (NumberFormatException ignore) {
-            }
+            } catch (NumberFormatException ignore) {}
         }
         return null;
     }
+
+    private String normalizeUrl(String base, String path) {
+        if (base == null || base.isBlank()) return path;
+        if (path == null || path.isBlank()) return base;
+        return base.endsWith("/") ? (base + path.replaceFirst("^/", "")) : (base + path);
+    }
+
+    private <T> T callWithRetry(Supplier<T> supplier, int attempts, long initialBackoffMs) {
+        RuntimeException last = null;
+        for (int i = 0; i < Math.max(1, attempts); i++) {
+            try {
+                return supplier.get();
+            } catch (RuntimeException ex) {
+                last = ex;
+                if (ex instanceof HttpClientErrorException e) {
+                    int sc = e.getStatusCode().value();
+                    if (sc >= 400 && sc < 500) throw e;
+                }
+                try {
+                    Thread.sleep(initialBackoffMs * i); 
+                } catch (InterruptedException ignored) {}
+            }
+        }
+        throw last;
+    }
 }
- 

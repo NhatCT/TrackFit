@@ -35,13 +35,11 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         User owner;
 
         if (req.getUserId() != null) {
-            // Nếu có userId trong request → giả định đây là admin tạo hộ
             owner = userRepo.findById(req.getUserId());
             if (owner == null) {
                 throw new IllegalArgumentException("UserId không hợp lệ");
             }
         } else {
-            // Người dùng tự tạo → lấy từ principal
             owner = userRepo.getUserByUsername(username);
             if (owner == null) {
                 throw new IllegalArgumentException("Không tìm thấy người dùng");
@@ -51,7 +49,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         WorkoutPlan plan = new WorkoutPlan();
         plan.setUserId(owner);
         plan.setPlanName(req.getPlanName());
-        plan.setIsTemplate(Boolean.TRUE.equals(req.getIsTemplate())); // mặc định false
+        plan.setIsTemplate(Boolean.TRUE.equals(req.getIsTemplate())); 
         plan.setCreatedAt(new Date());
 
         if (req.getGoalId() != null) {
@@ -176,7 +174,6 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         return u;
     }
 
-    // Ghép tên hiển thị: firstName + lastName (fallback username)
     private String displayUserName(User u) {
         if (u == null) {
             return null;
@@ -187,7 +184,6 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         return full.isEmpty() ? u.getUsername() : full;
     }
 
-    // Chuỗi hiển thị cho Goal (thân thiện)
     private String displayGoal(Goal g) {
         if (g == null) {
             return null;
@@ -210,7 +206,6 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         return joined.isEmpty() ? ("Goal #" + g.getGoalId()) : joined;
     }
 
-    // Map list items có userName/goalName
     private List<WorkoutPlanListItemDTO> mapToListItems(List<WorkoutPlan> plans) {
         return plans.stream()
                 .map(w -> new WorkoutPlanListItemDTO(
@@ -239,7 +234,6 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         return detailRepo.save(d);
     }
 
-    // Trả DTO chi tiết + tên user/goal
     private WorkoutPlanResponseDTO toPlanDTO(WorkoutPlan p) {
         WorkoutPlanResponseDTO dto = new WorkoutPlanResponseDTO();
         dto.setPlanId(p.getPlanId());

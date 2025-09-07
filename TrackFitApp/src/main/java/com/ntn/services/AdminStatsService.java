@@ -7,8 +7,6 @@ public interface AdminStatsService {
     long countExercises();
     long countTemplatePlans();
     long countTodayWorkouts();
-
-    // Dữ liệu biểu đồ 7 ngày gần nhất (COMPLETED)
-    List<String> systemChartLabels(); // yyyy-MM-dd
-    List<Long> systemChartData();     // số buổi hoàn thành theo ngày
+    List<String> systemChartLabels();
+    List<Long> systemChartData();    
 }

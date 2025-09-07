@@ -43,7 +43,6 @@ public class ExercisesServiceImpl implements ExercisesService {
 
     @Override
     public Map<String, Object> list(Integer page, Integer pageSize, String kw) {
-        // ✅ đảm bảo có mặc định và truyền pageSize xuống repo
         int pageNum = (page != null && page > 0) ? page : 1;
         int ps = (pageSize != null && pageSize > 0) ? pageSize : 10;
 
@@ -75,7 +74,6 @@ public class ExercisesServiceImpl implements ExercisesService {
         repo.delete(mustGet(id));
     }
 
-    // ===== helpers =====
     private Exercises mustGet(Integer id) {
         Exercises ex = repo.findById(id);
         if (ex == null) throw new IllegalArgumentException("Không tìm thấy bài tập");

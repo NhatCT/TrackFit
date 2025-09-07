@@ -31,13 +31,12 @@ public class HealthDataServiceImpl implements HealthDataService {
         h.setUserId(user);
         h.setHeight(dto.getHeight() != null ? new BigDecimal(dto.getHeight()) : null);
         h.setWeight(dto.getWeight() != null ? new BigDecimal(dto.getWeight()) : null);
-        h.setBloodPressure(dto.getBloodPressure());  // ➕
-        h.setNotes(dto.getNotes());                  // ➕
-        h.setCreatedAt(new Date());                  // ➕
+        h.setBloodPressure(dto.getBloodPressure());  
+        h.setNotes(dto.getNotes());                  
+        h.setCreatedAt(new Date());                  
         h.setUpdatedAt(new Date());
         healthRepo.saveHealthData(h);
 
-        // (tuỳ chọn) đồng bộ 1 số trường sang user
         if (dto.getGender() != null) user.setGender(dto.getGender());
         if (dto.getBirthDate() != null) user.setBirthDate(dto.getBirthDate());
         user.setUpdatedAt(LocalDateTime.now());
@@ -49,12 +48,12 @@ public class HealthDataServiceImpl implements HealthDataService {
         User user = mustGetUser(username);
         return healthRepo.findByUserId(user.getUserId()).stream().map(h -> {
             HealthDataDTO d = new HealthDataDTO();
-            d.setHealthId(h.getHealthId());                                  // ➕
+            d.setHealthId(h.getHealthId());                                  
             d.setHeight(h.getHeight() != null ? h.getHeight().doubleValue() : null);
             d.setWeight(h.getWeight() != null ? h.getWeight().doubleValue() : null);
-            d.setBloodPressure(h.getBloodPressure());                        // ➕
-            d.setNotes(h.getNotes());                                        // ➕
-            d.setCreatedAt(h.getCreatedAt());                                // ➕
+            d.setBloodPressure(h.getBloodPressure());                        
+            d.setNotes(h.getNotes());                                        
+            d.setCreatedAt(h.getCreatedAt());                                
             d.setUpdatedAt(h.getUpdatedAt());
 
             d.setGender(user.getGender());
@@ -72,8 +71,8 @@ public class HealthDataServiceImpl implements HealthDataService {
 
         if (dto.getHeight() != null) h.setHeight(new BigDecimal(dto.getHeight()));
         if (dto.getWeight() != null) h.setWeight(new BigDecimal(dto.getWeight()));
-        if (dto.getBloodPressure() != null) h.setBloodPressure(dto.getBloodPressure()); // ➕
-        if (dto.getNotes() != null) h.setNotes(dto.getNotes());                         // ➕
+        if (dto.getBloodPressure() != null) h.setBloodPressure(dto.getBloodPressure()); 
+        if (dto.getNotes() != null) h.setNotes(dto.getNotes());                         
         h.setUpdatedAt(new Date());
         healthRepo.saveHealthData(h);
 

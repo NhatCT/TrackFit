@@ -35,8 +35,6 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
     public HistoryDTO create(String username, HistoryCreateUpdateDTO req) {
         User u  = mustUser(username);
         Exercises ex = mustExercise(req.getExerciseId());
-
-        // KHÔNG bắt buộc có plan
         WorkoutPlan plan = null;
         if (req.getPlanId() != null) plan = mustPlan(req.getPlanId(), u);
 
@@ -46,8 +44,6 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
         h.setPlanId(plan);
         if (req.getStatus() != null) h.setStatus(req.getStatus());
         h.setCompletedAt(req.getCompletedAt() != null ? req.getCompletedAt() : new Date());
-
-        // Ghi duration để thống kê đúng
         if (req.getDuration() != null && req.getDuration() >= 0) {
             h.setDuration(req.getDuration());
         }
@@ -114,15 +110,12 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
         return Map.of("page", p, "pageSize", pageSize, "totalPages", totalPages,
                 "totalElements", total, "items", items);
     }
-
-    // ✨ Tổng hợp cho biểu đồ: sessions & minutes theo bài tập
     @Override
     public List<ExerciseShare> aggregateExerciseShare(String username, Date from, Date toExclusive) {
         User u = mustUser(username);
         return repo.countByExercise(u.getUserId(), from, toExclusive);
     }
 
-    // --------- helpers ----------
     private User mustUser(String username) {
         User u = userRepo.getUserByUsername(username);
         if (u == null) throw new IllegalArgumentException("Không tìm thấy người dùng");

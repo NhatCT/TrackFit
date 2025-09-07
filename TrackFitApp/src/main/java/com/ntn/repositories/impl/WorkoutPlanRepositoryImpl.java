@@ -80,8 +80,6 @@ public class WorkoutPlanRepositoryImpl implements WorkoutPlanRepository {
         CriteriaBuilder cb = s.getCriteriaBuilder();
         CriteriaQuery<WorkoutPlan> cq = cb.createQuery(WorkoutPlan.class);
         Root<WorkoutPlan> root = cq.from(WorkoutPlan.class);
-
-        // fetch để có dữ liệu tên hiển thị
         root.fetch("userId");
         root.fetch("goalId", JoinType.LEFT);
 
@@ -128,15 +126,12 @@ public class WorkoutPlanRepositoryImpl implements WorkoutPlanRepository {
         return s.createQuery(cq).getSingleResult();
     }
 
-    // ===== ADMIN list toàn hệ thống (kw: planName / user:username,first,last / goal:goalType,intensity[,duration số]) =====
     @Override
     public List<WorkoutPlan> getPlans(Map<String, String> params) {
         Session s = this.factory.getObject().getCurrentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
         CriteriaQuery<WorkoutPlan> cq = cb.createQuery(WorkoutPlan.class);
         Root<WorkoutPlan> root = cq.from(WorkoutPlan.class);
-
-        // JOIN để lọc theo tên
         Join<Object, Object> userJoin = root.join("userId");
         Join<Object, Object> goalJoin = root.join("goalId", JoinType.LEFT);
 
@@ -145,11 +140,8 @@ public class WorkoutPlanRepositoryImpl implements WorkoutPlanRepository {
         if (kwRaw != null && !kwRaw.trim().isEmpty()) {
             String kw = kwRaw.trim().toLowerCase();
             String like = "%" + kw + "%";
-
-            // cố gắng bắt số để so sánh workoutDuration (nếu người dùng nhập số)
             Integer durNum = null;
             try {
-                // chỉ khi toàn số, tránh "8 tuần"
                 if (kw.matches("^\\d+$")) durNum = Integer.parseInt(kw);
             } catch (Exception ignore) {}
 

@@ -157,14 +157,13 @@ public class UserWorkoutHistoryRepositoryImpl implements UserWorkoutHistoryRepos
         if (userId != null) {
             ps.add(cb.equal(root.get("userId").get("userId"), userId));
         }
-        // chỉ lấy những buổi đã hoàn thành
         ps.add(cb.equal(cb.upper(root.get("status")), "COMPLETED"));
 
         cq.select(root.get("exercisesId").get("exercisesId")).where(ps.toArray(Predicate[]::new)).distinct(true);
         cq.orderBy(cb.desc(root.get("completedAt")), cb.desc(root.get("historyId")));
 
         Query<Integer> q = s.createQuery(cq);
-        q.setMaxResults(Math.max(1, Math.min(limit, 100))); // chặn 1..100
+        q.setMaxResults(Math.max(1, Math.min(limit, 100)));
         return q.getResultList();
     }
 

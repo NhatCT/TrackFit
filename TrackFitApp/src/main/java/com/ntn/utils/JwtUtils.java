@@ -11,13 +11,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class JwtUtils {
-    // NÊN lấy từ biến môi trường (độ dài >= 32 ký tự cho HS256)
     private static final String SECRET = "12345678901234567890123456789012";
-    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000L; // 1 ngày
+    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000L; 
 
     private static final String CLAIM_ROLES = "roles";
 
-    /** Tạo token kèm roles, ví dụ roles = ["USER"] hoặc ["ADMIN"] */
     public static String generateToken(String username, List<String> roles) throws JOSEException {
         JWSSigner signer = new MACSigner(SECRET);
 
@@ -36,12 +34,9 @@ public class JwtUtils {
         return signedJWT.serialize();
     }
 
-    /** Bản cũ (không khuyến nghị) — giữ lại để tương thích */
     public static String generateToken(String username) throws JOSEException {
         return generateToken(username, Collections.emptyList());
     }
-
-    /** Xác thực và lấy username; null nếu sai/hết hạn */
     public static String validateTokenAndGetUsername(String token) throws Exception {
         SignedJWT jwt = parseAndVerify(token);
         if (jwt == null) return null;
@@ -51,8 +46,6 @@ public class JwtUtils {
         }
         return null;
     }
-
-    /** Lấy roles từ token, trả về list rỗng nếu không có */
     @SuppressWarnings("unchecked")
     public static List<String> getRoles(String token) throws Exception {
         SignedJWT jwt = parseAndVerify(token);
@@ -65,7 +58,6 @@ public class JwtUtils {
         return Collections.emptyList();
     }
 
-    /* Helpers */
     private static SignedJWT parseAndVerify(String token) throws ParseException, JOSEException {
         SignedJWT jwt = SignedJWT.parse(token);
         JWSVerifier verifier = new MACVerifier(SECRET);

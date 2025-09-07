@@ -122,7 +122,6 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean authenticate(String username, String password) {
-        // SỬA: Dùng BCrypt để so khớp thay vì repo.authenticate(plain)
         User user = this.userRepo.getUserByUsername(username);
         if (user == null) {
             return false;
