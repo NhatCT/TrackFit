@@ -32,6 +32,9 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Value("${ai.reco.url:}")
     private String aiRecoUrl;
 
+    @Value("${ai.reco.enabled:true}")
+    private boolean aiEnabled;
+
     @Value("${ai.http.retry.attempts:3}")
     private int retryAttempts;
 
@@ -71,7 +74,6 @@ public class RecommendationServiceImpl implements RecommendationService {
         int minutesPref = params.getAvailableMinutes() != null ? params.getAvailableMinutes() : 25;
         int size = params.getSize() != null && params.getSize() > 0 ? params.getSize() : 8;
 
-        // === candidates từ DB ===
         Map<String, String> q = new HashMap<>();
         if (params.getKw() != null && !params.getKw().isBlank()) {
             q.put("kw", params.getKw().trim());
@@ -80,16 +82,13 @@ public class RecommendationServiceImpl implements RecommendationService {
         q.put("pageSize", "200");
 
         List<Exercises> candidates = exercisesRepo.getExercises(q);
-        if (candidates.isEmpty()) {
-            return List.of();
-        }
+        if (candidates.isEmpty()) return List.of();
 
-        // === gọi AI service (retry + backoff) ===
         Map<Integer, Double> scoreMap = new HashMap<>();
         Map<Integer, String> reasonMap = new HashMap<>();
         boolean aiOk = false;
 
-        if (rest != null && aiRecoUrl != null && !aiRecoUrl.isBlank()) {
+        if (aiEnabled && rest != null && aiRecoUrl != null && !aiRecoUrl.isBlank()) {
             try {
                 AiRankRequest req = buildAiPayload(u, latestGoal, latestHealth,
                         goalType, intensity, minutesPref, candidates);
@@ -99,79 +98,96 @@ public class RecommendationServiceImpl implements RecommendationService {
                         retryAttempts,
                         backoffMs
                 );
-
                 if (ranked != null) {
                     for (AiRankedExercise it : ranked) {
                         if (it.getExerciseId() != null) {
-                            if (it.getScore() != null) {
-                                scoreMap.put(it.getExerciseId(), it.getScore());
-                            }
-                            if (it.getReason() != null && !it.getReason().isBlank()) {
+                            if (it.getScore() != null) scoreMap.put(it.getExerciseId(), it.getScore());
+                            if (it.getReason() != null && !it.getReason().isBlank())
                                 reasonMap.put(it.getExerciseId(), it.getReason());
-                            }
                         }
                     }
                 }
                 aiOk = true;
             } catch (RuntimeException ex) {
                 System.err.println("AI service error: " + ex.getMessage());
-                // aiOk = false => fallback sắp xếp cục bộ phía dưới
             }
+        } else {
+            System.out.println("[AI_RECO] Bypass – chỉ dùng DB baseline");
         }
-
-        // === hybrid sort: score -> goal match -> createdAt desc ===
-        final boolean aiOkFinal = aiOk;
-        final String goalTypeFinal = goalType;
-        final String intensityFinal = intensity;
 
         candidates.sort(
             Comparator.comparing((Exercises e) -> scoreMap.getOrDefault(e.getExercisesId(), 0.0)).reversed()
                 .thenComparing(e -> e.getTargetGoal() != null
-                        && e.getTargetGoal().equalsIgnoreCase(goalTypeFinal) ? 0 : 1)
+                        && e.getTargetGoal().equalsIgnoreCase(goalType) ? 0 : 1)
                 .thenComparing(e -> e.getCreatedAt() != null ? -e.getCreatedAt().getTime() : 0L)
         );
 
-        // === map về DTO cho FE ===
-        return candidates.stream().limit(size).map(e -> {
+        List<Exercises> diversified = new ArrayList<>();
+        Map<String, Integer> muscleCount = new HashMap<>();
+        int softCapPerMuscle = Math.max(1, size / 2);
+
+        for (Exercises ex : candidates) {
+            String mg = ex.getMuscleGroup() != null ? ex.getMuscleGroup().trim().toLowerCase() : "";
+            int cnt = muscleCount.getOrDefault(mg, 0);
+            if (diversified.size() < size && cnt <= softCapPerMuscle) {
+                diversified.add(ex);
+                muscleCount.put(mg, cnt + 1);
+            }
+            if (diversified.size() >= size) break;
+        }
+        if (diversified.size() < size) {
+            for (Exercises ex : candidates) {
+                if (!diversified.contains(ex)) {
+                    diversified.add(ex);
+                    if (diversified.size() >= size) break;
+                }
+            }
+        }
+
+        final boolean aiOkFinal = aiOk;
+
+        return diversified.stream().limit(size).map(e -> {
             RecommendationItemDTO dto = new RecommendationItemDTO();
             dto.setExercisesId(e.getExercisesId());
             dto.setName(e.getName());
-            dto.setDescription(
-                (e.getDescription() != null && !e.getDescription().isBlank())
-                    ? e.getDescription()
-                    : "Phù hợp với mục tiêu " + goalTypeFinal
-            );
             dto.setMuscleGroup(e.getMuscleGroup());
             dto.setVideoUrl(e.getVideoUrl());
             dto.setCreatedAt(e.getCreatedAt());
 
-            // AI data
+            String desc = (e.getDescription() != null && !e.getDescription().isBlank())
+                    ? e.getDescription()
+                    : "Phù hợp với mục tiêu " + goalType;
+            dto.setDescription(desc);
+
             Double score = scoreMap.get(e.getExercisesId());
             dto.setScore(score);
 
             String reason = reasonMap.get(e.getExercisesId());
             if (reason == null || reason.isBlank()) {
-                reason = aiOkFinal
-                        ? ("Phù hợp với mục tiêu " + goalTypeFinal + " và cường độ " + intensityFinal)
-                        : "Fallback (DB) – Sắp xếp theo mục tiêu & thời gian tạo";
+                if (score != null && score > 0.7) {
+                    reason = "AI đánh giá phù hợp (sim cao) với mục tiêu " + goalType;
+                } else if (e.getMuscleGroup() != null && !e.getMuscleGroup().isBlank()) {
+                    reason = "Tập trung nhóm cơ " + e.getMuscleGroup() + " hỗ trợ mục tiêu " + goalType;
+                } else {
+                    reason = aiOkFinal
+                            ? ("Phù hợp mục tiêu " + goalType + " và cường độ " + intensity)
+                            : "Fallback (DB) – Sắp xếp theo mục tiêu & thời gian tạo";
+                }
             }
             dto.setReason(reason);
 
-            // estimatedMinutes: parse từ targetGoal nếu có
             Integer estMinutes = parseMinutesFromTargetGoal(e.getTargetGoal());
             dto.setEstimatedMinutes(estMinutes);
 
-            // targetGoal hiển thị: "15’ • AI 0.92"
             List<String> tg = new ArrayList<>();
             if (estMinutes != null) tg.add(estMinutes + "’");
-            if (score != null)   tg.add("AI " + String.format(Locale.US, "%.2f", score));
+            if (score != null) tg.add("AI " + String.format(Locale.US, "%.2f", score));
             dto.setTargetGoal(tg.isEmpty() ? e.getTargetGoal() : String.join(" • ", tg));
 
             return dto;
         }).collect(Collectors.toList());
     }
 
-    // ================== helpers ==================
     private User mustGetUser(String username) {
         User u = userRepo.getUserByUsername(username);
         if (u == null) throw new IllegalArgumentException("Không tìm thấy user");
@@ -179,9 +195,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     private String pick(String... opts) {
-        for (String s : opts) {
-            if (s != null && !s.isBlank()) return s;
-        }
+        for (String s : opts) if (s != null && !s.isBlank()) return s;
         return null;
     }
 
@@ -241,9 +255,8 @@ public class RecommendationServiceImpl implements RecommendationService {
         if (targetGoal == null) return null;
         var matcher = java.util.regex.Pattern.compile("(\\d{1,3})[’']?").matcher(targetGoal);
         if (matcher.find()) {
-            try {
-                return Integer.parseInt(matcher.group(1));
-            } catch (NumberFormatException ignore) {}
+            try { return Integer.parseInt(matcher.group(1)); }
+            catch (NumberFormatException ignore) {}
         }
         return null;
     }
@@ -257,17 +270,15 @@ public class RecommendationServiceImpl implements RecommendationService {
     private <T> T callWithRetry(Supplier<T> supplier, int attempts, long initialBackoffMs) {
         RuntimeException last = null;
         for (int i = 0; i < Math.max(1, attempts); i++) {
-            try {
-                return supplier.get();
-            } catch (RuntimeException ex) {
+            try { return supplier.get(); }
+            catch (RuntimeException ex) {
                 last = ex;
                 if (ex instanceof HttpClientErrorException e) {
                     int sc = e.getStatusCode().value();
                     if (sc >= 400 && sc < 500) throw e;
                 }
-                try {
-                    Thread.sleep(initialBackoffMs * i); 
-                } catch (InterruptedException ignored) {}
+                try { Thread.sleep(initialBackoffMs * i); }
+                catch (InterruptedException ignored) {}
             }
         }
         throw last;

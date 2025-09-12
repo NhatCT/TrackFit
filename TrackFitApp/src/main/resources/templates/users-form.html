@@ -13,7 +13,6 @@
         <form th:action="${mode=='edit'} ? @{'/users/' + ${userId}} : @{/users}"
               method="post" th:object="${form}" enctype="multipart/form-data">
 
-            <!-- Username / Email -->
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Username</label>
@@ -27,7 +26,6 @@
                 </div>
             </div>
 
-            <!-- Họ tên -->
             <div class="row g-3 mt-1">
                 <div class="col-md-6">
                     <label class="form-label">Họ</label>
@@ -39,7 +37,6 @@
                 </div>
             </div>
 
-            <!-- Role + Password -->
             <div class="row g-3 mt-1">
                 <div class="col-md-6">
                     <label class="form-label">Role</label>
@@ -75,7 +72,6 @@
                 </div>
             </div>
 
-            <!-- Avatar -->
             <div class="row g-3 mt-1">
                 <div class="col-md-6">
                     <label class="form-label">Ảnh đại diện</label>

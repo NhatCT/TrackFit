@@ -15,7 +15,7 @@ class Candidate(BaseModel):
 
 class AiRankRequest(BaseModel):
     user: Optional[UserInfo] = None
-    context: Optional[Dict[str, Any]] = None  # có thể chứa: kw, availableMinutes, intensity, recentIds, ...
+    context: Optional[Dict[str, Any]] = None  # kw, availableMinutes, intensity, recentIds, ...
     candidates: List[Candidate] = Field(default_factory=list)
 
 class AiRankedExercise(BaseModel):

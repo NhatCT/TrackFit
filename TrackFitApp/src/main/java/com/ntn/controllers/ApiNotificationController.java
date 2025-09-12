@@ -85,7 +85,7 @@ public class ApiNotificationController {
         Date dt = Date.from(d.atStartOfDay(VN).toInstant());
         int removed = service.cleanupReadOlderThan(username, dt);
         return ResponseEntity.ok(Map.of("removed", removed));
-    }
+    }   
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable("id") Integer id, Principal principal) {

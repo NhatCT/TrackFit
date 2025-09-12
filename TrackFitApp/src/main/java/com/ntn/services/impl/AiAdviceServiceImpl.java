@@ -1,85 +1,62 @@
 package com.ntn.services.impl;
 
-import com.ntn.dto.NotificationCreateDTO;
 import com.ntn.dto.RecommendationItemDTO;
 import com.ntn.dto.RecommendationParamsDTO;
+import com.ntn.pojo.Notification;
+import com.ntn.pojo.User;
 import com.ntn.repositories.NotificationRepository;
 import com.ntn.repositories.UserRepository;
 import com.ntn.services.AiAdviceService;
-import com.ntn.services.NotificationService;
 import com.ntn.services.RecommendationService;
-import java.util.Date;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Date;
+import java.util.List;
 
 @Service
+@Transactional
 public class AiAdviceServiceImpl implements AiAdviceService {
 
-    @Autowired
-    private RecommendationService recoService;
-    @Autowired
-    private NotificationService notificationService;
-    @Autowired
-    private UserRepository userRepo;
-    @Autowired
-    private NotificationRepository notifRepo;
+    private final RecommendationService recoService;
+    private final UserRepository userRepo;
+    private final NotificationRepository notifRepo;
 
-    @Override
-    public int sendAdviceFromReco(String username, RecommendationParamsDTO params, int top) {
-        return sendAdviceFromRecoIfNotExists(username, params, top, 0);
+    public AiAdviceServiceImpl(RecommendationService recoService,
+                               UserRepository userRepo,
+                               NotificationRepository notifRepo) {
+        this.recoService = recoService;
+        this.userRepo = userRepo;
+        this.notifRepo = notifRepo;
     }
 
     @Override
-    public int sendAdviceFromRecoIfNotExists(String username, RecommendationParamsDTO params,
-            int top, int withinDays) {
-        if (params == null) {
-            params = new RecommendationParamsDTO();
-        }
-        if (top <= 0) {
-            top = 3;
-        }
+    public int sendAdviceFromRecoIfNotExists(
+            String username,
+            RecommendationParamsDTO params,
+            int top,
+            int withinDays
+    ) {
+        var u = userRepo.getUserByUsername(username);
+        if (u == null) return 0;
 
-        var user = userRepo.getUserByUsername(username);
-        if (user == null) {
-            return 0;
-        }
+        List<RecommendationItemDTO> recs = recoService.recommendExercises(username, params);
+        int created = 0;
 
-        var recs = recoService.recommendExercises(username, params);
-        if (recs == null || recs.isEmpty()) {
-            return 0;
-        }
-
-        Date since = withinDays > 0
-                ? new Date(System.currentTimeMillis() - withinDays * 24L * 3600_000L)
-                : new Date(0L);
-
-        int count = 0;
         for (int i = 0; i < Math.min(top, recs.size()); i++) {
-            var it = recs.get(i);
-            StringBuilder msg = new StringBuilder("Gợi ý hôm nay: ")
-                    .append(it.getName() != null ? it.getName() : "bài tập");
-            if (it.getEstimatedMinutes() != null) {
-                msg.append(" (").append(it.getEstimatedMinutes()).append("′)");
-            }
-            if (it.getReason() != null && !it.getReason().isBlank()) {
-                msg.append(". Lý do: ").append(it.getReason());
-            }
-            String message = msg.toString();
+            var dto = recs.get(i);
 
-            long existed = notifRepo.countSimilarMessageSince(user.getUserId(), message, since);
-            if (withinDays > 0 && existed > 0) {
-                continue;
-            }
-
-            var dto = new NotificationCreateDTO();
-            dto.setMessage(message);
-            dto.setType("advice");
-            dto.setSource("AI");
-            dto.setSender("AI Coach");
-
-            notificationService.createForUsername(username, dto);
-            count++;
+            var n = new Notification();
+            n.setUserId(u);
+            n.setType("AI_ADVICE");
+            n.setMessage("Hôm nay hãy thử: " + dto.getName()
+                    + (dto.getEstimatedMinutes() != null ? " (" + dto.getEstimatedMinutes() + "’)" : "")
+                    + (dto.getReason() != null ? " – " + dto.getReason() : ""));
+            n.setIsRead(false);
+            n.setCreatedAt(new Date());
+            notifRepo.save(n);
+            created++;
         }
-        return count;
+        return created;
     }
 }

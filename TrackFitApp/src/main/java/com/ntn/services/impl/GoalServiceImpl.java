@@ -40,8 +40,6 @@ public class GoalServiceImpl implements GoalService {
         return goalRepo.findByUserId(user.getUserId()).stream().map(g -> {
             GoalDTO d = new GoalDTO();
             d.setGoalId(g.getGoalId());
-
-            // Tạo tên gợi nghĩa cho dropdown
             String label = String.format(
                     "%s%s%s",
                     g.getGoalType() != null ? g.getGoalType() : "Goal",
@@ -49,8 +47,6 @@ public class GoalServiceImpl implements GoalService {
                     g.getIntensity() != null ? " • " + g.getIntensity() : ""
             );
             d.setName(label.trim());
-
-            // các field gốc
             d.setGoalType(g.getGoalType());
             d.setWorkoutDuration(g.getWorkoutDuration());
             d.setIntensity(g.getIntensity());

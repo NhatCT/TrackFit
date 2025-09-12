@@ -56,7 +56,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public Map<String, Object> listByUserPaged(String username, Integer page, Integer pageSize,
-                                               Boolean isRead, String type, String kw) {
+            Boolean isRead, String type, String kw) {
         User u = mustUser(username);
         if (pageSize == null || pageSize <= 0) {
             List<NotificationDTO> items = repo.findByUserIdFiltered(u.getUserId(), isRead, type, kw)
@@ -128,11 +128,15 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private String normalizeType(String t) {
-        if (t == null) return "system";
+        if (t == null) {
+            return "system";
+        }
         String v = t.trim().toLowerCase();
         return switch (v) {
-            case "reminder", "advice", "system" -> v;
-            default -> "system";
+            case "reminder", "advice", "system" ->
+                v;
+            default ->
+                "system";
         };
     }
 
@@ -140,7 +144,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification n = new Notification();
         n.setUserId(u);
         n.setMessage(req.getMessage());
-        n.setType(normalizeType(req.getType()));                 // 👈 enum DB chữ thường
+        n.setType(normalizeType(req.getType()));
         n.setSource((req.getSource() == null || req.getSource().isBlank())
                 ? "SYSTEM" : req.getSource().trim().toUpperCase());
         n.setSender(req.getSender() == null ? "System Bot" : req.getSender());
