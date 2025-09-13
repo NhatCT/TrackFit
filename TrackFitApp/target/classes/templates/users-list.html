@@ -1,43 +1,43 @@
 <!doctype html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-  <title>Người dùng</title>
-  <th:block th:replace="~{base :: resources}"></th:block>
+    <head>
+        <title>Người dùng</title>
+    <th:block th:replace="~{base :: resources}"></th:block>
 </head>
 <body>
-<div th:replace="~{base :: header}"></div>
+    <div th:replace="~{base :: header}"></div>
 
-<main class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="m-0">Quản lý người dùng</h3>
-    <a class="btn btn-primary" th:href="@{/users/new}">Thêm người dùng</a>
-  </div>
+    <main class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="m-0">Quản lý người dùng</h3>
+            <a class="btn btn-primary" th:href="@{/users/new}">Thêm người dùng</a>
+        </div>
 
-  <div th:if="${msg}" class="alert alert-success" th:text="${msg}"></div>
+        <div th:if="${msg}" class="alert alert-success" th:text="${msg}"></div>
 
-  <table class="table table-hover align-middle">
-    <thead><tr>
-      <th>ID</th><th>Username</th><th>Họ tên</th><th>Email</th><th>Role</th><th class="text-end"></th>
-    </tr></thead>
-    <tbody>
-    <tr th:each="u : ${users}">
-      <td th:text="${u.userId}">1</td>
-      <td th:text="${u.username}">john</td>
-      <td th:text="${u.firstName} + ' ' + ${u.lastName}">-</td>
-      <td th:text="${u.email}">-</td>
-      <td th:text="${u.role}">ROLE_USER</td>
-      <td class="text-end">
-        <a th:href="@{'/users/' + ${u.userId}}" class="btn btn-sm btn-outline-primary">Sửa</a>
-        <form th:action="@{'/users/' + ${u.userId} + '/delete'}" method="post" class="d-inline"
-              onsubmit="return confirm('Xoá người dùng này?');">
-          <button class="btn btn-sm btn-outline-danger" type="submit">Xoá</button>
-        </form>
-      </td>
-    </tr>
-    </tbody>
-  </table>
-</main>
+        <table class="table table-hover align-middle">
+            <thead><tr>
+                    <th>ID</th><th>Username</th><th>Họ tên</th><th>Email</th><th>Role</th><th class="text-end"></th>
+                </tr></thead>
+            <tbody>
+                <tr th:each="u : ${users}">
+                    <td th:text="${u.userId}">1</td>
+                    <td th:text="${u.username}">john</td>
+                    <td th:text="${u.firstName} + ' ' + ${u.lastName}">-</td>
+                    <td th:text="${u.email}">-</td>
+                    <td th:text="${u.role}">ROLE_USER</td>
+                    <td class="text-end">
+                        <a th:href="@{'/users/' + ${u.userId}}" class="btn btn-sm btn-outline-primary">Sửa</a>
+                        <form th:action="@{'/users/' + ${u.userId} + '/delete'}" method="post" class="d-inline"
+                              onsubmit="return confirm('Xoá người dùng này?');">
+                            <button class="btn btn-sm btn-outline-danger" type="submit">Xoá</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </main>
 
-<div th:replace="~{base :: footer}"></div>
+    <div th:replace="~{base :: footer}"></div>
 </body>
 </html>

@@ -1,3 +1,4 @@
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\agent\AiAdviceScheduler.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\agent\RecommendationAgentJob.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\configs\CacheConfig.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\configs\DispatcherServletInit.java
@@ -18,12 +19,15 @@ E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\ApiStatsController.jav
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\ApiUserController.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\ApiUserWorkoutHistoryController.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\ApiWorkoutPlanController.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\CurrentUserAdvice.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\DashboardController.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\ExercisesPageController.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\HomeController.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\LoginController.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\NotificationsAiAdminController.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\PlansPageController.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\StatsPageController.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\UsersAdminController.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\controllers\UsersPageController.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\AdminStatsSummaryDTO.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\dto\AdminUserFormDTO.java
@@ -62,6 +66,8 @@ E:\TrackFit\TrackFitApp\src\main\java\com\ntn\pojo\Goal.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\pojo\HealthData.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\pojo\Notification.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\pojo\PlanDetail.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\pojo\RecoEvent.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\pojo\RecoFeedback.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\pojo\Statistic.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\pojo\User.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\pojo\UserWorkoutHistory.java
@@ -83,10 +89,12 @@ E:\TrackFit\TrackFitApp\src\main\java\com\ntn\repositories\UserRepository.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\repositories\UserWorkoutHistoryRepository.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\repositories\WorkoutPlanRepository.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\AdminStatsService.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\AiAdviceService.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\ExercisesService.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\GoalService.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\HealthDataService.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\impl\AdminStatsServiceImpl.java
+E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\impl\AiAdviceServiceImpl.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\impl\ExercisesServiceImpl.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\impl\GoalServiceImpl.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\impl\HealthDataServiceImpl.java
@@ -105,4 +113,3 @@ E:\TrackFit\TrackFitApp\src\main\java\com\ntn\services\WorkoutPlanService.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\trackfitapp\JakartaRestConfiguration.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\trackfitapp\resources\JakartaEE11Resource.java
 E:\TrackFit\TrackFitApp\src\main\java\com\ntn\utils\JwtUtils.java
-E:\TrackFit\TrackFitApp\src\main\java\EncodePassword.java

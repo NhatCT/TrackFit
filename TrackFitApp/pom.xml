@@ -1,153 +1,153 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+    <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.ntn</groupId>
-  <artifactId>TrackFitApp</artifactId>
-  <version>1.0-SNAPSHOT</version>
-  <packaging>war</packaging>
-  <name>TrackFitApp-1.0-SNAPSHOT</name>
+    <groupId>com.ntn</groupId>
+    <artifactId>TrackFitApp</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>war</packaging>
+    <name>TrackFitApp-1.0-SNAPSHOT</name>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <!-- Giữ Spring 6.2.x đồng bộ -->
-    <spring.version>6.2.8</spring.version>
-    <spring.security.version>6.3.4</spring.security.version>
-    <hibernate.version>6.6.19.Final</hibernate.version>
-    <!-- Khuyên dùng Jakarta EE 10 stable thay vì 11-M1 -->
-    <jakartaee.version>10.0.0</jakartaee.version>
-    <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
-    <java.version>17</java.version>
-    <jackson.version>2.17.2</jackson.version>
-  </properties>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Giữ Spring 6.2.x đồng bộ -->
+        <spring.version>6.2.8</spring.version>
+        <spring.security.version>6.3.4</spring.security.version>
+        <hibernate.version>6.6.19.Final</hibernate.version>
+        <!-- Khuyên dùng Jakarta EE 10 stable thay vì 11-M1 -->
+        <jakartaee.version>10.0.0</jakartaee.version>
+        <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
+        <java.version>17</java.version>
+        <jackson.version>2.17.2</jackson.version>
+    </properties>
 
-  <dependencies>
-    <!-- Jakarta EE API (provided) -->
-    <dependency>
-      <groupId>jakarta.platform</groupId>
-      <artifactId>jakarta.jakartaee-api</artifactId>
-      <version>${jakartaee.version}</version>
-      <scope>provided</scope>
-    </dependency>
+    <dependencies>
+        <!-- Jakarta EE API (provided) -->
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-api</artifactId>
+            <version>${jakartaee.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
-    <!-- Servlet API (provided, bản stable 6.0.0) -->
-    <dependency>
-      <groupId>jakarta.servlet</groupId>
-      <artifactId>jakarta.servlet-api</artifactId>
-      <version>${jakarta.servlet.version}</version>
-      <scope>provided</scope>
-    </dependency>
+        <!-- Servlet API (provided, bản stable 6.0.0) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>${jakarta.servlet.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
-    <!-- Spring Framework (KHÔNG dùng spring-boot-starter-*) -->
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-webmvc</artifactId>
-      <version>${spring.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-orm</artifactId>
-      <version>${spring.version}</version>
-    </dependency>
-    <!-- WebSocket + Messaging (để STOMP hoạt động) -->
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-websocket</artifactId>
-      <version>${spring.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-messaging</artifactId>
-      <version>${spring.version}</version>
-    </dependency>
+        <!-- Spring Framework (KHÔNG dùng spring-boot-starter-*) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-orm</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <!-- WebSocket + Messaging (để STOMP hoạt động) -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-websocket</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-messaging</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
 
-    <!-- Thymeleaf cho Spring 6 -->
-    <dependency>
-      <groupId>org.thymeleaf</groupId>
-      <artifactId>thymeleaf</artifactId>
-      <version>3.1.2.RELEASE</version>
-    </dependency>
-    <dependency>
-      <groupId>org.thymeleaf</groupId>
-      <artifactId>thymeleaf-spring6</artifactId>
-      <version>3.1.2.RELEASE</version>
-    </dependency>
-    <dependency>
-      <groupId>org.thymeleaf.extras</groupId>
-      <artifactId>thymeleaf-extras-springsecurity6</artifactId>
-      <version>3.1.2.RELEASE</version>
-    </dependency>
+        <!-- Thymeleaf cho Spring 6 -->
+        <dependency>
+            <groupId>org.thymeleaf</groupId>
+            <artifactId>thymeleaf</artifactId>
+            <version>3.1.2.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>org.thymeleaf</groupId>
+            <artifactId>thymeleaf-spring6</artifactId>
+            <version>3.1.2.RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>org.thymeleaf.extras</groupId>
+            <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+            <version>3.1.2.RELEASE</version>
+        </dependency>
 
-    <!-- Hibernate + Validator -->
-    <dependency>
-      <groupId>org.hibernate.orm</groupId>
-      <artifactId>hibernate-core</artifactId>
-      <version>${hibernate.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.hibernate.validator</groupId>
-      <artifactId>hibernate-validator</artifactId>
-      <version>8.0.1.Final</version>
-    </dependency>
+        <!-- Hibernate + Validator -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>${hibernate.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.validator</groupId>
+            <artifactId>hibernate-validator</artifactId>
+            <version>8.0.1.Final</version>
+        </dependency>
 
-    <!-- Spring Security -->
-    <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-web</artifactId>
-      <version>${spring.security.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.security</groupId>
-      <artifactId>spring-security-config</artifactId>
-      <version>${spring.security.version}</version>
-    </dependency>
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-web</artifactId>
+            <version>${spring.security.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-config</artifactId>
+            <version>${spring.security.version}</version>
+        </dependency>
 
-    <!-- DB & JSON -->
-    <dependency>
-      <groupId>com.mysql</groupId>
-      <artifactId>mysql-connector-j</artifactId>
-      <version>8.4.0</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
+        <!-- DB & JSON -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
 
-    <!-- Khác -->
-    <dependency>
-      <groupId>com.nimbusds</groupId>
-      <artifactId>nimbus-jose-jwt</artifactId>
-      <version>10.1</version>
-    </dependency>
-    <dependency>
-      <groupId>com.cloudinary</groupId>
-      <artifactId>cloudinary-http44</artifactId>
-      <version>1.29.0</version>
-    </dependency>
-  </dependencies>
+        <!-- Khác -->
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>10.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http44</artifactId>
+            <version>1.29.0</version>
+        </dependency>
+    </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.12.1</version>
-        <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>3.4.0</version>
-      </plugin>
-    </plugins>
-  </build>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.12.1</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.4.0</version>
+            </plugin>
+        </plugins>
+    </build>
 </project>

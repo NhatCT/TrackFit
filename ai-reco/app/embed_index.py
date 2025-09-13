@@ -1,61 +1,86 @@
-import faiss
+import os, threading
+from typing import List, Dict, Any, Tuple
 import numpy as np
-from typing import List, Dict, Any, Optional, Iterable
 from sentence_transformers import SentenceTransformer
-from .models import get_encoder
+import faiss
 
-class MiniRAGIndex:
-    def __init__(self, encoder: Optional[SentenceTransformer] = None,
-                 model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
-        self.model = encoder or SentenceTransformer(model_name)
-        self.dim = self.model.get_sentence_embedding_dimension()
-        self.index = faiss.IndexFlatIP(self.dim)  # cosine (vì đã normalize)
-        self.corpus: List[Dict[str, Any]] = []
+_EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-m3")
+_DEVICE = os.getenv("EMBED_DEVICE", "cpu")
 
-    def _emb(self, texts: Iterable[str]) -> np.ndarray:
-        em = self.model.encode(
-            list(texts),
-            normalize_embeddings=True,
-            convert_to_numpy=True,
-            show_progress_bar=False,
-        )
-        return np.ascontiguousarray(em.astype("float32"))
+_model_lock = threading.Lock()
+_index_lock = threading.Lock()
+_model = None
+_index = None
+_corpus: List[Dict[str, Any]] = []
 
-    def add_docs(self, docs: List[Dict[str, Any]]) -> None:
-        if not docs:
-            return
-        vecs = self._emb(d["text"] for d in docs)
-        if vecs.shape[1] != self.dim:
-            raise ValueError(f"Embedding dim mismatch: index={self.dim}, new={vecs.shape[1]}")
-        self.index.add(vecs)
-        self.corpus.extend(docs)
+def _get_model():
+    global _model
+    with _model_lock:
+        if _model is None:
+            _model = SentenceTransformer(_EMBED_MODEL, device=_DEVICE)
+        return _model
 
-    def query(self, q: str, topk: int = 8):
-        if self.index.ntotal == 0:
-            return []
-        k = int(min(max(topk, 1), self.index.ntotal))
-        qv = self._emb([q])
-        D, I = self.index.search(qv, k)
-        out = []
-        for score, idx in zip(D[0], I[0]):
-            if 0 <= idx < len(self.corpus):
-                d = self.corpus[idx]
-                out.append({**d, "score": float(score)})
-        return out
+def _embed(texts: List[str]) -> np.ndarray:
+    mdl = _get_model()
+    embs = mdl.encode(texts, normalize_embeddings=True, batch_size=64, convert_to_numpy=True)
+    return embs.astype("float32")
 
-def build_default_index(encoder: Optional[SentenceTransformer] = None) -> MiniRAGIndex:
-    rag = MiniRAGIndex(encoder=encoder)
-    howto = [
-        {"id":"HOWTO-PLAN-1", "text":"Tạo kế hoạch → '+ Tạo kế hoạch' → nhập tên → chọn Goal → Lưu.", "meta":{"type":"howto"}},
-        {"id":"HOWTO-PLAN-2", "text":"Thêm bài tập → mở kế hoạch → '+ Thêm bài tập' → chọn bài → chọn ngày → Lưu.", "meta":{"type":"howto"}},
-        {"id":"HOWTO-PLAN-3", "text":"Chủ nhật là 'CN' (dayOfWeek = 8). Nếu lỗi, kiểm tra enum/constraint.", "meta":{"type":"howto"}},
-    ]
-    ex = [
-        {"id":"E#1", "text":"Plank — core stability — giảm mỡ, thể lực chung — 10-15 phút.", "meta":{"type":"exercise","exerciseId":1,"muscleGroup":"core"}},
-        {"id":"E#2", "text":"Squat — lower body — tăng cơ, sức mạnh — 15-20 phút.", "meta":{"type":"exercise","exerciseId":2,"muscleGroup":"legs"}},
-    ]
-    rag.add_docs(howto + ex)
-    return rag
+def reindex(items: List[Dict[str, Any]]) -> int:
+    """items: [{id, title, text, group?}]"""
+    global _index, _corpus
+    _corpus = items[:]
+    if not _corpus:
+        with _index_lock: _index = None
+        return 0
+    vecs = _embed([(it.get("title","")+" "+it.get("text","")).strip() for it in _corpus])
+    d = vecs.shape[1]
+    idx = faiss.IndexFlatIP(d)  # cosine (vì embedding normalized)
+    idx.add(vecs)
+    with _index_lock:
+        _index = idx
+    return len(_corpus)
 
-# dùng chung encoder đã nạp (tránh tải model 2 lần)
-INDEX = build_default_index(encoder=get_encoder())
+def search(query: str, k: int = 5) -> List[Tuple[float, Dict[str, Any]]]:
+    if not query or _index is None or not _corpus:
+        return []
+    q = _embed([query])
+    with _index_lock:
+        D, I = _index.search(q, min(k, len(_corpus)))
+    out = []
+    for score, i in zip(D[0].tolist(), I[0].tolist()):
+        if i == -1: continue
+        out.append((float(score), _corpus[i]))
+    return out
+
+def rank(query: str, candidates: List[Dict[str, Any]], k: int = 10) -> List[Dict[str, Any]]:
+    if not candidates:
+        return []
+    texts = [(c.get("title","")+" "+c.get("text","")).strip() for c in candidates]
+    cand_emb = _embed(texts)
+    q_emb = _embed([query])
+    scores = (q_emb @ cand_emb.T)[0].tolist()
+    ranked = sorted(
+        [{**c, "score": float(s)} for c, s in zip(candidates, scores)],
+        key=lambda x: x["score"], reverse=True
+    )
+    return ranked[:k]
+
+# ---- LangChain retriever (tùy chọn) ----
+from langchain.embeddings.base import Embeddings
+from langchain_community.vectorstores import FAISS as LCFAISS
+
+class _STEmbeddings(Embeddings):
+    def __init__(self): self.model = _get_model()
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        arr = self.model.encode(texts, normalize_embeddings=True, convert_to_numpy=True)
+        return arr.astype("float32").tolist()
+    def embed_query(self, text: str) -> List[float]:
+        return self.embed_documents([text])[0]
+
+def as_langchain_retriever(k: int = 4):
+    docs = [ (it.get("title","")+" "+it.get("text","")).strip() for it in _corpus ]
+    metas = [ {"id": it.get("id"), "title": it.get("title"), "group": it.get("group")} for it in _corpus ]
+    if not docs:
+        return None
+    vs = LCFAISS.from_texts(docs, _STEmbeddings(), metadatas=metas)
+    return vs.as_retriever(search_kwargs={"k": k})

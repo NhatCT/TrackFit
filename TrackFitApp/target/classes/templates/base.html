@@ -14,44 +14,66 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </th:block>
 </head>
+
 <body>
-<!-- header fragment -->
+<!-- HEADER -->
 <nav th:fragment="header" class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
     <a class="navbar-brand" th:href="@{/}">TrackFit</a>
     <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#nav">
       <span class="navbar-toggler-icon"></span>
     </button>
+
     <div id="nav" class="collapse navbar-collapse">
+      <!-- Menu trái -->
       <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" th:href="@{/dashboard}">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/exercises}">Bài tập</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/plans}">Kế hoạch</a></li>
-        <li class="nav-item"><a class="nav-link" th:href="@{/users}">Người dùng</a></li>
-        <li class="nav-item">
-          <a class="nav-link text-warning" th:href="@{/stats}" sec:authorize="isAuthenticated()">Thống kê</a>
+        <li class="nav-item"><a class="nav-link" th:href="@{/}">Trang chủ</a></li>
+        <li class="nav-item" sec:authorize="isAuthenticated()"><a class="nav-link" th:href="@{/dashboard}">Dashboard</a></li>
+        <li class="nav-item" sec:authorize="isAuthenticated()"><a class="nav-link" th:href="@{/exercises}">Bài tập</a></li>
+        <li class="nav-item" sec:authorize="isAuthenticated()"><a class="nav-link" th:href="@{/plans}">Kế hoạch</a></li>
+        <li class="nav-item" sec:authorize="isAuthenticated()"><a class="nav-link" th:href="@{/users}">Người dùng</a></li>
+        <li class="nav-item" sec:authorize="isAuthenticated()">
+          <a class="nav-link text-warning" th:href="@{/stats}">Thống kê</a>
         </li>
       </ul>
+
+      <!-- Menu phải -->
       <ul class="navbar-nav">
-        <li class="nav-item">
+        <!-- Chưa đăng nhập -->
+        <li class="nav-item" sec:authorize="!isAuthenticated()">
           <a class="nav-link" th:href="@{/login}">Đăng nhập</a>
         </li>
-        <li class="nav-item">
-          <form th:action="@{/logout}" method="post" class="d-inline">
-            <button class="nav-link btn btn-link text-light p-2">Đăng xuất</button>
-          </form>
+
+        <!-- Đã đăng nhập: Avatar + Username chỉ để Đăng xuất -->
+        <li class="nav-item dropdown" sec:authorize="isAuthenticated()">
+          <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false">
+            <img th:src="${currentUser != null and currentUser.avatarUrl != null} ? ${currentUser.avatarUrl} : @{/img/default-avatar.png}"
+                 alt="Avatar"
+                 class="rounded-circle"
+                 style="width:30px;height:30px;object-fit:cover;">
+            <span th:text="${currentUser != null} ? ${currentUser.username} : 'Tài khoản'">Tài khoản</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <form th:action="@{/logout}" method="post">
+                <button class="dropdown-item text-danger" type="submit">Đăng xuất</button>
+              </form>
+            </li>
+          </ul>
         </li>
       </ul>
     </div>
   </div>
 </nav>
+<!-- END HEADER -->
 
-<!-- footer fragment -->
+<!-- FOOTER -->
 <footer th:fragment="footer" class="bg-light mt-5">
   <div class="container py-4 small text-muted">
     <div class="d-flex justify-content-between">
       <span>TrackFit &copy; 2025</span>
-      <span>Built with Spring Boot + Thymeleaf</span>
+      <span>Built with Spring + Thymeleaf</span>
     </div>
   </div>
 </footer>
