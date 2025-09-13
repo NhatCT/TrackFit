@@ -21,7 +21,6 @@ import java.io.IOException;
 @Service
 public class AiRecoServiceImpl implements AiRecoService {
 
-    // ========== cấu hình từ application.properties ==========
     @Value("${ai.reco.url:}")
     private String aiRecoUrlProp;
 
@@ -37,23 +36,15 @@ public class AiRecoServiceImpl implements AiRecoService {
     @Value("${ai.http.retry.backoff-ms:400}")
     private int backoffMs;
 
-    // ========================================================
-    private String baseUrl;                 // URL cuối cùng dùng để gọi AI
-    private HttpClient http;                // HTTP client có connect-timeout
+    private String baseUrl;
+    private HttpClient http;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public AiRecoServiceImpl() {
-        // no-args constructor cho Spring
-    }
-
-    /** Cho phép tạo bean thủ công (nếu bạn muốn new AiRecoServiceImpl("...")). */
-    public AiRecoServiceImpl(String baseUrl) {
-        this.baseUrl = baseUrl;
-    }
+    public AiRecoServiceImpl() {}
+    public AiRecoServiceImpl(String baseUrl) { this.baseUrl = baseUrl; }
 
     @PostConstruct
     public void init() {
-        // Ưu tiên: constructor -> property ai.reco.url -> ENV AI_RECO_BASE_URL -> default
         if (this.baseUrl == null || this.baseUrl.isBlank()) {
             String fromProp = aiRecoUrlProp;
             String fromEnv  = System.getenv("AI_RECO_BASE_URL");
@@ -62,12 +53,15 @@ public class AiRecoServiceImpl implements AiRecoService {
                     : (fromEnv != null && !fromEnv.isBlank() ? fromEnv : "http://localhost:8000");
         }
 
+        // Ép dùng HTTP/1.1 và để HttpClient tự set Content-Length
         this.http = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofMillis(connectTimeoutMs))
                 .build();
+
+        System.out.println("[AI RECO] baseUrl=" + this.baseUrl);
     }
 
-    // -------------------- tiện ích gửi kèm retry --------------------
     private HttpResponse<String> sendWithRetry(HttpRequest req) throws IOException, InterruptedException {
         int attempt = 0;
         IOException lastIo = null;
@@ -78,7 +72,6 @@ public class AiRecoServiceImpl implements AiRecoService {
             try {
                 HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
                 int code = resp.statusCode();
-                // retry nếu 5xx hoặc 429
                 if (code >= 500 || code == 429) {
                     Thread.sleep(backoffMs * (long) attempt);
                     continue;
@@ -100,10 +93,8 @@ public class AiRecoServiceImpl implements AiRecoService {
     private HttpRequest.Builder baseReq(String path) {
         return HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + path))
-                .timeout(Duration.ofMillis(readTimeoutMs)); // read-timeout per request
+                .timeout(Duration.ofMillis(readTimeoutMs));
     }
-
-    // ======================= API public =======================
 
     @Override
     public boolean aiHealth() {
@@ -122,10 +113,12 @@ public class AiRecoServiceImpl implements AiRecoService {
             Map<String, Object> body = new HashMap<>();
             body.put("items", items);
 
-            String json = mapper.writeValueAsString(body);
+            byte[] payload = mapper.writeValueAsBytes(body);
             HttpRequest req = baseReq("/reindex")
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
+                    .header("Content-Type", "application/json; charset=utf-8")
+                    .header("Accept", "application/json")
+                    // KHÔNG set Content-Length!
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(payload))
                     .build();
 
             HttpResponse<String> resp = sendWithRetry(req);
@@ -143,15 +136,16 @@ public class AiRecoServiceImpl implements AiRecoService {
             body.put("candidates", candidates);
             body.put("topK", topK != null ? topK : 10);
 
-            String json = mapper.writeValueAsString(body);
+            byte[] payload = mapper.writeValueAsBytes(body);
             HttpRequest req = baseReq("/rank")
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
+                    .header("Content-Type", "application/json; charset=utf-8")
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(payload))
                     .build();
 
             HttpResponse<String> resp = sendWithRetry(req);
 
-            Map<String, Object> result = mapper.readValue(resp.body(), new TypeReference<Map<String, Object>>(){});
+            Map<String, Object> result = mapper.readValue(resp.body(), new TypeReference<Map<String, Object>>() {});
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> items = (List<Map<String, Object>>) result.get("items");
 
@@ -176,27 +170,49 @@ public class AiRecoServiceImpl implements AiRecoService {
 
     @Override
     public ChatAnswerDTO chatAsk(String sessionId, String question, Integer topK) {
+        ChatAnswerDTO fallback = new ChatAnswerDTO();
+        fallback.setAnswer("Có lỗi khi gọi chatbot. Vui lòng thử lại.");
+        fallback.setModel("");
+
         try {
             Map<String, Object> body = new HashMap<>();
             body.put("sessionId", sessionId);
             body.put("question", question);
             body.put("topK", topK != null ? topK : 4);
 
-            String json = mapper.writeValueAsString(body);
+            byte[] payload = mapper.writeValueAsBytes(body);
             HttpRequest req = baseReq("/chat")
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
+                    .header("Content-Type", "application/json; charset=utf-8")
+                    .header("Accept", "application/json")
+                    // TUYỆT ĐỐI không thêm Content-Length
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(payload))
                     .build();
 
             HttpResponse<String> resp = sendWithRetry(req);
 
-            Map<String, Object> result = mapper.readValue(resp.body(), new TypeReference<Map<String, Object>>(){});
+            System.out.println("[AI CHAT] status=" + resp.statusCode() + " body=" + resp.body());
+
+            if (resp.statusCode() != 200 || resp.body() == null || resp.body().isBlank()) {
+                fallback.setAnswer("AI hiện không phản hồi. Thử lại sau.");
+                fallback.setModel("offline");
+                return fallback;
+            }
+
+            Map<String, Object> result = mapper.readValue(
+                    resp.body(),
+                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {}
+            );
+
             ChatAnswerDTO ans = new ChatAnswerDTO();
-            ans.setAnswer((String) result.get("answer"));
-            ans.setModel((String) result.get("model"));
+            Object a = result.get("answer");
+            Object m = result.get("model");
+            ans.setAnswer(a == null ? "Mình chưa có câu trả lời." : String.valueOf(a));
+            ans.setModel(m == null ? "" : String.valueOf(m));
             return ans;
+
         } catch (Exception ex) {
-            throw new RuntimeException(ex);
+            System.err.println("[AI CHAT] error: " + ex.getMessage());
+            return fallback;
         }
     }
 }

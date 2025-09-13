@@ -10,6 +10,7 @@ import com.ntn.services.RecommendationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -30,7 +31,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Autowired private HealthDataRepository healthRepo;
 
     @Value("${ai.reco.url:}")
-    private String aiRecoUrl;
+    private String aiRecoUrl;                       // ví dụ: http://ai:8000
 
     @Value("${ai.reco.enabled:true}")
     private boolean aiEnabled;
@@ -74,6 +75,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         int minutesPref = params.getAvailableMinutes() != null ? params.getAvailableMinutes() : 25;
         int size = params.getSize() != null && params.getSize() > 0 ? params.getSize() : 8;
 
+        // Lấy candidates từ DB
         Map<String, String> q = new HashMap<>();
         if (params.getKw() != null && !params.getKw().isBlank()) {
             q.put("kw", params.getKw().trim());
@@ -84,26 +86,77 @@ public class RecommendationServiceImpl implements RecommendationService {
         List<Exercises> candidates = exercisesRepo.getExercises(q);
         if (candidates.isEmpty()) return List.of();
 
+        // --------- Xây query rõ ràng cho AI ---------
+        String query = String.join(" ",
+                goalType != null ? goalType : "",
+                intensity != null ? ("intensity " + intensity) : "",
+                minutesPref > 0 ? (minutesPref + " minutes") : "",
+                params.getKw() != null ? params.getKw() : ""
+        ).trim();
+        if (query.isBlank()) query = "recommend suitable exercises";
+
+        // --------- Map candidates thành shape AI /rank cần: {id,title,text,group} ---------
+        List<Map<String, Object>> candJson = candidates.stream().map(e -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("id",    e.getExercisesId());
+            m.put("title", e.getName());
+            String desc = (e.getDescription() != null && !e.getDescription().isBlank())
+                    ? e.getDescription()
+                    : (e.getTargetGoal() != null ? e.getTargetGoal() : "");
+            m.put("text",  desc);
+            m.put("group", e.getMuscleGroup());
+            return m;
+        }).collect(Collectors.toList());
+
         Map<Integer, Double> scoreMap = new HashMap<>();
         Map<Integer, String> reasonMap = new HashMap<>();
         boolean aiOk = false;
 
         if (aiEnabled && rest != null && aiRecoUrl != null && !aiRecoUrl.isBlank()) {
             try {
-                AiRankRequest req = buildAiPayload(u, latestGoal, latestHealth,
-                        goalType, intensity, minutesPref, candidates);
+                // Body đúng schema /rank
+                Map<String, Object> body = new HashMap<>();
+                body.put("query", query);
+                body.put("candidates", candJson);
+                body.put("topK", size);
 
-                AiRankedExercise[] ranked = callWithRetry(
-                        () -> rest.postForObject(normalizeUrl(aiRecoUrl, "/rank"), req, AiRankedExercise[].class),
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+
+                // Gọi /rank (trả về {"items":[ ... ]})
+                @SuppressWarnings("unchecked")
+                Map<String, Object> resp = callWithRetry(
+                        () -> rest.postForObject(
+                                normalizeUrl(aiRecoUrl, "/rank"),
+                                entity,
+                                Map.class
+                        ),
                         retryAttempts,
                         backoffMs
                 );
-                if (ranked != null) {
-                    for (AiRankedExercise it : ranked) {
-                        if (it.getExerciseId() != null) {
-                            if (it.getScore() != null) scoreMap.put(it.getExerciseId(), it.getScore());
-                            if (it.getReason() != null && !it.getReason().isBlank())
-                                reasonMap.put(it.getExerciseId(), it.getReason());
+
+                if (resp != null) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> items = (List<Map<String, Object>>) resp.get("items");
+                    if (items != null) {
+                        for (Map<String, Object> it : items) {
+                            // AI trả về lại mỗi candidate + score (và có thể có reason sau này)
+                            Object idObj = it.get("id");
+                            if (idObj == null) idObj = it.get("exerciseId"); // phòng hờ
+                            if (idObj == null) continue;
+
+                            Integer exId = Integer.valueOf(idObj.toString());
+                            Object sc = it.get("score");
+                            if (sc != null) {
+                                try {
+                                    scoreMap.put(exId, Double.valueOf(sc.toString()));
+                                } catch (NumberFormatException ignore) {}
+                            }
+                            Object rs = it.get("reason");
+                            if (rs != null && !rs.toString().isBlank()) {
+                                reasonMap.put(exId, rs.toString());
+                            }
                         }
                     }
                 }
@@ -115,6 +168,7 @@ public class RecommendationServiceImpl implements RecommendationService {
             System.out.println("[AI_RECO] Bypass – chỉ dùng DB baseline");
         }
 
+        // --------- Sắp xếp & đa dạng hoá ---------
         candidates.sort(
             Comparator.comparing((Exercises e) -> scoreMap.getOrDefault(e.getExercisesId(), 0.0)).reversed()
                 .thenComparing(e -> e.getTargetGoal() != null
@@ -188,6 +242,8 @@ public class RecommendationServiceImpl implements RecommendationService {
         }).collect(Collectors.toList());
     }
 
+    // ======================== helpers ========================
+
     private User mustGetUser(String username) {
         User u = userRepo.getUserByUsername(username);
         if (u == null) throw new IllegalArgumentException("Không tìm thấy user");
@@ -216,41 +272,6 @@ public class RecommendationServiceImpl implements RecommendationService {
         return total == 0 ? 1.0 : Math.max(0.0, Math.min(1.0, (double) done / total));
     }
 
-    private AiRankRequest buildAiPayload(
-            User u, Goal g, HealthData h,
-            String goalType, String intensity,
-            int minutes, List<Exercises> cand
-    ) {
-        AiRankRequest req = new AiRankRequest();
-
-        AiRankRequest.UserInfo ui = new AiRankRequest.UserInfo();
-        ui.id = u.getUserId();
-        ui.goalType = goalType;
-        ui.gender = u.getGender();
-        req.setUser(ui);
-
-        Map<String, Object> ctx = new HashMap<>();
-        ctx.put("availableMinutes", minutes);
-        ctx.put("intensity", intensity);
-        if (h != null) {
-            ctx.put("height", h.getHeight());
-            ctx.put("weight", h.getWeight());
-        }
-        req.setContext(ctx);
-
-        req.setCandidates(cand.stream().map(e -> {
-            AiRankRequest.Candidate c = new AiRankRequest.Candidate();
-            c.exerciseId = e.getExercisesId();
-            c.name = e.getName();
-            c.muscleGroup = e.getMuscleGroup();
-            c.minutes = parseMinutesFromTargetGoal(e.getTargetGoal());
-            c.difficulty = "Medium";
-            return c;
-        }).collect(Collectors.toList()));
-
-        return req;
-    }
-
     private Integer parseMinutesFromTargetGoal(String targetGoal) {
         if (targetGoal == null) return null;
         var matcher = java.util.regex.Pattern.compile("(\\d{1,3})[’']?").matcher(targetGoal);
@@ -275,9 +296,10 @@ public class RecommendationServiceImpl implements RecommendationService {
                 last = ex;
                 if (ex instanceof HttpClientErrorException e) {
                     int sc = e.getStatusCode().value();
+                    // 4xx thì không retry
                     if (sc >= 400 && sc < 500) throw e;
                 }
-                try { Thread.sleep(initialBackoffMs * i); }
+                try { Thread.sleep(initialBackoffMs * (long) Math.max(1, i)); }
                 catch (InterruptedException ignored) {}
             }
         }

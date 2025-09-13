@@ -30,7 +30,7 @@ if USE_LLM:
             base_url=VLLM_BASE,
             api_key=VLLM_API_KEY,  # vLLM thường bỏ qua, nhưng langchain-openai cần field này
             temperature=0.2,
-            max_tokens=512,
+            max_tokens=384,
             http_client=http_client,
         )
     except Exception as e:
