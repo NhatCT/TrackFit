@@ -9,3 +9,4 @@ node_modules/
 # local compose / dumps
 docker-compose.yml
 *.sql
+REDACTED_OPENAI_KEY
