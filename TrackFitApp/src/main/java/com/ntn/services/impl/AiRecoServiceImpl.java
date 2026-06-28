@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.net.http.*;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.io.IOException;
@@ -53,7 +52,7 @@ public class AiRecoServiceImpl implements AiRecoService {
                     : (fromEnv != null && !fromEnv.isBlank() ? fromEnv : "http://localhost:8000");
         }
 
-        // Ép dùng HTTP/1.1 và để HttpClient tự set Content-Length
+        
         this.http = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofMillis(connectTimeoutMs))
@@ -184,7 +183,6 @@ public class AiRecoServiceImpl implements AiRecoService {
             HttpRequest req = baseReq("/chat")
                     .header("Content-Type", "application/json; charset=utf-8")
                     .header("Accept", "application/json")
-                    // TUYỆT ĐỐI không thêm Content-Length
                     .POST(HttpRequest.BodyPublishers.ofByteArray(payload))
                     .build();
 

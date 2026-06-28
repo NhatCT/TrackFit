@@ -23,7 +23,8 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
             SpringSecurityConfigs.class,
             RestClientConfigs.class,
             SchedulingConfig.class,
-            CacheConfig.class
+            CacheConfig.class,
+            WebSocketConfig.class
         };
     }
 

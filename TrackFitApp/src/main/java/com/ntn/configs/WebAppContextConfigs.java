@@ -12,11 +12,13 @@ import org.springframework.web.multipart.support.StandardServletMultipartResolve
 import org.springframework.web.servlet.config.annotation.DefaultServletHandlerConfigurer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebMvc
 @EnableTransactionManagement
+@EnableCaching
 @ComponentScan(basePackages = {
     "com.ntn.controllers",
     "com.ntn.repositories",

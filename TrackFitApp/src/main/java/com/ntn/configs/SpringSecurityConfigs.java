@@ -3,6 +3,8 @@ package com.ntn.configs;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.ntn.filters.JwtFilter;
+import org.springframework.beans.factory.annotation.Value;
+import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +37,18 @@ import java.util.List;
     "com.ntn.configs"
 })
 public class SpringSecurityConfigs {
+
+    @Value("${allowed.origins:http://localhost:3000,http://127.0.0.1:3000}")
+    private String allowedOriginsProp;
+
+    @Value("${cloudinary.cloud-name:dywix6n0z}")
+    private String cloudinaryCloudName;
+
+    @Value("${cloudinary.api-key:198396299352167}")
+    private String cloudinaryApiKey;
+
+    @Value("${cloudinary.api-secret:Hlh12SuOkmrk7ZRQTX8f-nkDwTY}")
+    private String cloudinaryApiSecret;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -77,7 +91,7 @@ public class SpringSecurityConfigs {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/login",
-                        "/css/**", "/js/**", "/images/**", "/webjars/**", "/vendor/**").permitAll()
+                        "/css/**", "/js/**", "/images/**", "/webjars/**", "/vendor/**", "/ws/**").permitAll()
                 .requestMatchers("/dashboard/**", "/users/**", "/plans/**", "/stats/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
                 )
@@ -91,7 +105,8 @@ public class SpringSecurityConfigs {
     @Bean
     public CorsConfigurationSource cors() {
         var cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000"));
+        List<String> origins = Arrays.asList(allowedOriginsProp.split(","));
+        cfg.setAllowedOrigins(origins);
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         cfg.setExposedHeaders(List.of("Authorization"));
@@ -116,9 +131,9 @@ public class SpringSecurityConfigs {
     @Bean
     public Cloudinary cloudinary() {
         return new Cloudinary(ObjectUtils.asMap(
-                "cloud_name", "dywix6n0z",
-                "api_key", "198396299352167",
-                "api_secret", "Hlh12SuOkmrk7ZRQTX8f-nkDwTY",
+                "cloud_name", cloudinaryCloudName,
+                "api_key", cloudinaryApiKey,
+                "api_secret", cloudinaryApiSecret,
                 "secure", true
         ));
     }

@@ -31,7 +31,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Autowired private HealthDataRepository healthRepo;
 
     @Value("${ai.reco.url:}")
-    private String aiRecoUrl;                       // ví dụ: http://ai:8000
+    private String aiRecoUrl;                      
 
     @Value("${ai.reco.enabled:true}")
     private boolean aiEnabled;
@@ -48,11 +48,11 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Override
     @Cacheable(
         value = "reco_exercises",
-        key = "#username + '_' + (#params.size==null?8:#params.size) + '_' + "
-             + "(#params.kw==null?'':#params.kw) + '_' + "
-             + "(#params.availableMinutes==null?25:#params.availableMinutes) + '_' + "
-             + "(#params.intensity==null?'':#params.intensity) + '_' + "
-             + "(#params.goalType==null?'':#params.goalType)"
+        key = "#p0 + '_' + (#p1.size==null?8:#p1.size) + '_' + "
+             + "(#p1.kw==null?'':#p1.kw) + '_' + "
+             + "(#p1.availableMinutes==null?25:#p1.availableMinutes) + '_' + "
+             + "(#p1.intensity==null?'':#p1.intensity) + '_' + "
+             + "(#p1.goalType==null?'':#p1.goalType)"
     )
     public List<RecommendationItemDTO> recommendExercises(String username, RecommendationParamsDTO params) {
         User u = mustGetUser(username);
@@ -75,7 +75,6 @@ public class RecommendationServiceImpl implements RecommendationService {
         int minutesPref = params.getAvailableMinutes() != null ? params.getAvailableMinutes() : 25;
         int size = params.getSize() != null && params.getSize() > 0 ? params.getSize() : 8;
 
-        // Lấy candidates từ DB
         Map<String, String> q = new HashMap<>();
         if (params.getKw() != null && !params.getKw().isBlank()) {
             q.put("kw", params.getKw().trim());
@@ -86,7 +85,6 @@ public class RecommendationServiceImpl implements RecommendationService {
         List<Exercises> candidates = exercisesRepo.getExercises(q);
         if (candidates.isEmpty()) return List.of();
 
-        // --------- Xây query rõ ràng cho AI ---------
         String query = String.join(" ",
                 goalType != null ? goalType : "",
                 intensity != null ? ("intensity " + intensity) : "",
@@ -95,7 +93,6 @@ public class RecommendationServiceImpl implements RecommendationService {
         ).trim();
         if (query.isBlank()) query = "recommend suitable exercises";
 
-        // --------- Map candidates thành shape AI /rank cần: {id,title,text,group} ---------
         List<Map<String, Object>> candJson = candidates.stream().map(e -> {
             Map<String, Object> m = new HashMap<>();
             m.put("id",    e.getExercisesId());
@@ -114,7 +111,6 @@ public class RecommendationServiceImpl implements RecommendationService {
 
         if (aiEnabled && rest != null && aiRecoUrl != null && !aiRecoUrl.isBlank()) {
             try {
-                // Body đúng schema /rank
                 Map<String, Object> body = new HashMap<>();
                 body.put("query", query);
                 body.put("candidates", candJson);
@@ -124,7 +120,7 @@ public class RecommendationServiceImpl implements RecommendationService {
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-                // Gọi /rank (trả về {"items":[ ... ]})
+                
                 @SuppressWarnings("unchecked")
                 Map<String, Object> resp = callWithRetry(
                         () -> rest.postForObject(
@@ -306,3 +302,4 @@ public class RecommendationServiceImpl implements RecommendationService {
         throw last;
     }
 }
+    

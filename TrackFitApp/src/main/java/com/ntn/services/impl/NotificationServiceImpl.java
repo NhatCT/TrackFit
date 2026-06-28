@@ -8,6 +8,7 @@ import com.ntn.repositories.NotificationRepository;
 import com.ntn.repositories.UserRepository;
 import com.ntn.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,8 @@ public class NotificationServiceImpl implements NotificationService {
     private UserRepository userRepo;
     @Autowired
     private NotificationRepository repo;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @Override
     public NotificationDTO createForUser(String username, NotificationCreateDTO req) {
@@ -151,7 +154,13 @@ public class NotificationServiceImpl implements NotificationService {
         n.setIsRead(false);
         n.setCreatedAt(new java.util.Date());
         n = repo.save(n);
-        return toDTO(n);
+        NotificationDTO dto = toDTO(n);
+        try {
+            messagingTemplate.convertAndSendToUser(u.getUsername(), "/queue/notifications", dto);
+        } catch (Exception e) {
+            System.err.println("Failed to send WebSocket notification: " + e.getMessage());
+        }
+        return dto;
     }
 
     private NotificationDTO toDTO(Notification n) {

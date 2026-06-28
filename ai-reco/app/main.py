@@ -28,7 +28,7 @@ if USE_LLM:
         llm = ChatOpenAI(
             model=MODEL_NAME,
             base_url=VLLM_BASE,
-            api_key=VLLM_API_KEY,  # vLLM thường bỏ qua, nhưng langchain-openai cần field này
+            api_key=VLLM_API_KEY,
             temperature=0.2,
             max_tokens=384,
             http_client=http_client,
@@ -50,7 +50,6 @@ PROMPT = ChatPromptTemplate.from_messages([
 # ========= APP =========
 app = FastAPI(title="AI Reco", version="1.0")
 
-# --- Handler 422 để debug dễ ---
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     return JSONResponse(
@@ -60,7 +59,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 # ========= SCHEMAS (Pydantic v2) =========
 class Item(BaseModel):
-    model_config = ConfigDict(extra="allow")  # cho phép field thừa (minutes, difficulty,...)
+    model_config = ConfigDict(extra="allow")
 
     id: int | str
     title: str

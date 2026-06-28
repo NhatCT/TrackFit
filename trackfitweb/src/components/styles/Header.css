@@ -1,0 +1,95 @@
+.app-header-dark{
+  background: linear-gradient(180deg, #0f1a2e, #0b1220 65%, rgba(0,0,0,0));
+  border-bottom: 1px solid rgba(76, 201, 240, .15);
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+.navbar-elevated{ position: sticky; top: 0; z-index: 1050; }
+.navbar .dropdown-menu{ z-index: 2000; }
+
+/* ===== Card hover ===== */
+.hoverable{ transition: transform .15s ease, box-shadow .15s ease; }
+.hoverable:hover{ transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.35) !important; }
+
+/* ===== Search pill ===== */
+.search-pill .form-control{
+  background:#141114; color:#eae7ee;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:999px; padding:.6rem 1rem;
+}
+
+/* ===== Table dark tint (giữ Bootstrap semantics) ===== */
+.table > :not(caption) > * > *{
+  background-color:#161316;
+  color:#e6e1ea;
+  border-color:rgba(255,255,255,.06);
+}
+.table-light > tr > th{
+  background:#1f1a20 !important;
+  color:#e6e1ea;
+}
+
+/* ===== Thumbnail YouTube ===== */
+.img-thumb{
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 8px 18px rgba(0,0,0,.25);
+  transition: transform .15s ease, box-shadow .2s ease;
+}
+.img-thumb:hover{ transform: scale(1.02); box-shadow: 0 12px 28px rgba(0,0,0,.35); }
+
+/* ===== Buttons tweak ===== */
+.btn-outline-primary{
+  --bs-btn-color:#ff8f3a;
+  --bs-btn-border-color:#ff8f3a;
+  --bs-btn-hover-bg:#ff8f3a;
+  --bs-btn-hover-border-color:#ff8f3a;
+  --bs-btn-active-bg:#ff8f3a;
+  --bs-btn-active-border-color:#ff8f3a;
+}
+.btn-outline-secondary{ --bs-btn-color:#cfcad6; --bs-btn-border-color:#cfcad6; }
+.btn-outline-danger{ --bs-btn-color:#ff5a5f; --bs-btn-border-color:#ff5a5f; }
+
+/* === Rainbow NEW badge for "Gợi ý" === */
+.tf-new-badge {
+  position: relative;          /* hiển thị inline cạnh chữ */
+  top: -1px;
+  margin-left: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: #0b1020;         /* nền tối để nổi chữ bảy màu */
+  color: #fff;                  /* sẽ đổi màu qua keyframes */
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 4px 12px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.06);
+  user-select: none;
+  line-height: 1;
+  animation: tf-rainbow 2.3s linear infinite, tf-pulse 1.8s ease-in-out infinite;
+}
+
+/* Đổi màu chữ theo dải bảy màu */
+@keyframes tf-rainbow {
+  0%   { color: #ff004c; }
+  14%  { color: #ff6a00; }
+  28%  { color: #ffea00; }
+  42%  { color: #00d084; }
+  57%  { color: #00b0ff; }
+  71%  { color: #5b6bff; }
+  85%  { color: #8a00ff; }
+  100% { color: #ff004c; }
+}
+
+/* Nhịp nhấp nháy nhẹ */
+@keyframes tf-pulse {
+  0%, 100% { transform: translateY(0) scale(1); box-shadow: 0 0 0 0 rgba(255,255,255,0.15); }
+  50%      { transform: translateY(-1px) scale(1.06); box-shadow: 0 0 0 6px rgba(255,255,255,0); }
+}
+
+/* Nếu muốn phù hiệu nhỏ hơn trên màn hình hẹp */
+@media (max-width: 576px) {
+  .tf-new-badge { font-size: 9px; padding: 2px 5px; }
+}
+

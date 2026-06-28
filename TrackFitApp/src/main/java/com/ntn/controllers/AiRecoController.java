@@ -18,14 +18,12 @@ public class AiRecoController {
         this.ai = ai;
     }
 
-    // Health check AI
     @GetMapping("/health")
     public ResponseEntity<?> aiHealth(){
         boolean ok = ai.aiHealth();
         return ResponseEntity.ok(Map.of("ok", ok));
     }
 
-    // Manual reindex: frontend có thể gửi items để build index
     @PostMapping("/reindex")
     public ResponseEntity<?> aiReindex(@RequestBody Map<String, Object> body){
         Object raw = body.get("items");
@@ -59,7 +57,6 @@ public class AiRecoController {
         return ResponseEntity.ok(ranked);
     }
 
-    // Chatbot proxy → AI Reco /chat
     @PostMapping("/chat/ask")
     public ResponseEntity<ChatAnswerDTO> chatAsk(@RequestBody ChatRequestDTO body){
         ChatAnswerDTO ans = ai.chatAsk(

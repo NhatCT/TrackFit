@@ -1,0 +1,29 @@
+/* Thêm chống "mờ" font và tăng tương phản cho theme tối */
+html, body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+body { color: var(--bs-body-color, #e9eef5); }
+
+.text-muted { color: rgba(229, 236, 245, 0.65) !important; } /* muted sáng hơn chút để dễ đọc */
+
+.plan-card { background: #101827; color: #e9eef5; }
+.plan-card .card-header { background: #0f1623 !important; color: #e9eef5; border-bottom: 1px solid rgba(255,255,255,.08); }
+
+.table-dark-soft thead tr th {
+  background: #161e2c;
+  color: #e9eef5;
+  border-color: rgba(255,255,255,.06);
+}
+
+.hoverable { transition: transform .15s ease, box-shadow .15s ease; }
+.hoverable:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,.18) !important; }
+
+.search-pill { border-radius: 999px; padding-inline: 16px; }
+
+/* Modal chọn bài tập */
+.exercise-pick-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.pick-card { cursor: pointer; border: 2px solid transparent !important; background: #101827; color: #e9eef5; }
+.pick-card.active { border-color: var(--bs-primary) !important; }

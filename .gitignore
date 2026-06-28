@@ -10,3 +10,18 @@ node_modules/
 docker-compose.yml
 *.sql
 REDACTED_OPENAI_KEY
+
+# IDEs & OS files
+.vscode/
+.idea/
+*.class
+*.war
+
+# Build / Output folders
+TrackFitApp/target/
+ai-reco/.venv/
+ai-reco/app/__pycache__/
+trackfitweb/build/
+
+# Local MCP Servers
+mcp-mysql-server/
