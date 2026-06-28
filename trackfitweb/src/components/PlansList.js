@@ -23,7 +23,10 @@ const PlansList = () => {
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [page]);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   const del = async (id) => {
     if (!window.confirm("Xóa kế hoạch này?")) return;

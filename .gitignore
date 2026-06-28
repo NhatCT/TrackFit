@@ -25,3 +25,6 @@ trackfitweb/build/
 
 # Local MCP Servers
 mcp-mysql-server/
+
+# Exclude learning notes
+LEARNING.md

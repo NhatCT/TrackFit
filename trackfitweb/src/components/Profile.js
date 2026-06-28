@@ -33,7 +33,7 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [ctxUser, dispatch] = useContext(MyUserContext);
+  const [, dispatch] = useContext(MyUserContext);
 
   // Đổi avatar
   const [msg, setMsg] = useState("");
@@ -69,12 +69,6 @@ const Profile = () => {
       roleColor: isAdmin ? "danger" : "secondary",
     };
   }, [profile]);
-
-  const roleBadge = (
-    <Badge bg={roleColor} className="align-middle">
-      {roleText}
-    </Badge>
-  );
 
   const onPickFile = (e) => {
     setMsg("");

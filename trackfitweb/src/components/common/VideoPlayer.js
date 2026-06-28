@@ -20,7 +20,6 @@
     const safeUrl = toHttps(url);
     const isYouTube = useMemo(() => !!ytId(safeUrl), [safeUrl]);
     const isHls = useMemo(() => /\.m3u8($|\?)/i.test(safeUrl), [safeUrl]);
-    const isMp4 = useMemo(() => /\.mp4($|\?)/i.test(safeUrl), [safeUrl]);
 
     if (!safeUrl) return <div style={{ width, height, background: "#000", borderRadius: 8 }} />;
 

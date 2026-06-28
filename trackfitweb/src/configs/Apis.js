@@ -42,8 +42,8 @@ export const endpoints = {
   cleanup: (olderThanDays) =>
     `secure/notifications/cleanup?olderThanDays=${olderThanDays}`,
   // ==== AI Advice (ADMIN) ====
-// gọi AI tạo thông báo lời khuyên cho 1 user hiện tại (backend đang có /from-reco)
-aiAdviceFromReco: (username, top = 3, withinDays = 1) =>
+  // Gửi yêu cầu AI gợi ý lời khuyên cho người dùng
+  aiAdviceFromReco: (username, top = 3, withinDays = 1) =>
     `admin/notifications/ai/for-user?username=${encodeURIComponent(username)}&top=${top}&withinDays=${withinDays}`,
 // ==== Admin Users ====
 adminUsers: (kw = "", limit = 100) =>

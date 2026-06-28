@@ -58,7 +58,6 @@ const toClassItem = (ex, fallbackImg) => ({
 const Home = () => {
   const [exercises, setExercises] = useState([]);
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
 
   const isLoggedIn = !!cookie.load("token");
 
@@ -66,20 +65,14 @@ const Home = () => {
     const load = async () => {
       if (!isLoggedIn) return;
       try {
-        setLoading(true);
-
-        // Lấy 8 bài tập (classes)
         const exRes = await authApis().get(endpoints.exercises, { params: { page: 1, pageSize: 8 } });
         const items = exRes?.data?.items || exRes?.data || [];
         setExercises(items);
 
-        // Lấy thống kê (stats summary)
         const stRes = await authApis().get(endpoints.statsSummary);
         setStats(stRes?.data || null);
       } catch (e) {
         console.error("Home fetch error:", e);
-      } finally {
-        setLoading(false);
       }
     };
     load();
