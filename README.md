@@ -4,14 +4,6 @@
 
 Dự án được xây dựng theo kiến trúc hệ thống phân tầng (Client - Server) kết hợp với các dịch vụ Microservice xử lý khuyến nghị AI độc lập.
 
----
-
-## Báo Cáo Chi Tiết Đồ Án
-Tài liệu báo cáo chi tiết đồ án ngành đã được lưu tại thư mục dự án dưới dạng PDF. Bạn có thể xem trực tiếp hoặc tải xuống tại:
-- **[Báo cáo đồ án Gutim (PDF)](file:///e:/TrackFit/docs/Bao_cao_Do_an_Gutim.pdf)** (Vui lòng lưu báo cáo của bạn vào đường dẫn này)
-
----
-
 ## Công Nghệ Sử Dụng
 
 ### 1. Backend (API Server)
