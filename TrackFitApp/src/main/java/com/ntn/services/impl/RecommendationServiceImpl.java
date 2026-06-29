@@ -58,9 +58,15 @@ public class RecommendationServiceImpl implements RecommendationService {
         User u = mustGetUser(username);
 
         Goal latestGoal = goalRepo.findByUserId(u.getUserId())
-                .stream().max(Comparator.comparing(Goal::getCreatedAt)).orElse(null);
+                .stream()
+                .filter(g -> g.getCreatedAt() != null)
+                .max(Comparator.comparing(Goal::getCreatedAt))
+                .orElse(null);
         HealthData latestHealth = healthRepo.findByUserId(u.getUserId())
-                .stream().max(Comparator.comparing(HealthData::getUpdatedAt)).orElse(null);
+                .stream()
+                .filter(h -> h.getUpdatedAt() != null)
+                .max(Comparator.comparing(HealthData::getUpdatedAt))
+                .orElse(null);
 
         String goalType = pick(params.getGoalType(),
                 latestGoal != null ? latestGoal.getGoalType() : null,
