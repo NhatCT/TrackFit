@@ -8,9 +8,11 @@ import java.util.Properties;
 import javax.sql.DataSource;
 import static org.hibernate.cfg.JdbcSettings.DIALECT;
 import static org.hibernate.cfg.JdbcSettings.SHOW_SQL;
+import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -29,6 +31,7 @@ public class HibernateConfigs {
     private Environment env;
 
     @Bean
+    @DependsOn("flyway")
     public LocalSessionFactoryBean getSessionFactory() {
         LocalSessionFactoryBean sessionFactory
                 = new LocalSessionFactoryBean();
@@ -52,6 +55,22 @@ public class HibernateConfigs {
         dataSource.setPassword(
                 env.getProperty("hibernate.connection.password"));
         return dataSource;
+    }
+
+    @Bean
+    public Flyway flyway(DataSource dataSource) {
+        Flyway flyway = Flyway.configure()
+                .dataSource(dataSource)
+                .locations(env.getProperty("flyway.locations", "classpath:db/migration"))
+                .baselineOnMigrate(Boolean.parseBoolean(env.getProperty("flyway.baselineOnMigrate", "true")))
+                .baselineVersion(env.getProperty("flyway.baselineVersion", "1"))
+                .cleanDisabled(true)
+                .load();
+
+        if (Boolean.parseBoolean(env.getProperty("flyway.enabled", "true"))) {
+            flyway.migrate();
+        }
+        return flyway;
     }
 
     private Properties hibernateProperties() {
