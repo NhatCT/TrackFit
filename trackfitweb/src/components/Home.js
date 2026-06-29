@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Button, Image, Form, Carousel, Badge } from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Image, Badge } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
 import cookie from "react-cookies";
+import TodayWorkout from "./TodayWorkout";
+import StreakWidget from "./StreakWidget";
 
 import heroBg from "../img/hero-bg.jpg";
-import aboutPic from "../img/about-pic.jpg";
-import playPng from "../img/play.png";
 import servicePic from "../img/services/service-pic.jpg";
 import sIcon1 from "../img/services/service-icon-1.png";
 import sIcon2 from "../img/services/service-icon-2.png";
@@ -21,26 +21,6 @@ import c6 from "../img/classes/classes-6.jpg";
 import c7 from "../img/classes/classes-7.jpg";
 import c8 from "../img/classes/classes-8.jpg";
 
-import trainer1 from "../img/trainer/trainer-1.jpg";
-import trainer2 from "../img/trainer/trainer-2.jpg";
-import trainer3 from "../img/trainer/trainer-3.jpg";
-
-import testi1 from "../img/testimonial/testimonial-1.jpg";
-import quoteLeft from "../img/testimonial/quote-left.png";
-
-import bannerBg from "../img/banner-bg.jpg";
-import bannerPerson from "../img/banner-person.png";
-
-import registerPic from "../img/register-pic.jpg";
-
-import blog1 from "../img/blog/blog-1.jpg";
-import blog2 from "../img/blog/blog-2.jpg";
-import blog3 from "../img/blog/blog-3.jpg";
-
-import fb1 from "../img/footer-banner/footer-banner-1.jpg";
-import fb2 from "../img/footer-banner/footer-banner-2.jpg";
-import footerSignup from "../img/footer-signup.jpg";
-
 /* helper tạo background giống set-bg của template */
 const bg = (url) => ({
   backgroundImage: `url('${url}')`,
@@ -51,7 +31,7 @@ const bg = (url) => ({
 /* map dữ liệu bài tập từ BE -> item hiển thị */
 const toClassItem = (ex, fallbackImg) => ({
   title: ex?.name || "Exercise",
-  coach: ex?.type || "Exercise",
+  coach: ex?.muscleGroup || ex?.targetGoal || "Bài tập",
   img: fallbackImg,
 });
 
@@ -80,61 +60,86 @@ const Home = () => {
 
   // Fallback khi chưa login
   const fallbackClasses = [
-    { title: "Yoga", coach: "Ryan Knight", img: c1 },
-    { title: "Running", coach: "Randy Rivera", img: c2 },
-    { title: "Personal Training", coach: "Cole Robertson", img: c3 },
-    { title: "Karate", coach: "Kevin McCormick", img: c4 },
-    { title: "Dance", coach: "Russell Lane", img: c5 },
-    { title: "Weight Loss", coach: "Ryan Scott", img: c6 },
+    { title: "Yoga", coach: "Dẻo dai", img: c1 },
+    { title: "Running", coach: "Cardio", img: c2 },
+    { title: "Personal Training", coach: "Tổng hợp", img: c3 },
+    { title: "Karate", coach: "Võ thuật", img: c4 },
+    { title: "Dance", coach: "Nhảy", img: c5 },
+    { title: "Weight Loss", coach: "Giảm cân", img: c6 },
   ];
   const classImgs = [c1, c2, c3, c4, c5, c6, c7, c8];
   const classData = exercises?.length
     ? exercises.map((ex, i) => toClassItem(ex, classImgs[i % classImgs.length]))
     : fallbackClasses;
 
-  const trainers = [
-    { name: "Patrick Cortez", role: "Leader", img: trainer1 },
-    { name: "Gregory Powers", role: "Gym coach", img: trainer2 },
-    { name: "Walter Wagner", role: "Dance trainer", img: trainer3 },
-  ];
-
-  const blogs = [
-    { title: "10 States At Risk of Rural Hospital Closures", date: "February 17, 2019", tag: "#Gym", img: blog1 },
-    { title: "Diver who helped save Thai soccer team", date: "February 17, 2019", tag: "#Sport", img: blog2 },
-    { title: "Man gets life in prison for stabbing", date: "February 17, 2019", tag: "#Body", img: blog3 },
-  ];
-
-  const membership = [
-    { name: "Basic", price: 17, unit: "/01 mo", features: [["Duration","12 months"],["Personal trainer","00 person"],["Amount of people","01 person"],["Number of visits","Unlimited"]] },
-    { name: "Standard", price: 57, unit: "/01 mo", features: [["Duration","12 months"],["Personal trainer","01 person"],["Amount of people","01 person"],["Number of visits","Unlimited"]] },
-    { name: "Premium", price: 98, unit: "/01 mo", features: [["Duration","12 months"],["Personal trainer","01 person"],["Amount of people","01 person"],["Number of visits","Unlimited"]] },
+  const services = [
+    {
+      icon: sIcon1,
+      title: "Kế hoạch cá nhân",
+      desc: "Lập kế hoạch tập luyện chi tiết 7 ngày/tuần, tùy chỉnh theo mục tiêu và thể trạng.",
+    },
+    {
+      icon: sIcon2,
+      title: "Gợi ý AI thông minh",
+      desc: "AI phân tích hồ sơ sức khỏe và lịch sử tập luyện để đề xuất bài tập tối ưu.",
+    },
+    {
+      icon: sIcon3,
+      title: "Theo dõi sức khỏe",
+      desc: "Ghi nhận chiều cao, cân nặng, BMI và huyết áp — theo dõi xu hướng theo thời gian.",
+    },
+    {
+      icon: sIcon4,
+      title: "Trợ lý Chatbot",
+      desc: "Trò chuyện với AI Coach về dinh dưỡng, kỹ thuật bài tập và chế độ sinh hoạt.",
+    },
   ];
 
   return (
     <>
       {/* ===== HERO ===== */}
       <section style={{ ...bg(heroBg), position: "relative", color: "#fff", padding: "100px 0" }}>
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.35)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)" }} />
         <Container style={{ position: "relative", zIndex: 1 }}>
-          <Row>
-            <Col lg={8}>
+          <Row className="align-items-center">
+            <Col lg={isLoggedIn ? 8 : 12}>
               <div className="mb-2 text-uppercase fw-semibold" style={{ letterSpacing: "2px", opacity: .9 }}>
-                FITNESS ELEMENTS
+                GUTIM — SỨC KHỎE & TẬP LUYỆN
               </div>
-              <h1 className="fw-bold">BMI CALCULATOR</h1>
-              <p className="lead mb-4">
-                Gutim comes packed with the user-friendly BMI Calculator<br /> shortcode which lets
+              <h1 className="fw-bold" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
+                Theo dõi sức khỏe,<br />tập luyện thông minh cùng AI
+              </h1>
+              <p className="lead mb-4" style={{ opacity: .9, maxWidth: 560 }}>
+                Gutim giúp bạn xây dựng kế hoạch tập luyện cá nhân hóa, nhận gợi ý bài tập từ AI
+                và theo dõi hành trình sức khỏe mỗi ngày.
               </p>
               <div className="d-flex flex-wrap gap-2">
-                <Button href="/plans" variant="light">Bắt đầu kế hoạch</Button>
-                <Button href="/exercises" variant="outline-light">Khám phá bài tập</Button>
+                {isLoggedIn ? (
+                  <>
+                    <Button href="/plans" variant="light" className="fw-semibold px-4">
+                      📋 Kế hoạch của tôi
+                    </Button>
+                    <Button href="/recommendations" variant="outline-light" className="fw-semibold px-4">
+                      🤖 Gợi ý AI
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button href="/register" variant="light" className="fw-semibold px-4">
+                      Đăng ký miễn phí
+                    </Button>
+                    <Button href="/exercises" variant="outline-light" className="fw-semibold px-4">
+                      Khám phá bài tập
+                    </Button>
+                  </>
+                )}
               </div>
             </Col>
 
-            {/* quick stats nếu đã đăng nhập */}
+            {/* Quick Stats khi đã đăng nhập */}
             {isLoggedIn && (
               <Col lg={4} className="mt-4 mt-lg-0">
-                <Card className="border-0 shadow-sm">
+                <Card className="border-0 shadow-sm" style={{ backdropFilter: "blur(12px)", background: "rgba(17,26,43,0.85)" }}>
                   <Card.Body>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                       <h6 className="m-0">Tổng quan tập luyện</h6>
@@ -154,6 +159,8 @@ const Home = () => {
                         <div className="fw-semibold">{stats?.topExerciseName ?? "—"}</div>
                       </Col>
                     </Row>
+                    <hr style={{ borderColor: "rgba(255,255,255,0.1)" }} />
+                    <StreakWidget />
                     <div className="text-end mt-3">
                       <Button size="sm" variant="outline-primary" href="/stats/summary">Xem thống kê</Button>
                     </div>
@@ -165,38 +172,16 @@ const Home = () => {
         </Container>
       </section>
 
-      {/* ===== ABOUT ===== */}
-      <section className="py-5">
-        <Container>
-          <Row className="align-items-center g-4">
-            <Col lg={6}>
-              <div className="position-relative">
-                <Image src={aboutPic} alt="About" fluid style={{ borderRadius: "1rem" }} />
-                <a
-                  href="https://www.youtube.com/watch?v=SlPhMPnQ58k"
-                  className="position-absolute top-50 start-50 translate-middle"
-                  title="Play"
-                >
-                  <Image src={playPng} alt="Play" width={80} height={80} />
-                </a>
-              </div>
-            </Col>
-            <Col lg={6}>
-              <h2 className="fw-bold">Story About Us</h2>
-              <p className="text-muted">
-                Lorem ipsum proin gravida nibh vel velit auctor aliquet. Aenean pretium sollicitudin, nascetur auci elit…
-              </p>
-              <p className="text-muted">
-                Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, gravida quam semper libero…
-              </p>
-              <Button variant="primary">Read More</Button>
-            </Col>
-          </Row>
-        </Container>
-      </section>
+      {isLoggedIn && (
+        <section className="py-4">
+          <Container>
+            <TodayWorkout />
+          </Container>
+        </section>
+      )}
 
-      {/* ===== SERVICES ===== */}
-      <section>
+      {/* ===== SERVICES (tính năng nổi bật) ===== */}
+      <section data-aos="fade-up">
         <Container fluid>
           <Row className="g-0">
             <Col lg={6}>
@@ -204,39 +189,19 @@ const Home = () => {
             </Col>
             <Col lg={6}>
               <div className="p-4 p-lg-5">
+                <h2 className="fw-bold mb-4">Tính năng nổi bật</h2>
                 <Row className="g-4">
-                  <Col md={6}>
-                    <Card className="h-100 shadow-sm border-0 bg-light">
-                      <Card.Body>
-                        <Image src={sIcon1} alt="" height={48} className="mb-3" />
-                        <h4>Strategies</h4>
-                        <p className="text-muted m-0">Aenean massa. Cum sociis Theme et natoque penatibus…</p>
-                      </Card.Body>
-                    </Card>
-                    <Card className="h-100 shadow-sm border-0 bg-light mt-4">
-                      <Card.Body>
-                        <Image src={sIcon3} alt="" height={48} className="mb-3" />
-                        <h4>Workout</h4>
-                        <p className="text-muted m-0">Aenean massa. Cum sociis Theme et natoque penatibus…</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                  <Col md={6}>
-                    <Card className="h-100 shadow-sm border-0">
-                      <Card.Body>
-                        <Image src={sIcon2} alt="" height={48} className="mb-3" />
-                        <h4>Yoga</h4>
-                        <p className="text-muted m-0">Aenean massa. Cum sociis Theme et natoque penatibus…</p>
-                      </Card.Body>
-                    </Card>
-                    <Card className="h-100 shadow-sm border-0 mt-4">
-                      <Card.Body>
-                        <Image src={sIcon4} alt="" height={48} className="mb-3" />
-                        <h4>Weight Loss</h4>
-                        <p className="text-muted m-0">Aenean massa. Cum sociis Theme et natoque penatibus…</p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
+                  {services.map((s, i) => (
+                    <Col md={6} key={i}>
+                      <Card className="h-100 shadow-sm border-0">
+                        <Card.Body>
+                          <Image src={s.icon} alt="" height={48} className="mb-3" />
+                          <h5 className="fw-bold">{s.title}</h5>
+                          <p className="text-muted m-0 small">{s.desc}</p>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  ))}
                 </Row>
               </div>
             </Col>
@@ -244,11 +209,14 @@ const Home = () => {
         </Container>
       </section>
 
-      {/* ===== CLASSES (map từ BE hoặc fallback) ===== */}
-      <section className="py-5">
+      {/* ===== EXERCISES (map từ BE hoặc fallback) ===== */}
+      <section className="py-5" data-aos="fade-up">
         <Container>
           <div className="d-flex align-items-center justify-content-between mb-3">
-            <h2 className="fw-bold m-0">UNLIMITED CLASSES</h2>
+            <div>
+              <h2 className="fw-bold m-0">Bài tập nổi bật</h2>
+              <p className="text-muted m-0 small">Khám phá và thêm vào kế hoạch tập luyện của bạn</p>
+            </div>
             <div className="d-flex gap-2">
               <Button size="sm" variant="outline-primary" href="/exercises">Tất cả bài tập</Button>
               {isLoggedIn && <Button size="sm" variant="primary" href="/plans">Lập kế hoạch</Button>}
@@ -259,12 +227,15 @@ const Home = () => {
             {classData.map((c, idx) => (
               <Col key={idx} lg={4} md={6}>
                 <div className="position-relative rounded-3 overflow-hidden"
-                     style={{ ...bg(c.img), height: 260 }}>
+                     style={{ ...bg(c.img), height: 260, transition: "transform 0.3s" }}
+                     onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.03)"}
+                     onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                >
                   <div className="position-absolute bottom-0 start-0 w-100 p-3"
-                       style={{ background: "linear-gradient(180deg,transparent,rgba(0,0,0,.6))", color: "#fff" }}>
+                       style={{ background: "linear-gradient(180deg,transparent,rgba(0,0,0,.65))", color: "#fff" }}>
                     <h5 className="mb-1">{c.title}</h5>
                     <div className="small" style={{ opacity: .9 }}>
-                      <i className="fa fa-user" /> {c.coach}
+                      {c.coach}
                     </div>
                   </div>
                 </div>
@@ -277,237 +248,76 @@ const Home = () => {
         </Container>
       </section>
 
-      {/* ===== TRAINERS ===== */}
-      <section className="py-5">
-        <Container>
-          <div className="text-center mb-4">
-            <h2 className="fw-bold">EXPERT TRAINERS</h2>
-          </div>
-          <Row className="g-4">
-            {trainers.map((t, i) => (
-              <Col key={i} lg={4} md={6}>
-                <Card className="border-0 shadow-sm h-100">
-                  <Image src={t.img} alt={t.name} fluid />
+      {/* ===== CTA Section ===== */}
+      {!isLoggedIn && (
+        <section className="py-5" data-aos="fade-up">
+          <Container>
+            <Card
+              className="border-0 text-center p-5"
+              style={{
+                background: "linear-gradient(135deg, rgba(255,107,53,0.12), rgba(76,201,240,0.12))",
+                borderRadius: "1.5rem",
+              }}
+            >
+              <Card.Body>
+                <h2 className="fw-bold mb-3">Bắt đầu hành trình sức khỏe của bạn</h2>
+                <p className="text-muted mb-4" style={{ maxWidth: 520, margin: "0 auto" }}>
+                  Đăng ký miễn phí để nhận kế hoạch tập luyện cá nhân hóa, gợi ý bài tập từ AI
+                  và theo dõi tiến trình sức khỏe hàng ngày.
+                </p>
+                <div className="d-flex justify-content-center gap-3">
+                  <Button href="/register" variant="primary" className="fw-semibold px-4 py-2">
+                    Đăng ký ngay
+                  </Button>
+                  <Button href="/login" variant="outline-primary" className="fw-semibold px-4 py-2">
+                    Đăng nhập
+                  </Button>
+                </div>
+              </Card.Body>
+            </Card>
+          </Container>
+        </section>
+      )}
+
+      {/* ===== Quick Links cho logged-in users ===== */}
+      {isLoggedIn && (
+        <section className="py-5" data-aos="fade-up">
+          <Container>
+            <Row className="g-4">
+              <Col md={4}>
+                <Card className="border-0 shadow-sm h-100 text-center p-4">
                   <Card.Body>
-                    <h5 className="mb-0">{t.name}</h5>
-                    <div className="text-muted small mb-2">{t.role}</div>
-                    <p className="text-muted">
-                      non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
-                    </p>
-                    <div className="d-flex gap-2">
-                      <a href="#fb" aria-label="fb"><i className="fa fa-facebook" /></a>
-                      <a href="#ig" aria-label="ig"><i className="fa fa-instagram" /></a>
-                      <a href="#tw" aria-label="tw"><i className="fa fa-twitter" /></a>
-                      <a href="#pt" aria-label="pt"><i className="fa fa-pinterest" /></a>
-                    </div>
+                    <div style={{ fontSize: "2.5rem" }} className="mb-3">📊</div>
+                    <h5 className="fw-bold">Thống kê chi tiết</h5>
+                    <p className="text-muted small">Biểu đồ phút tập, số buổi và tỷ lệ bài tập trong 30 ngày</p>
+                    <Button variant="outline-primary" size="sm" href="/stats/summary">Xem thống kê</Button>
                   </Card.Body>
                 </Card>
               </Col>
-            ))}
-          </Row>
-        </Container>
-      </section>
-
-      {/* ===== TESTIMONIAL (Carousel) ===== */}
-      <section className="py-5">
-        <Container>
-          <div className="text-center mb-4">
-            <h2 className="fw-bold text-capitalize">success stories</h2>
-          </div>
-          <Row className="justify-content-center">
-            <Col lg={10}>
-              <Carousel variant="dark" interval={4000}>
-                {[1, 2].map((n) => (
-                  <Carousel.Item key={n}>
-                    <Row className="align-items-center g-4">
-                      <Col md={8}>
-                        <p className="lead">
-                          Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                          dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-                          commodo consequat.
-                        </p>
-                        <h5 className="mb-0">Patrick Cortez</h5>
-                        <div className="text-muted">Leader</div>
-                      </Col>
-                      <Col md={4}>
-                        <div className="position-relative">
-                          <Image src={testi1} alt="" fluid className="rounded-3" />
-                          <Image
-                            src={quoteLeft}
-                            alt=""
-                            width={48}
-                            className="position-absolute top-0 start-0 translate-middle"
-                            style={{ top: 16, left: 16 }}
-                          />
-                        </div>
-                      </Col>
-                    </Row>
-                  </Carousel.Item>
-                ))}
-              </Carousel>
-            </Col>
-          </Row>
-        </Container>
-      </section>
-
-      {/* ===== BANNER ===== */}
-      <section style={{ ...bg(bannerBg) }}>
-        <Container className="py-5">
-          <Row className="align-items-center">
-            <Col lg={6}>
-              <div className="text-white" style={{ textShadow: "0 2px 10px rgba(0,0,0,.5)" }}>
-                <h2 className="fw-bold">Get training today</h2>
-                <p>Gimply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry’s standard.</p>
-                <Button variant="light" className="banner-btn">Contact Now</Button>
-              </div>
-            </Col>
-            <Col lg={5} className="ms-auto d-none d-lg-block">
-              <Image src={bannerPerson} alt="" fluid />
-            </Col>
-          </Row>
-        </Container>
-      </section>
-
-      {/* ===== MEMBERSHIP ===== */}
-      <section className="py-5">
-        <Container>
-          <div className="text-center mb-4">
-            <h2 className="fw-bold">MEMBERSHIP PLANS</h2>
-          </div>
-          <Row className="g-4">
-            {membership.map((m, i) => (
-              <Col key={i} lg={4}>
-                <Card className="h-100 shadow-sm border-0">
-                  <div className="p-3 border-bottom">
-                    <h4 className="m-0">{m.name}</h4>
-                  </div>
+              <Col md={4}>
+                <Card className="border-0 shadow-sm h-100 text-center p-4">
                   <Card.Body>
-                    <h2 className="fw-bold">
-                      ${m.price}<span className="fs-6 text-muted">{m.unit}</span>
-                    </h2>
-                    <ul className="list-unstyled mt-3">
-                      {m.features.map(([k,v], idx) => (
-                        <li key={idx} className="d-flex justify-content-between border-bottom py-2">
-                          <p className="m-0">{k}</p><span className="text-muted">{v}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <Button className="w-100 mt-2" variant="primary">Start Now</Button>
+                    <div style={{ fontSize: "2.5rem" }} className="mb-3">💚</div>
+                    <h5 className="fw-bold">Sức khỏe</h5>
+                    <p className="text-muted small">Theo dõi cân nặng, BMI, huyết áp và xu hướng biến đổi</p>
+                    <Button variant="outline-primary" size="sm" href="/health">Cập nhật sức khỏe</Button>
                   </Card.Body>
                 </Card>
               </Col>
-            ))}
-          </Row>
-        </Container>
-      </section>
-
-      {/* ===== REGISTER ===== */}
-      <section className="py-5">
-        <Container>
-          <Row className="align-items-center g-4">
-            <Col lg={8}>
-              <div className="mb-3">
-                <h2 className="fw-bold">Register Now</h2>
-                <p className="text-muted">The First 7 Day Trial Is Completely Free With The Teacher</p>
-              </div>
-              <Form className="row g-3">
-                <Col lg={6}>
-                  <Form.Label>First Name</Form.Label>
-                  <Form.Control placeholder="First Name" />
-                </Col>
-                <Col lg={6}>
-                  <Form.Label>Your email address</Form.Label>
-                  <Form.Control type="email" placeholder="Email" />
-                </Col>
-                <Col lg={6}>
-                  <Form.Label>Last Name</Form.Label>
-                  <Form.Control placeholder="Last Name" />
-                </Col>
-                <Col lg={6}>
-                  <Form.Label>Mobile No*</Form.Label>
-                  <Form.Control placeholder="Mobile" />
-                </Col>
-                <Col xs={12}>
-                  <Button className="register-btn" href="/register">Get Started</Button>
-                </Col>
-              </Form>
-            </Col>
-            <Col lg={4}>
-              <Image src={registerPic} alt="" fluid className="rounded-3 shadow-sm" />
-            </Col>
-          </Row>
-        </Container>
-      </section>
-
-      {/* ===== LATEST BLOG ===== */}
-      <section className="py-5">
-        <Container>
-          <div className="text-center mb-4">
-            <h2 className="fw-bold">Latest Blog</h2>
-          </div>
-        </Container>
-        <Container>
-          <Row className="g-4">
-            {[blogs[0], blogs[1], blogs[2]].map((b, i) => (
-              <Col key={i} lg={4} md={6}>
-                <Card className="border-0 shadow-sm h-100">
-                  <Image src={b.img} alt={b.title} fluid />
+              <Col md={4}>
+                <Card className="border-0 shadow-sm h-100 text-center p-4">
                   <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <div className="small text-muted">{b.date}</div>
-                      <a href="#tag" className="small">{b.tag}</a>
-                    </div>
-                    <h5><a href="#blog" className="text-decoration-none text-dark">{b.title}</a></h5>
+                    <div style={{ fontSize: "2.5rem" }} className="mb-3">🎯</div>
+                    <h5 className="fw-bold">Mục tiêu</h5>
+                    <p className="text-muted small">Thiết lập mục tiêu giảm cân, tăng cơ hoặc tăng sức bền</p>
+                    <Button variant="outline-primary" size="sm" href="/goals">Quản lý mục tiêu</Button>
                   </Card.Body>
                 </Card>
               </Col>
-            ))}
-          </Row>
-        </Container>
-      </section>
-
-      {/* ===== FOOTER BANNER (2 cột) ===== */}
-      <section className="py-4">
-        <Container fluid>
-          <Row className="g-4">
-            <Col lg={6}>
-              <div className="text-white rounded-3 p-4 p-lg-5" style={{ ...bg(fb1) }}>
-                <span className="text-uppercase">New member</span>
-                <h2 className="fw-bold">7 days for free</h2>
-                <p>Complete the training sessions with us, surely you will be happy</p>
-                <Button variant="light">Get Started</Button>
-              </div>
-            </Col>
-            <Col lg={6}>
-              <div className="text-white rounded-3 p-4 p-lg-5" style={{ ...bg(fb2) }}>
-                <span className="text-uppercase">contact us</span>
-                <h2 className="fw-bold">09 746 204</h2>
-                <p>If you trust us on your journey they dark sex does not disappoint you!</p>
-                <Button variant="light">Get Started</Button>
-              </div>
-            </Col>
-          </Row>
-        </Container>
-      </section>
-
-      {/* ===== SUBSCRIBE (footer-signup.jpg) ===== */}
-      <section className="py-5">
-        <Container>
-          <div className="rounded-3 p-4 p-md-5 d-flex flex-column flex-md-row align-items-center justify-content-between"
-               style={{ ...bg(footerSignup), color: "#fff" }}>
-            <div className="mb-3 mb-md-0" style={{ textShadow: "0 2px 10px rgba(0,0,0,.4)" }}>
-              <h4 className="fw-bold m-0">Subscribe To Our Mailing List</h4>
-              <div>Sign up to receive the latest information</div>
-            </div>
-            <Form className="d-flex bg-white rounded-pill p-1" style={{ minWidth: 320 }}>
-              <Form.Control placeholder="Enter Your Mail" className="border-0 rounded-pill" />
-              <Button className="rounded-pill px-3" variant="primary">
-                <i className="fa fa-send" />
-              </Button>
-            </Form>
-          </div>
-        </Container>
-      </section>
+            </Row>
+          </Container>
+        </section>
+      )}
     </>
   );
 };

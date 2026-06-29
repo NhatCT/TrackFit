@@ -14,9 +14,9 @@ const Footer = () => {
       <Container>
         <Row className="mb-4 align-items-center" data-aos="fade-up">
           <Col md={4} className="d-flex align-items-center gap-2">
-            <img src={logo} alt="TrackFit" style={{ height: 36 }} />
+            <img src={logo} alt="Gutim" style={{ height: 36 }} />
             <div>
-              <h5 className="mb-1">TrackFit</h5>
+              <h5 className="mb-1">Gutim</h5>
               <p className="mb-0">© {new Date().getFullYear()} - Nền tảng Fitness &amp; Wellness.</p>
             </div>
           </Col>
@@ -40,7 +40,7 @@ const Footer = () => {
         <hr style={{ borderColor: "#ffffff66" }} />
 
         <p className="text-center mb-0" data-aos="fade-up">
-          © {new Date().getFullYear()} TrackFit. All Rights Reserved.
+          © {new Date().getFullYear()} Gutim. All Rights Reserved.
         </p>
       </Container>
     </footer>

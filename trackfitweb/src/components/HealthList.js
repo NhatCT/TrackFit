@@ -3,6 +3,19 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, Badge, Button, Card, Form, InputGroup, Table } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
 import MySpinner from "./layout/MySpinner";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
 const EMPTY = { height: "", weight: "", bloodPressure: "", notes: "" };
 
@@ -20,6 +33,12 @@ const bmiCalc = (heightCm, weightKg) => {
   return { bmi, label };
 };
 
+const fmtDate = (d) => {
+  if (!d) return "";
+  const dt = new Date(d);
+  return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`;
+};
+
 const HealthList = () => {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(EMPTY);
@@ -27,6 +46,7 @@ const HealthList = () => {
   const [msg, setMsg] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [chartMode, setChartMode] = useState("weight"); // "weight" | "bmi"
 
   const load = async () => {
     setLoading(true);
@@ -53,6 +73,97 @@ const HealthList = () => {
     );
   }, [items, kw]);
 
+  // ===== CHART DATA =====
+  // Sort ascending by date for chart
+  const sortedAsc = useMemo(() =>
+    [...items].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)),
+    [items]
+  );
+
+  const chartLabels = useMemo(() => sortedAsc.map((h) => fmtDate(h.createdAt)), [sortedAsc]);
+
+  const weightData = useMemo(() => sortedAsc.map((h) => Number(h.weight) || null), [sortedAsc]);
+
+  const bmiData = useMemo(
+    () => sortedAsc.map((h) => bmiCalc(h.height, h.weight).bmi),
+    [sortedAsc]
+  );
+
+  const latestBmi = bmiData.length ? bmiData[bmiData.length - 1] : null;
+  const bmiAlert = latestBmi != null && (latestBmi < 18.5 || latestBmi >= 25);
+
+  const chartDataWeight = {
+    labels: chartLabels,
+    datasets: [
+      {
+        label: "Cân nặng (kg)",
+        data: weightData,
+        borderColor: "#4cc9f0",
+        backgroundColor: "rgba(76,201,240,0.12)",
+        fill: true,
+        tension: 0.35,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: "#4cc9f0",
+      },
+    ],
+  };
+
+  const chartDataBmi = {
+    labels: chartLabels,
+    datasets: [
+      {
+        label: "BMI",
+        data: bmiData,
+        borderColor: "#ff6b35",
+        backgroundColor: "rgba(255,107,53,0.12)",
+        fill: true,
+        tension: 0.35,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: "#ff6b35",
+      },
+    ],
+  };
+
+  const chartOptions = (mode) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            if (mode === "bmi") {
+              const v = ctx.raw;
+              const lbl = v < 18.5 ? "Thiếu cân" : v < 23 ? "Bình thường" : v < 25 ? "Thừa cân" : "Béo phì";
+              return `BMI: ${v} (${lbl})`;
+            }
+            return `${ctx.raw} kg`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { color: "rgba(255,255,255,0.06)" },
+        ticks: { color: "rgba(255,255,255,0.65)", maxRotation: 0 },
+      },
+      y: {
+        beginAtZero: false,
+        grid: { color: "rgba(255,255,255,0.06)" },
+        ticks: { color: "rgba(255,255,255,0.65)" },
+        ...(mode === "bmi"
+          ? {
+              suggestedMin: 14,
+              suggestedMax: 35,
+            }
+          : {}),
+      },
+    },
+  });
+
+  // ===== FORM HANDLERS =====
   const submit = async (e) => {
     e.preventDefault();
     setMsg({ type: "", text: "" });
@@ -129,9 +240,67 @@ const HealthList = () => {
         </Form>
       </div>
 
+      {/* ===== BMI Alert ===== */}
+      {bmiAlert && latestBmi != null && (
+        <Alert variant={latestBmi < 18.5 ? "info" : "warning"} className="d-flex align-items-center gap-2">
+          <span>
+            {latestBmi < 18.5
+              ? `⚠️ BMI hiện tại của bạn là ${latestBmi} (Thiếu cân). Hãy xem xét tăng cường dinh dưỡng.`
+              : `⚠️ BMI hiện tại của bạn là ${latestBmi} (${latestBmi >= 25 ? "Béo phì" : "Thừa cân"}). Hãy điều chỉnh chế độ tập luyện.`
+            }
+          </span>
+          <Button size="sm" variant="outline-primary" href="/recommendations" className="ms-auto text-nowrap">
+            Xem gợi ý AI
+          </Button>
+        </Alert>
+      )}
+
+      {/* ===== TREND CHART ===== */}
+      {sortedAsc.length >= 2 && (
+        <Card className="shadow-sm border-0 mb-3" data-aos="fade-up">
+          <Card.Body>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <div className="text-muted small text-uppercase fw-semibold">
+                {chartMode === "weight" ? "Xu hướng cân nặng" : "Xu hướng BMI"}
+              </div>
+              <div className="d-flex gap-1">
+                <Button
+                  size="sm"
+                  variant={chartMode === "weight" ? "primary" : "outline-secondary"}
+                  onClick={() => setChartMode("weight")}
+                >
+                  Cân nặng
+                </Button>
+                <Button
+                  size="sm"
+                  variant={chartMode === "bmi" ? "primary" : "outline-secondary"}
+                  onClick={() => setChartMode("bmi")}
+                >
+                  BMI
+                </Button>
+              </div>
+            </div>
+            <div style={{ height: 280, position: "relative" }}>
+              <Line
+                data={chartMode === "weight" ? chartDataWeight : chartDataBmi}
+                options={chartOptions(chartMode)}
+              />
+            </div>
+            {chartMode === "bmi" && (
+              <div className="d-flex gap-3 mt-2 flex-wrap" style={{ fontSize: "0.75rem" }}>
+                <span><span style={{ color: "#6c757d" }}>●</span> &lt;18.5 Thiếu cân</span>
+                <span><span style={{ color: "#198754" }}>●</span> 18.5–22.9 Bình thường</span>
+                <span><span style={{ color: "#ffc107" }}>●</span> 23–24.9 Thừa cân</span>
+                <span><span style={{ color: "#dc3545" }}>●</span> ≥25 Béo phì</span>
+              </div>
+            )}
+          </Card.Body>
+        </Card>
+      )}
+
       {/* Form thêm mới */}
       <Card className="shadow-sm border-0 mb-3 hoverable plan-card">
-        <Card.Header className="bg-white"><strong>Thêm bản ghi</strong></Card.Header>
+        <Card.Header className="bg-transparent border-0 pt-3 pb-0"><strong>Thêm bản ghi</strong></Card.Header>
         <Card.Body>
           {msg.text && <Alert variant={msg.type || "info"}>{msg.text}</Alert>}
 

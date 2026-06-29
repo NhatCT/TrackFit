@@ -1,7 +1,8 @@
 // src/components/Recommendations.jsx
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useContext } from "react";
 import { Button, Card, Row, Col, Badge, Spinner, Alert, Modal } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
+import { MyUserContext } from "../configs/Context";
 import { getKey, formatScore } from "../utils/recoUtils";
 import ExerciseCard from "./ExerciseCard";
 import VideoPlayer from "./common/VideoPlayer";
@@ -27,6 +28,7 @@ const getYoutubeThumbnail = (url) => {
 
 /** ================ Component ================ **/
 const Recommendations = () => {
+  const [user] = useContext(MyUserContext);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -40,6 +42,19 @@ const Recommendations = () => {
   const [addItem, setAddItem] = useState(null);
 
   const loadAuto = useCallback(async () => {
+    if (!user?.isPremium) {
+      // Mock items for premium teaser blur
+      const mockItems = [
+        { id: 1, name: "Full Body Blast HIIT", estimatedMinutes: 20, score: 0.96, muscleGroup: "Toàn thân", description: "Bài tập đốt calo cường độ cao." },
+        { id: 2, name: "Upper Body Strength PRO", estimatedMinutes: 35, score: 0.92, muscleGroup: "Ngực/Vai", description: "Tập trung xây dựng cơ bắp thân trên." },
+        { id: 3, name: "Core Definition Extreme", estimatedMinutes: 15, score: 0.89, muscleGroup: "Bụng", description: "Điêu khắc cơ bụng 6 múi săn chắc." },
+        { id: 4, name: "Leg Day Hypertrophy", estimatedMinutes: 45, score: 0.88, muscleGroup: "Đùi/Mông", description: "Kích thích phát triển nhóm cơ đùi sau." }
+      ];
+      setItems(mockItems);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setErr("");
@@ -59,7 +74,7 @@ const Recommendations = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user?.isPremium]);
 
   useEffect(() => {
     loadAuto();
@@ -114,28 +129,65 @@ const Recommendations = () => {
 
       {err && <Alert variant="danger">{err}</Alert>}
 
-      {loading ? (
-        <div className="d-flex justify-content-center py-5">
-          <Spinner animation="border" />
+      <div style={{ position: "relative" }}>
+        {!user?.isPremium && (
+          <div 
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(11, 18, 32, 0.8)",
+              backdropFilter: "blur(6px)",
+              zIndex: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "16px",
+              border: "1px solid rgba(255,255,255,0.06)",
+              minHeight: "320px"
+            }}
+            className="p-4 text-center"
+          >
+            <div style={{ maxWidth: "480px" }}>
+              <div className="fs-1 mb-3">👑</div>
+              <h4 className="text-white mb-3">Tính Năng Dành Riêng Cho Hội Viên PRO</h4>
+              <p className="text-light-50 small mb-4">
+                Chức năng gợi ý bài tập thông minh được tối ưu hóa bởi AI Agent phân tích riêng cho thể trạng của bạn chỉ dành cho tài khoản PRO.
+              </p>
+              <Button href="/upgrade" variant="warning" className="fw-bold text-dark px-4 py-2.5">
+                Nâng Cấp GUTIM PRO Ngay
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div style={{ filter: !user?.isPremium ? "blur(6px)" : "none", pointerEvents: !user?.isPremium ? "none" : "auto" }}>
+          {loading ? (
+            <div className="d-flex justify-content-center py-5">
+              <Spinner animation="border" />
+            </div>
+          ) : exerciseLikeItems.length ? (
+            <Row xs={1} sm={2} lg={3} xl={4} className="g-3">
+              {exerciseLikeItems.map((it) => (
+                <Col key={it.exercisesId}>
+                  <ExerciseCard
+                    item={it}
+                    onPreview={onPreview}
+                    getYoutubeThumbnail={getYoutubeThumbnail}
+                    allowManage={false}
+                  />
+                </Col>
+              ))}
+            </Row>
+          ) : (
+            <Card className="shadow-sm border-0">
+              <Card.Body className="text-center text-muted">Chưa có gợi ý</Card.Body>
+            </Card>
+          )}
         </div>
-      ) : exerciseLikeItems.length ? (
-        <Row xs={1} sm={2} lg={3} xl={4} className="g-3">
-          {exerciseLikeItems.map((it) => (
-            <Col key={it.exercisesId}>
-              <ExerciseCard
-                item={it}
-                onPreview={onPreview}
-                getYoutubeThumbnail={getYoutubeThumbnail}
-                allowManage={false}
-              />
-            </Col>
-          ))}
-        </Row>
-      ) : (
-        <Card className="shadow-sm border-0">
-          <Card.Body className="text-center text-muted">Chưa có gợi ý</Card.Body>
-        </Card>
-      )}
+      </div>
 
       {/* Preview Modal */}
       <Modal show={showPreview} onHide={() => setShowPreview(false)} size="lg" centered>

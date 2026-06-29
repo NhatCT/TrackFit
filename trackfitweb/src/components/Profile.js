@@ -1,7 +1,7 @@
 // src/components/Profile.jsx
 import { useEffect, useMemo, useRef, useState, useContext } from "react";
 import { authApis, endpoints } from "../configs/Apis";
-import { Card, Button, Row, Col, Badge, Form, Alert } from "react-bootstrap";
+import { Card, Button, Row, Col, Badge, Form, Alert, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -33,13 +33,21 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [, dispatch] = useContext(MyUserContext);
+  const [user, dispatch] = useContext(MyUserContext);
 
   // Đổi avatar
   const [msg, setMsg] = useState("");
   const [msgVariant, setMsgVariant] = useState("info");
   const fileRef = useRef();
   const [previewUrl, setPreviewUrl] = useState("");
+
+  const [achievements, setAchievements] = useState({
+    streak: 0,
+    plansCount: 0,
+    goalsCount: 0,
+    healthCount: 0,
+  });
+  const [achMapLoading, setAchMapLoading] = useState(true);
 
   useEffect(() => {
     AOS.init({ duration: 700, once: true });
@@ -57,8 +65,79 @@ const Profile = () => {
     }
   };
 
+  const loadAchievements = async () => {
+    setAchMapLoading(true);
+    try {
+      const [histRes, plansRes, goalsRes, healthRes] = await Promise.all([
+        authApis().get(endpoints.histories, { params: { status: "COMPLETED", pageSize: 0 } }),
+        authApis().get(endpoints.plans),
+        authApis().get(endpoints.goals),
+        authApis().get(endpoints.health),
+      ]);
+
+      const histories = histRes.data?.items || [];
+      const plans = Array.isArray(plansRes.data) ? plansRes.data : plansRes.data?.items || [];
+      const goals = Array.isArray(goalsRes.data) ? goalsRes.data : goalsRes.data?.items || [];
+      const health = Array.isArray(healthRes.data) ? healthRes.data : healthRes.data?.items || [];
+
+      // Calculate streak
+      const completedDates = new Set(
+        histories
+          .filter((h) => h.completedAt)
+          .map((h) => new Date(h.completedAt).toDateString())
+      );
+
+      let currentStreak = 0;
+      const today = new Date();
+      const todayStr = today.toDateString();
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toDateString();
+
+      const hasCompletedToday = completedDates.has(todayStr);
+      const hasCompletedYesterday = completedDates.has(yesterdayStr);
+
+      if (hasCompletedToday) {
+        currentStreak = 1;
+        const curr = new Date();
+        while (true) {
+          curr.setDate(curr.getDate() - 1);
+          if (completedDates.has(curr.toDateString())) {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+      } else if (hasCompletedYesterday) {
+        currentStreak = 1;
+        const curr = new Date();
+        curr.setDate(curr.getDate() - 1);
+        while (true) {
+          curr.setDate(curr.getDate() - 1);
+          if (completedDates.has(curr.toDateString())) {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+      }
+
+      setAchievements({
+        streak: currentStreak,
+        plansCount: plans.length,
+        goalsCount: goals.length,
+        healthCount: health.length,
+      });
+    } catch (err) {
+      console.error("Lỗi khi tải thành tựu:", err);
+    } finally {
+      setAchMapLoading(false);
+    }
+  };
+
   useEffect(() => {
     load();
+    loadAchievements();
   }, []);
 
   const { roleText, roleColor } = useMemo(() => {
@@ -132,6 +211,15 @@ const Profile = () => {
           <h3 className="m-0">Hồ sơ cá nhân</h3>
         </div>
         <div className="d-flex align-items-center gap-2">
+          {!user?.isPremium ? (
+            <Button as={Link} to="/upgrade" variant="warning" className="fw-bold text-dark me-2">
+              Nâng cấp PRO 👑
+            </Button>
+          ) : (
+            <Button as={Link} to="/upgrade" variant="outline-warning" className="fw-bold me-2">
+              Gói dịch vụ PRO 👑
+            </Button>
+          )}
           <Button as={Link} to="/profile/password" variant="outline-primary">
             Đổi mật khẩu
           </Button>
@@ -184,9 +272,14 @@ const Profile = () => {
                 <Col sm={6}>
                   <div className="small text-uppercase text-muted">Quyền</div>
                   <div>
-                    <Badge bg={roleColor} className="align-middle">
+                    <Badge bg={roleColor} className="align-middle me-2">
                       {roleText}
                     </Badge>
+                    {user?.isPremium && (
+                      <Badge bg="warning" className="align-middle text-dark fw-bold" style={{ boxShadow: "0 0 8px rgba(255,193,7,0.5)" }}>
+                        👑 PRO MEMBER
+                      </Badge>
+                    )}
                   </div>
                 </Col>
 
@@ -217,6 +310,145 @@ const Profile = () => {
               </Row>
             </Col>
           </Row>
+        </Card.Body>
+      </Card>
+
+      {/* Huy hiệu & Thành tựu */}
+      <Card className="shadow-sm border-0 mb-4 bg-surface text-light mt-4" data-aos="fade-up">
+        <Card.Body>
+          <Card.Title className="text-white border-bottom border-secondary pb-2 mb-3 d-flex justify-content-between align-items-center">
+            <span>🏆 Huy hiệu Thành tựu</span>
+            <span className="badge bg-warning text-dark fs-6" style={{ color: "#000" }}>
+              Đã đạt: {
+                [
+                  achievements.streak >= 1,
+                  achievements.streak >= 7,
+                  achievements.streak >= 30,
+                  achievements.plansCount > 0,
+                  achievements.goalsCount > 0,
+                  achievements.healthCount >= 3
+                ].filter(Boolean).length
+              }/6
+            </span>
+          </Card.Title>
+          
+          {achMapLoading ? (
+            <div className="text-center py-4">
+              <Spinner animation="border" variant="warning" size="sm" className="me-2" />
+              Đang tải danh sách huy hiệu...
+            </div>
+          ) : (
+            <Row className="g-3">
+              {[
+                {
+                  id: "streak_bronze",
+                  title: "Huy hiệu Khởi động",
+                  desc: "Tập luyện liên tục 1 ngày",
+                  emoji: "🔥",
+                  achieved: achievements.streak >= 1,
+                  metric: `${achievements.streak}/1 ngày`,
+                  gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                },
+                {
+                  id: "streak_silver",
+                  title: "Huy hiệu Chăm chỉ",
+                  desc: "Tập luyện liên tục 7 ngày",
+                  emoji: "💪",
+                  achieved: achievements.streak >= 7,
+                  metric: `${achievements.streak}/7 ngày`,
+                  gradient: "linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)",
+                },
+                {
+                  id: "streak_gold",
+                  title: "Huy hiệu Chiến thần",
+                  desc: "Tập luyện liên tục 30 ngày",
+                  emoji: "🏆",
+                  achieved: achievements.streak >= 30,
+                  metric: `${achievements.streak}/30 ngày`,
+                  gradient: "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                },
+                {
+                  id: "master_trainer",
+                  title: "Đệ nhất huấn luyện viên",
+                  desc: "Lên kế hoạch tập luyện (kế hoạch > 0)",
+                  emoji: "📋",
+                  achieved: achievements.plansCount > 0,
+                  metric: `${achievements.plansCount}/1 kế hoạch`,
+                  gradient: "linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)",
+                },
+                {
+                  id: "iron_will",
+                  title: "Quyết tâm sắt đá",
+                  desc: "Thiết lập mục tiêu sức khỏe (mục tiêu > 0)",
+                  emoji: "🎯",
+                  achieved: achievements.goalsCount > 0,
+                  metric: `${achievements.goalsCount}/1 mục tiêu`,
+                  gradient: "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)",
+                },
+                {
+                  id: "health_tracker",
+                  title: "Theo dõi sức khỏe",
+                  desc: "Theo dõi cân nặng & BMI (chỉ số > 2)",
+                  emoji: "❤️",
+                  achieved: achievements.healthCount >= 3,
+                  metric: `${achievements.healthCount}/3 chỉ số`,
+                  gradient: "linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)",
+                },
+              ].map((b) => (
+                <Col md={4} sm={6} key={b.id}>
+                  <div 
+                    className="p-3 h-100 d-flex flex-column align-items-center text-center rounded position-relative"
+                    style={{
+                      backgroundColor: b.achieved ? "rgba(31, 45, 71, 0.6)" : "rgba(17, 26, 43, 0.4)",
+                      border: b.achieved ? "1px solid #ff6b35" : "1px solid #1f2d47",
+                      opacity: b.achieved ? 1 : 0.55,
+                      filter: b.achieved ? "none" : "grayscale(70%)",
+                      transition: "all 0.3s ease",
+                      cursor: "default"
+                    }}
+                    onMouseEnter={(e) => {
+                      if (b.achieved) {
+                        e.currentTarget.style.transform = "translateY(-4px)";
+                        e.currentTarget.style.boxShadow = "0 8px 24px rgba(255, 107, 53, 0.25)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "none";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    {/* Badge Icon circle */}
+                    <div 
+                      className="d-flex align-items-center justify-content-center rounded-circle mb-3 shadow"
+                      style={{
+                        width: 64,
+                        height: 64,
+                        fontSize: "2rem",
+                        background: b.achieved ? b.gradient : "#1f2d47",
+                        border: "2px solid #fff"
+                      }}
+                    >
+                      {b.emoji}
+                    </div>
+
+                    <h6 className="text-white mb-1 fw-bold">{b.title}</h6>
+                    <p className="text-light-50 small mb-2 flex-grow-1" style={{ fontSize: "0.75rem" }}>{b.desc}</p>
+                    
+                    <div className="d-flex align-items-center gap-2 mt-2">
+                      <span className="badge bg-dark text-muted font-monospace" style={{ fontSize: "0.7rem" }}>
+                        {b.metric}
+                      </span>
+                      {b.achieved ? (
+                        <span className="badge bg-success text-white" style={{ fontSize: "0.7rem" }}>Đạt được</span>
+                      ) : (
+                        <span className="badge bg-secondary text-light-50" style={{ fontSize: "0.7rem" }}>Chưa đạt</span>
+                      )}
+                    </div>
+                  </div>
+                </Col>
+              ))}
+            </Row>
+          )}
         </Card.Body>
       </Card>
     </div>

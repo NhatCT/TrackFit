@@ -26,9 +26,11 @@ import StatsSummary from "./components/StatsSummary";
 import PlansList from "./components/PlansList";
 import PlanForm from "./components/PlanForm";
 import HistoriesList from "./components/HistoriesList";
-import Chatbot from "./components/ChatBot";
+import GymMap from "./components/GymMap";
+import Upgrade from "./components/Upgrade";
 import ChatWidget from "./components/ChatWidget";
 import WebSocketListener from "./components/layout/WebSocketListener";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 
 const App = () => {
   const [user, dispatch] = useReducer(MyUserReducer, cookie.load("user") || null);
@@ -95,6 +97,7 @@ const App = () => {
         </ToastContainer>
         <main>
           <Container className="py-4" style={{ minHeight: "80vh" }}>
+            <ErrorBoundary>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/register" element={<Register />} />
@@ -108,14 +111,16 @@ const App = () => {
               <Route path="/health" element={user ? <HealthList /> : <Navigate to="/login" />} />
               <Route path="/notifications" element={user ? <NotificationsList /> : <Navigate to="/login" />} />
               <Route path="/recommendations" element={user ? <Recommendations /> : <Navigate to="/login" />} />
-              <Route path="/chatbot" element={user ? <Chatbot /> : <Navigate to="/login" />} />
               <Route path="/stats/summary" element={user ? <StatsSummary /> : <Navigate to="/login" />} />
               <Route path="/plans" element={user ? <PlansList /> : <Navigate to="/login" />} />
               <Route path="/plans/new" element={user ? <PlanForm /> : <Navigate to="/login" />} />
               <Route path="/plans/:id" element={user ? <PlanForm /> : <Navigate to="/login" />} />
               <Route path="/histories" element={user ? <HistoriesList /> : <Navigate to="/login" />} />
+              <Route path="/gyms" element={user ? <GymMap /> : <Navigate to="/login" />} />
+              <Route path="/upgrade" element={user ? <Upgrade /> : <Navigate to="/login" />} />
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
+            </ErrorBoundary>
           </Container>
         </main>
         <Footer />

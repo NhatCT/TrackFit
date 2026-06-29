@@ -3,7 +3,10 @@ package com.ntn.configs;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.ntn.filters.JwtFilter;
+import com.ntn.filters.RateLimitFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -38,6 +41,9 @@ import java.util.List;
 })
 public class SpringSecurityConfigs {
 
+    @Autowired
+    private RedisConnectionFactory redisConnectionFactory;
+
     @Value("${allowed.origins:http://localhost:3000,http://127.0.0.1:3000}")
     private String allowedOriginsProp;
 
@@ -61,6 +67,11 @@ public class SpringSecurityConfigs {
     }
 
     @Bean
+    public RateLimitFilter rateLimitFilter() {
+        return new RateLimitFilter(redisConnectionFactory);
+    }
+
+    @Bean
     @Order(0)
     public SecurityFilterChain api(HttpSecurity http) throws Exception {
         http
@@ -77,6 +88,7 @@ public class SpringSecurityConfigs {
                 .requestMatchers("/api/secure/**").authenticated()
                 .anyRequest().denyAll()
                 )
+                .addFilterBefore(rateLimitFilter(), JwtFilter.class)
                 .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

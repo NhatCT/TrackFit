@@ -6,6 +6,8 @@ import com.ntn.pojo.Exercises;
 import com.ntn.repositories.ExercisesRepository;
 import com.ntn.services.ExercisesService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ public class ExercisesServiceImpl implements ExercisesService {
     private ExercisesRepository repo;
 
     @Override
+    @CacheEvict(value = {"exercises_list", "exercises_detail", "reco_exercises"}, allEntries = true)
     public ExerciseDTO create(ExerciseCreateUpdateDTO req) {
         Exercises e = new Exercises();
         apply(e, req);
@@ -29,6 +32,7 @@ public class ExercisesServiceImpl implements ExercisesService {
     }
 
     @Override
+    @CacheEvict(value = {"exercises_list", "exercises_detail", "reco_exercises"}, allEntries = true)
     public ExerciseDTO update(Integer id, ExerciseCreateUpdateDTO req) {
         Exercises cur = mustGet(id);
         apply(cur, req);
@@ -37,11 +41,13 @@ public class ExercisesServiceImpl implements ExercisesService {
     }
 
     @Override
+    @Cacheable(value = "exercises_detail", key = "#id")
     public ExerciseDTO get(Integer id) {
         return toDTO(mustGet(id));
     }
 
     @Override
+    @Cacheable(value = "exercises_list", key = "(#page == null ? 1 : #page) + '_' + (#pageSize == null ? 10 : #pageSize) + '_' + (#kw == null ? '' : #kw.trim())")
     public Map<String, Object> list(Integer page, Integer pageSize, String kw) {
         int pageNum = (page != null && page > 0) ? page : 1;
         int ps = (pageSize != null && pageSize > 0) ? pageSize : 10;
@@ -60,16 +66,17 @@ public class ExercisesServiceImpl implements ExercisesService {
         long total = repo.countExercises(params);
         int totalPages = (int) Math.ceil(total * 1.0 / ps);
 
-        return Map.of(
-            "page", pageNum,
-            "pageSize", ps,
-            "totalPages", Math.max(totalPages, 1),
-            "totalElements", total,
-            "items", items
-        );
+        Map<String, Object> res = new HashMap<>();
+        res.put("page", pageNum);
+        res.put("pageSize", ps);
+        res.put("totalPages", Math.max(totalPages, 1));
+        res.put("totalElements", total);
+        res.put("items", items);
+        return res;
     }
 
     @Override
+    @CacheEvict(value = {"exercises_list", "exercises_detail", "reco_exercises"}, allEntries = true)
     public void delete(Integer id) {
         repo.delete(mustGet(id));
     }

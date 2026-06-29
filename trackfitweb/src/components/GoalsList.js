@@ -1,15 +1,16 @@
 // src/components/GoalsList.js
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, Card, Form, Table } from "react-bootstrap";
+import { Alert, Badge, Button, Card, Form, Table, ProgressBar } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
 import MySpinner from "./layout/MySpinner";
-
 
 const INTENSITY_OPTS = ["Low", "Medium", "High"];
 const EMPTY = { goalType: "", intensity: "Medium", workoutDuration: 30 };
 
 const GoalsList = () => {
   const [items, setItems] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [histories, setHistories] = useState([]);
   const [kw, setKw] = useState("");
   const [form, setForm] = useState(EMPTY);
   const [loading, setLoading] = useState(true);
@@ -18,9 +19,16 @@ const GoalsList = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await authApis().get(endpoints.goals); // /api/secure/goals
-      const data = Array.isArray(r.data) ? r.data : (r.data?.items || []);
+      const [goalsRes, plansRes, historiesRes] = await Promise.all([
+        authApis().get(endpoints.goals),
+        authApis().get(endpoints.plans, { params: { page: 1, pageSize: 100 } }),
+        authApis().get(endpoints.histories, { params: { status: "COMPLETED", pageSize: 0 } }),
+      ]);
+
+      const data = Array.isArray(goalsRes.data) ? goalsRes.data : goalsRes.data?.items || [];
       setItems(data);
+      setPlans(plansRes.data?.items || []);
+      setHistories(historiesRes.data?.items || []);
     } catch (e) {
       setMsg({ type: "danger", text: e?.response?.data?.message || "Tải mục tiêu thất bại" });
     } finally {
@@ -78,6 +86,21 @@ const GoalsList = () => {
     }
   };
 
+  // Helper to compute progress for each goal based on linked plans & histories
+  const calculateGoalProgress = (goal) => {
+    const linkedPlans = plans.filter((p) => Number(p.goalId) === Number(goal.goalId));
+    if (linkedPlans.length === 0) {
+      return { count: 0, percent: 0, hasPlan: false };
+    }
+
+    const planIds = linkedPlans.map((p) => p.planId);
+    const completedCount = histories.filter((h) => planIds.includes(h.planId)).length;
+    const target = Number(goal.workoutDuration) || 1;
+    const percent = Math.min(100, Math.round((completedCount / target) * 100));
+
+    return { count: completedCount, percent, hasPlan: true };
+  };
+
   return (
     <>
       <div className="d-flex align-items-center justify-content-between mb-3">
@@ -111,7 +134,7 @@ const GoalsList = () => {
 
       {/* Form thêm mới */}
       <Card className="shadow-sm border-0 mb-3 hoverable plan-card">
-        <Card.Header className="bg-white">
+        <Card.Header className="bg-transparent border-0 pt-3 pb-0">
           <strong>Thêm mục tiêu</strong>
         </Card.Header>
         <Card.Body>
@@ -173,41 +196,65 @@ const GoalsList = () => {
                 <th>Tên hiển thị</th>
                 <th>Goal type</th>
                 <th style={{ width: 120 }}>Intensity</th>
-                <th style={{ width: 150 }}>Duration</th>
+                <th style={{ width: 150 }}>Target Duration</th>
+                <th>Tiến độ</th>
                 <th style={{ width: 120 }}></th>
               </tr>
             </thead>
             <tbody>
               {filtered?.length ? (
-                filtered.map((g) => (
-                  <tr key={g.goalId}>
-                    <td>#{g.goalId}</td>
-                    <td className="fw-semibold">{g.name || "-"}</td>
-                    <td>{g.goalType || "-"}</td>
-                    <td>
-                      {g.intensity ? (
-                        <Badge bg={g.intensity === "High" ? "danger" : g.intensity === "Medium" ? "warning" : "success"}>
-                          {g.intensity}
-                        </Badge>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                    <td>{g.workoutDuration ? `${g.workoutDuration} ngày` : "-"}</td>
-                    <td className="text-end">
-                      <Button
-                        size="sm"
-                        variant="outline-danger"
-                        onClick={() => del(g.goalId)}
-                      >
-                        Xóa
-                      </Button>
-                    </td>
-                  </tr>
-                ))
+                filtered.map((g) => {
+                  const progress = calculateGoalProgress(g);
+                  return (
+                    <tr key={g.goalId}>
+                      <td>#{g.goalId}</td>
+                      <td className="fw-semibold">{g.name || "-"}</td>
+                      <td>{g.goalType || "-"}</td>
+                      <td>
+                        {g.intensity ? (
+                          <Badge bg={g.intensity === "High" ? "danger" : g.intensity === "Medium" ? "warning" : "success"}>
+                            {g.intensity}
+                          </Badge>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td>{g.workoutDuration ? `${g.workoutDuration} ngày` : "-"}</td>
+                      <td>
+                        {!progress.hasPlan ? (
+                          <Badge bg="secondary" className="bg-opacity-25 text-light-50">Chưa gắn lịch tập</Badge>
+                        ) : (
+                          <div style={{ minWidth: "160px" }}>
+                            <div className="d-flex justify-content-between align-items-center mb-1 text-muted" style={{ fontSize: "0.75rem" }}>
+                              <span>{progress.count}/{g.workoutDuration} buổi</span>
+                              <span className="fw-bold text-light">{progress.percent}%</span>
+                            </div>
+                            <ProgressBar
+                              now={progress.percent}
+                              variant={progress.percent === 100 ? "success" : progress.percent > 75 ? "info" : "warning"}
+                              style={{ height: "6px", backgroundColor: "var(--border)" }}
+                            />
+                            {progress.percent === 100 && (
+                              <span className="badge bg-success mt-1" style={{ fontSize: "0.65rem" }}>🎉 Hoàn thành!</span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="text-end">
+                        <Button
+                          size="sm"
+                          variant="outline-danger"
+                          onClick={() => del(g.goalId)}
+                        >
+                          Xóa
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
-                  <td colSpan={6} className="text-center text-muted py-4">
+                  <td colSpan={7} className="text-center text-muted py-4">
                     Chưa có mục tiêu
                   </td>
                 </tr>

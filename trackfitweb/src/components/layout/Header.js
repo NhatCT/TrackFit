@@ -145,7 +145,18 @@ const Header = (props) => {
           boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         }}
       />
-      <span className="text-white d-none d-sm-inline">{user?.username || "Tài khoản"}</span>
+      <span className="text-white d-none d-sm-inline">
+        {user?.username || "Tài khoản"}
+        {user?.isPremium && (
+          <span 
+            className="ms-1.5 px-1 py-0.5 rounded text-dark bg-warning fw-bold" 
+            style={{ fontSize: "0.6rem", letterSpacing: "0.5px", boxShadow: "0 0 8px rgba(255, 193, 7, 0.6)" }}
+            title="Premium Member"
+          >
+            PRO 👑
+          </span>
+        )}
+      </span>
     </span>
   );
 
@@ -159,7 +170,7 @@ const Header = (props) => {
           data-aos="fade-right"
         >
           <img src={logo} alt="TrackFit Logo" style={{ height: 40 }} />
-          <span className="fw-bold">TRACKFIT</span>
+          <span className="fw-bold">GUTIM</span>
         </Navbar.Brand>
 
         <Navbar.Toggle aria-controls="basic-navbar-nav" style={{ borderColor: "white" }} />
@@ -172,6 +183,7 @@ const Header = (props) => {
               <Nav.Link as={Link} to="/histories" className="text-white">Lịch sử</Nav.Link>
               <Nav.Link as={Link} to="/goals" className="text-white">Mục tiêu</Nav.Link>
               <Nav.Link as={Link} to="/health" className="text-white">Sức khỏe</Nav.Link>
+              <Nav.Link as={Link} to="/gyms" className="text-white">Phòng tập</Nav.Link>
               <Nav.Link
                 as={Link}
                 to="/recommendations"
@@ -183,6 +195,17 @@ const Header = (props) => {
               </Nav.Link>
 
               <Nav.Link as={Link} to="/stats/summary" className="text-white">Thống kê</Nav.Link>
+
+              {!user?.isPremium && (
+                <Nav.Link
+                  as={Link}
+                  to="/upgrade"
+                  className="text-warning fw-bold"
+                  style={{ textShadow: "0 0 8px rgba(255, 193, 7, 0.4)" }}
+                >
+                  Nâng cấp PRO ⚡
+                </Nav.Link>
+              )}
 
               <Nav.Link
                 as={Link}

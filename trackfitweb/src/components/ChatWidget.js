@@ -1,7 +1,8 @@
 // src/components/ChatWidget.jsx
-import React from "react";
+import React, { useContext } from "react";
 import cookie from "react-cookies";
 import { authApis, endpoints } from "../configs/Apis";
+import { MyUserContext } from "../configs/Context";
 
 import gutimAvatar from "../img/gutim-bot.jpg";
 
@@ -48,16 +49,26 @@ const STYLE = `
 .gutim-name { font-weight:800; color:#fff; font-size:14px; letter-spacing:.3px }
 .gutim-sub { font-size:12px; color:#a3a3a3 }
 
-.gutim-close { margin-left:auto; border:none; background:transparent; color:#9ca3af; cursor:pointer; font-size:18px }
+.gutim-clear-history { margin-left:auto; border:none; background:transparent; color:#9ca3af; cursor:pointer; font-size:18px; display:flex; align-items:center; transition:color 0.2s }
+.gutim-clear-history:hover { color:#ef4444 }
+.gutim-close { border:none; background:transparent; color:#9ca3af; cursor:pointer; font-size:18px; transition:color 0.2s }
+.gutim-close:hover { color:#fff }
 
 /* Body */
 .gutim-body { flex:1; padding:12px; overflow-y:auto; background:
- radial-gradient(1200px 600px at 120% -20%, rgba(124,58,237,.20), transparent 60%),
- radial-gradient(800px 500px at -20% 120%, rgba(37,99,235,.20), transparent 60%),
- linear-gradient(#0b1020, #0b1020); }
-.gutim-msg { max-width:78%; padding:10px 12px; border-radius:14px; margin:8px 0; white-space:pre-wrap; line-height:1.45; font-size:14px; color:#e5e7eb }
+  radial-gradient(1200px 600px at 120% -20%, rgba(124,58,237,.20), transparent 60%),
+  radial-gradient(800px 500px at -20% 120%, rgba(37,99,235,.20), transparent 60%),
+  linear-gradient(#0b1020, #0b1020); }
+.gutim-msg { max-width:78%; padding:10px 12px; border-radius:14px; margin:8px 0; line-height:1.45; font-size:14px; color:#e5e7eb }
 .gutim-msg.user { margin-left:auto; background:linear-gradient(135deg, #2563eb, #7c3aed); color:#fff; border-bottom-right-radius:6px; }
 .gutim-msg.bot  { margin-right:auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); border-bottom-left-radius:6px; backdrop-filter: blur(4px); }
+.gutim-msg ul, .gutim-msg ol { padding-left: 18px; margin: 6px 0 0 0; }
+.gutim-msg li { margin-bottom: 4px; }
+
+/* Suggestions */
+.gutim-suggestions { display:flex; flex-direction:column; gap:6px; margin:10px 0; padding:4px }
+.gutim-suggestion-btn { border:1px solid rgba(255,107,53,0.3); background:rgba(255,107,53,0.06); color:#ff6b35; border-radius:20px; padding:6px 12px; font-size:0.8rem; cursor:pointer; text-align:left; transition:all 0.2s; font-weight:500 }
+.gutim-suggestion-btn:hover { background:rgba(255,107,53,0.15); border-color:#ff6b35 }
 
 /* Footer */
 .gutim-ft { padding:10px; border-top:1px solid rgba(255,255,255,.06); background:rgba(255,255,255,.02); display:flex; gap:8px }
@@ -70,7 +81,6 @@ const STYLE = `
 `;
 
 function FallbackChibi() {
-  // Fallback SVG nếu bạn chưa có ảnh gutim-chibi.png
   return (
     <svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true">
       <circle cx="32" cy="32" r="30" fill="#111827" stroke="#7c3aed" strokeWidth="3" />
@@ -83,7 +93,90 @@ function FallbackChibi() {
   );
 }
 
+const SUGGESTIONS = [
+  "Hỏi chế độ ăn giảm mỡ?",
+  "Bài tập cơ ngực hiệu quả?",
+  "Lịch tập gym cho người mới?",
+  "Squat đúng tư thế thế nào?",
+];
+
+// Helper function to render text containing simple markdown-like syntax
+const renderMarkdown = (text) => {
+  if (!text) return "";
+  
+  // Safe HTML escape to prevent XSS
+  let html = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+    
+  // Convert Bold **text** to <strong>text</strong>
+  html = html.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+  
+  // Convert Italic *text* to <em>text</em>
+  html = html.replace(/\*(.*?)\*/g, "<em>$1</em>");
+  
+  // Process bullet points and numbered lists
+  const lines = html.split("\n");
+  let inList = false;
+  let inOrderedList = false;
+  
+  const processedLines = lines.map((line) => {
+    const isBullet = line.trim().startsWith("- ") || line.trim().startsWith("* ") || line.trim().startsWith("• ");
+    const isOrdered = /^\d+\.\s+/.test(line.trim());
+    
+    let result = "";
+    
+    // Close lists if we are not in them anymore
+    if (inList && !isBullet) {
+      result += "</ul>";
+      inList = false;
+    }
+    if (inOrderedList && !isOrdered) {
+      result += "</ol>";
+      inOrderedList = false;
+    }
+    
+    // Open lists if needed
+    if (!inList && isBullet) {
+      result += "<ul>";
+      inList = true;
+    }
+    if (!inOrderedList && isOrdered) {
+      result += "<ol>";
+      inOrderedList = true;
+    }
+    
+    if (isBullet) {
+      const content = line.trim().replace(/^[-*•]\s+/, "");
+      result += `<li>${content}</li>`;
+    } else if (isOrdered) {
+      const content = line.trim().replace(/^\d+\.\s+/, "");
+      result += `<li>${content}</li>`;
+    } else {
+      result += line;
+    }
+    
+    return result;
+  });
+  
+  // Append closing tags if necessary
+  let finalHtml = processedLines.join("<br />");
+  if (inList) finalHtml += "</ul>";
+  if (inOrderedList) finalHtml += "</ol>";
+  
+  // Clean up double br around lists
+  finalHtml = finalHtml.replace(/<br \/><ul>/g, "<ul>");
+  finalHtml = finalHtml.replace(/<\/ul><br \/>/g, "</ul>");
+  finalHtml = finalHtml.replace(/<br \/><ol>/g, "<ol>");
+  finalHtml = finalHtml.replace(/<\/ol><br \/>/g, "</ol>");
+  finalHtml = finalHtml.replace(/<\/li><br \/><li>/g, "</li><li>");
+  
+  return finalHtml;
+};
+
 export default function ChatWidget({ requireAuth = false }) {
+  const [user] = useContext(MyUserContext);
   const token = cookie.load("token");
   const authed = !!token || !requireAuth;
 
@@ -122,8 +215,8 @@ export default function ChatWidget({ requireAuth = false }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [msgs, open, storageKey]);
 
-  const send = async () => {
-    const q = input.trim();
+  const send = async (overrideText) => {
+    const q = (typeof overrideText === "string" ? overrideText : input).trim();
     if (!q || sending) return;
     setInput("");
     setMsgs(prev => [...prev, { role: "user", text: q }]);
@@ -149,6 +242,15 @@ export default function ChatWidget({ requireAuth = false }) {
     }
   };
 
+  const clearHistory = () => {
+    if (window.confirm("Bạn có chắc chắn muốn xoá lịch sử trò chuyện này?")) {
+      const defaultMsg = [{ role: "bot", text: "Xin chào! Mình là Gutim Coach AI 🤖💪 — hỏi mình về bài tập, dinh dưỡng hay lịch tập nhé!" }];
+      setMsgs(defaultMsg);
+      localStorage.setItem(storageKey, JSON.stringify(defaultMsg));
+      setModel("");
+    }
+  };
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: STYLE }} />
@@ -168,6 +270,8 @@ export default function ChatWidget({ requireAuth = false }) {
               <div className="gutim-name">Gutim Coach AI</div>
               <div className="gutim-sub">{statusOk ? "Sẵn sàng hỗ trợ" : "Mất kết nối AI"}</div>
             </div>
+            
+            <button className="gutim-clear-history" onClick={clearHistory} title="Xoá cuộc hội thoại">🗑️</button>
             <button className="gutim-close" onClick={() => setOpen(false)} title="Đóng">✕</button>
           </div>
 
@@ -177,26 +281,51 @@ export default function ChatWidget({ requireAuth = false }) {
                 Vui lòng <a href="/login" style={{ color:"#93c5fd", fontWeight:800 }}>đăng nhập</a> để sử dụng chatbot.
               </div>
             )}
+            
             {msgs.map((m, i) => (
-              <div key={i} className={`gutim-msg ${m.role === "user" ? "user" : "bot"}`}>
-                {m.text}
-              </div>
+              <div key={i} className={`gutim-msg ${m.role === "user" ? "user" : "bot"}`}
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(m.text) }}
+              />
             ))}
+
+            {/* Quick replies */}
+            {authed && msgs.length === 1 && !sending && (
+              <div className="gutim-suggestions">
+                <div className="text-muted small mb-1" style={{ fontSize: "0.75rem" }}>💡 Gợi ý câu hỏi nhanh:</div>
+                {SUGGESTIONS.map((s, idx) => (
+                  <button key={idx} className="gutim-suggestion-btn" onClick={() => send(s)}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+            
             {sending && <div className="gutim-tip">Đang soạn trả lời…</div>}
           </div>
 
           <div className="gutim-ft">
-            <textarea
-              className="gutim-input"
-              disabled={!authed}
-              placeholder={authed ? "Nhập tin nhắn... (Enter gửi, Shift+Enter xuống dòng)" : "Hãy đăng nhập để chat"}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKeyDown}
-            />
-            <button className="gutim-send" disabled={!authed || sending || !input.trim()} onClick={send}>
-              Gửi
-            </button>
+            {!user?.isPremium && msgs.filter(m => m.role === "user").length >= 3 ? (
+              <div className="w-100 p-2 text-center" style={{ background: "rgba(255,107,53,0.1)", border: "1px solid rgba(255,107,53,0.3)", borderRadius: "12px" }}>
+                <div className="small text-warning mb-1.5 fw-bold">👑 Mở khoá lượt chat không giới hạn</div>
+                <a href="/upgrade" className="btn btn-sm btn-warning fw-bold text-dark px-3 py-1" style={{ fontSize: "0.8rem", textDecoration: "none" }}>
+                  Nâng cấp GUTIM PRO ↗
+                </a>
+              </div>
+            ) : (
+              <>
+                <textarea
+                  className="gutim-input"
+                  disabled={!authed}
+                  placeholder={authed ? "Nhập tin nhắn... (Enter gửi, Shift+Enter xuống dòng)" : "Hãy đăng nhập để chat"}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onKeyDown}
+                />
+                <button className="gutim-send" disabled={!authed || sending || !input.trim()} onClick={() => send()}>
+                  Gửi
+                </button>
+              </>
+            )}
           </div>
 
           {!!model && (
