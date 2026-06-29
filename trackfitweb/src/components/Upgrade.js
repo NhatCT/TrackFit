@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useMemo, useCallback } from "react";
 import { Container, Row, Col, Card, Button, Spinner, Alert } from "react-bootstrap";
 import { MyUserContext } from "../configs/Context";
 import { useNavigate } from "react-router-dom";
@@ -10,24 +10,14 @@ const Upgrade = () => {
   const [user, dispatch] = useContext(MyUserContext);
   const navigate = useNavigate();
 
-  const [selectedPlan, setSelectedPlan] = useState(null); // 'monthly' | 'yearly'
+  const [selectedPlan, setSelectedPlan] = useState(null); // plan object
+  const [currentOrder, setCurrentOrder] = useState(null); // payment order from API
   const [step, setStep] = useState(1); // 1: choose, 2: pay, 3: success
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    AOS.init({ duration: 800, once: true });
-  }, []);
-
-  if (!user) {
-    return (
-      <Container className="py-5 text-center">
-        <Alert variant="warning">Vui lòng đăng nhập để nâng cấp tài khoản.</Alert>
-      </Container>
-    );
-  }
-
-  const plans = {
+  const plans = useMemo(() => ({
     monthly: {
       name: "Gói Tháng (Pro Monthly)",
       price: 99000,
@@ -45,39 +35,126 @@ const Upgrade = () => {
       badge: "Tiết kiệm 58%",
       isBestValue: true,
     },
-  };
+  }), []);
 
-  const handleSelectPlan = (planKey) => {
-    setSelectedPlan({ ...plans[planKey], planKey });
-    setStep(2);
-  };
+  const loadCurrentOrder = useCallback(async () => {
+    try {
+      const res = await authApis().get(endpoints.subscriptionCurrentOrder);
+      if (res.data?.order) {
+        const order = res.data.order;
+        setCurrentOrder(order);
+        setSelectedPlan({ ...plans[order.planKey], planKey: order.planKey });
+        setStep(2);
+      } else {
+        setCurrentOrder(null);
+      }
+    } catch (e) {
+      console.error("Error loading current order:", e);
+    } finally {
+      setInitialLoading(false);
+    }
+  }, [plans]);
 
-  const handleConfirmPayment = async () => {
-    if (!selectedPlan?.planKey) return;
+  // Load active order on mount
+  useEffect(() => {
+    AOS.init({ duration: 800, once: true });
+
+    if (user && !user.isPremium) {
+      loadCurrentOrder();
+    } else {
+      setInitialLoading(false);
+    }
+  }, [user, loadCurrentOrder]);
+
+  // Poll status manually if WebSocket isn't instant
+  const checkPaymentStatus = async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const res = await authApis().post(endpoints.subscriptionConfirm, {
-        planKey: selectedPlan.planKey,
-        transferRef: `GUTIM_PRO_${user.username}`,
-      });
-      const updated = res.data?.user;
-      if (updated) {
-        dispatch({ type: "updateProfile", payload: updated });
+      const res = await authApis().get(endpoints.subscriptionStatus);
+      if (res.data?.premium) {
+        dispatch({ type: "updateProfile", payload: { isPremium: true, premiumExpiresAt: res.data.premiumExpiresAt } });
+        setStep(3);
       } else {
-        dispatch({ type: "updateProfile", payload: { isPremium: true } });
+        // Refresh order detail to see if admin rejected or note updated
+        await loadCurrentOrder();
+        setError("Giao dịch của bạn vẫn đang được xử lý. Vui lòng chờ trong giây lát hoặc liên hệ hỗ trợ.");
       }
-      setStep(3);
     } catch (e) {
-      setError(
-        e?.response?.data?.message ||
-          "Không thể xác nhận thanh toán. Vui lòng thử lại sau."
-      );
+      setError("Không thể kiểm tra trạng thái. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
   };
+
+  const handleSelectPlan = async (planKey) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await authApis().post(endpoints.subscriptionCreateOrder, { planKey });
+      const order = res.data.order;
+      setCurrentOrder(order);
+      setSelectedPlan({ ...plans[planKey], planKey });
+      setStep(2);
+    } catch (e) {
+      setError(e?.response?.data?.message || "Không thể tạo hóa đơn thanh toán. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!currentOrder?.orderId) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await authApis().put(endpoints.subscriptionSubmitOrder(currentOrder.orderId));
+      setCurrentOrder(res.data.order);
+      setError(null);
+    } catch (e) {
+      setError(e?.response?.data?.message || "Không thể gửi xác nhận thanh toán. Vui lòng thử lại.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Listen to global WebSocket updates for real-time activation
+  useEffect(() => {
+    const handleSubscriptionActivated = (event) => {
+      const data = event?.detail?.data || event?.detail || {};
+      dispatch({
+        type: "updateProfile",
+        payload: {
+          isPremium: true,
+          premiumExpiresAt: data.premiumExpiresAt,
+        },
+      });
+      setStep(3);
+    };
+
+    window.addEventListener("trackfit-premium-activated", handleSubscriptionActivated);
+    return () => {
+      window.removeEventListener("trackfit-premium-activated", handleSubscriptionActivated);
+    };
+  }, [dispatch]);
+
+  if (!user) {
+    return (
+      <Container className="py-5 text-center">
+        <Alert variant="warning">Vui lòng đăng nhập để nâng cấp tài khoản.</Alert>
+      </Container>
+    );
+  }
+
+  if (initialLoading) {
+    return (
+      <Container className="py-5 text-center">
+        <Spinner animation="border" variant="warning" />
+        <p className="text-muted mt-2">Đang tải thông tin tài khoản...</p>
+      </Container>
+    );
+  }
 
   if (user.isPremium && step !== 3) {
     return (
@@ -234,8 +311,9 @@ const Upgrade = () => {
                   variant="outline-light" 
                   onClick={() => handleSelectPlan("monthly")}
                   className="w-100 py-2.5 fw-bold mt-auto"
+                  disabled={loading}
                 >
-                  Chọn gói Tháng
+                  {loading ? <Spinner size="sm" /> : "Chọn gói Tháng"}
                 </Button>
               </Card>
             </Col>
@@ -263,8 +341,9 @@ const Upgrade = () => {
                   variant="warning" 
                   onClick={() => handleSelectPlan("yearly")}
                   className="w-100 py-2.5 fw-bold text-dark mt-auto"
+                  disabled={loading}
                 >
-                  Đăng ký gói Năm
+                  {loading ? <Spinner size="sm" /> : "Đăng ký gói Năm"}
                 </Button>
               </Card>
             </Col>
@@ -272,13 +351,23 @@ const Upgrade = () => {
         </>
       )}
 
-      {step === 2 && selectedPlan && (
+      {step === 2 && selectedPlan && currentOrder && (
         <Row className="justify-content-center">
           <Col md={10} lg={8}>
-            <div className="mb-4">
-              <Button variant="link" onClick={() => setStep(1)} className="text-light p-0 text-decoration-none">
+            <div className="mb-4 d-flex justify-content-between align-items-center">
+              <Button
+                variant="link"
+                onClick={() => {
+                  if (currentOrder.status === "PENDING") {
+                    setStep(1);
+                  }
+                }}
+                className="text-light p-0 text-decoration-none"
+                disabled={currentOrder.status !== "PENDING"}
+              >
                 ← Chọn gói khác
               </Button>
+              <span className="text-muted small">Mã hóa đơn: #{currentOrder.orderId}</span>
             </div>
             
             <Row className="g-4 align-items-start">
@@ -321,12 +410,14 @@ const Upgrade = () => {
                   </div>
                   <div className="mb-3">
                     <span className="text-light-50 text-uppercase small d-block">Số tiền</span>
-                    <span className="fw-bold text-orange fs-4">{selectedPlan.priceFormatted}</span>
+                    <span className="fw-bold text-orange fs-4">
+                      {Number(currentOrder.amount || selectedPlan.price).toLocaleString("vi-VN")}đ
+                    </span>
                   </div>
                   <div className="mb-4">
                     <span className="text-light-50 text-uppercase small d-block">Nội dung chuyển khoản</span>
                     <span className="fw-bold font-monospace bg-dark text-white p-2 rounded d-inline-block mt-1">
-                      GUTIM_PRO_{user.username}
+                      {currentOrder.transferRef}
                     </span>
                   </div>
 
@@ -339,21 +430,65 @@ const Upgrade = () => {
 
                   {error && <Alert variant="danger">{error}</Alert>}
 
-                  <Button 
-                    variant="warning" 
-                    onClick={handleConfirmPayment} 
-                    className="w-100 py-3 fw-bold text-dark"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Spinner animation="border" size="sm" className="me-2" />
-                        Đang xác minh giao dịch...
-                      </>
-                    ) : (
-                      "Xác nhận đã chuyển khoản"
-                    )}
-                  </Button>
+                  {currentOrder.status === "PENDING" ? (
+                    <Button
+                      variant="warning"
+                      onClick={handleConfirmPayment}
+                      className="w-100 py-3 fw-bold text-dark"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Spinner animation="border" size="sm" className="me-2" />
+                          Đang gửi yêu cầu...
+                        </>
+                      ) : (
+                        "Xác nhận đã chuyển khoản"
+                      )}
+                    </Button>
+                  ) : currentOrder.status === "REJECTED" ? (
+                    <div className="p-3 text-center rounded bg-dark border border-danger" style={{ background: "#0b1220" }}>
+                      <div className="text-danger fw-bold mb-2">Thanh toán bị từ chối</div>
+                      <p className="small text-muted mb-3">
+                        {currentOrder.adminNote || "Admin chưa xác nhận được giao dịch này. Vui lòng tạo lại đơn hoặc liên hệ hỗ trợ."}
+                      </p>
+                      <Button
+                        variant="outline-light"
+                        size="sm"
+                        onClick={() => {
+                          setCurrentOrder(null);
+                          setSelectedPlan(null);
+                          setStep(1);
+                        }}
+                        className="fw-semibold w-100"
+                      >
+                        Tạo đơn khác
+                      </Button>
+                    </div>
+                  ) : currentOrder.status === "ACTIVATED" ? (
+                    <div className="p-3 text-center rounded bg-dark border border-success" style={{ background: "#0b1220" }}>
+                      <div className="text-success fw-bold mb-2">PRO đã được kích hoạt</div>
+                      <Button variant="success" size="sm" onClick={() => setStep(3)} className="fw-semibold w-100">
+                        Xem quyền lợi PRO
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="p-3 text-center rounded bg-dark border border-warning" style={{ background: "#0b1220" }}>
+                      <div className="text-warning fw-bold mb-2">⏳ Đang Chờ Xác Minh</div>
+                      <p className="small text-muted mb-3">
+                        Bạn đã gửi xác nhận chuyển khoản. Quá trình kiểm tra sao kê có thể mất 1-3 phút. Trình duyệt sẽ tự động kích hoạt khi có kết quả.
+                      </p>
+                      <Button
+                        variant="outline-warning"
+                        size="sm"
+                        onClick={checkPaymentStatus}
+                        className="fw-semibold w-100"
+                        disabled={loading}
+                      >
+                        {loading ? <Spinner size="sm" /> : "Kiểm tra lại trạng thái"}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </Col>
 
@@ -363,7 +498,7 @@ const Upgrade = () => {
                   <h5 className="text-white mb-3">Mã QR Thanh Toán Nhanh</h5>
                   <div className="bg-white p-3 rounded d-inline-block mx-auto mb-3" style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.3)" }}>
                     <img 
-                      src={`https://img.vietqr.io/image/mb-0382766336-compact2.png?amount=${selectedPlan.price}&addInfo=GUTIM_PRO_${user.username}&accountName=GUTIM%20FITNESS%20SYSTEM`}
+                      src={`https://img.vietqr.io/image/mb-0382766336-compact2.png?amount=${currentOrder.amount || selectedPlan.price}&addInfo=${encodeURIComponent(currentOrder.transferRef || "")}&accountName=GUTIM%20FITNESS%20SYSTEM`}
                       alt="VietQR Chuyển khoản"
                       style={{ width: "260px", height: "260px", objectFit: "contain" }}
                     />

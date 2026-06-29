@@ -55,7 +55,14 @@ adminUsers: (kw = "", limit = 100) =>
   
   // ==== Subscription / PRO ====
   subscriptionStatus: "secure/subscription/status",
-  subscriptionConfirm: "secure/subscription/confirm",
+  subscriptionConfirm: "secure/subscription/confirm",      // legacy
+  subscriptionCreateOrder: "secure/subscription/create-order",
+  subscriptionSubmitOrder: (id) => `secure/subscription/orders/${id}/submitted`,
+  subscriptionCurrentOrder: "secure/subscription/orders/current",
+  // Admin subscription
+  adminSubscriptionOrders: "admin/subscription/orders",
+  adminSubscriptionOrder: (id) => `admin/subscription/orders/${id}`,
+  adminSubscriptionVerify: (id) => `admin/subscription/orders/${id}/verify`,
 
   // ==== AI Services ====
   aiHealth: "secure/ai/health",

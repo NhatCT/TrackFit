@@ -16,6 +16,7 @@
     <class>com.ntn.pojo.User</class>
     <class>com.ntn.pojo.Notification</class>
     <class>com.ntn.pojo.PlanDetail</class>
+    <class>com.ntn.pojo.PaymentOrder</class>
     <class>com.ntn.pojo.AdminAccount</class>
     <class>com.ntn.pojo.Goal</class>
     <class>com.ntn.pojo.WorkoutPlan</class>

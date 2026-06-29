@@ -1,0 +1,131 @@
+package com.ntn.repositories.impl;
+
+import com.ntn.pojo.PaymentOrder;
+import com.ntn.repositories.PaymentOrderRepository;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.NoResultException;
+import java.time.LocalDateTime;
+import java.util.List;
+import org.hibernate.Session;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+@Repository
+@Transactional
+public class PaymentOrderRepositoryImpl implements PaymentOrderRepository {
+
+    @Autowired
+    private LocalSessionFactoryBean factory;
+
+    @Override
+    public PaymentOrder save(PaymentOrder order) {
+        factory.getObject().getCurrentSession().persist(order);
+        return order;
+    }
+
+    @Override
+    public PaymentOrder update(PaymentOrder order) {
+        return (PaymentOrder) factory.getObject().getCurrentSession().merge(order);
+    }
+
+    @Override
+    public PaymentOrder findById(Integer orderId) {
+        return factory.getObject().getCurrentSession().get(PaymentOrder.class, orderId);
+    }
+
+    @Override
+    public PaymentOrder findByIdForUpdate(Integer orderId) {
+        Session s = factory.getObject().getCurrentSession();
+        try {
+            return s.createQuery(
+                    "select o from PaymentOrder o join fetch o.user where o.orderId = :orderId",
+                    PaymentOrder.class)
+                    .setParameter("orderId", orderId)
+                    .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public PaymentOrder findByIdempotencyKey(String idempotencyKey) {
+        Session s = factory.getObject().getCurrentSession();
+        try {
+            return s.createQuery(
+                    "select o from PaymentOrder o join fetch o.user where o.idempotencyKey = :key",
+                    PaymentOrder.class)
+                    .setParameter("key", idempotencyKey)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public List<PaymentOrder> findByUserAndStatusIn(Integer userId, List<String> statuses) {
+        return factory.getObject().getCurrentSession()
+                .createQuery("""
+                    select o from PaymentOrder o join fetch o.user
+                    where o.user.userId = :userId and o.status in (:statuses)
+                    order by o.createdAt desc, o.orderId desc
+                """, PaymentOrder.class)
+                .setParameter("userId", userId)
+                .setParameter("statuses", statuses.stream()
+                        .map(PaymentOrder.PaymentStatus::valueOf)
+                        .toList())
+                .getResultList();
+    }
+
+    @Override
+    public List<PaymentOrder> findAllByStatus(String status, int page, int pageSize) {
+        String normalized = normalizeStatus(status);
+        String jpql = normalized == null
+                ? "select o from PaymentOrder o join fetch o.user order by o.createdAt desc, o.orderId desc"
+                : "select o from PaymentOrder o join fetch o.user where o.status = :status order by o.createdAt desc, o.orderId desc";
+
+        var q = factory.getObject().getCurrentSession().createQuery(jpql, PaymentOrder.class);
+        if (normalized != null) {
+            q.setParameter("status", PaymentOrder.PaymentStatus.valueOf(normalized));
+        }
+        q.setFirstResult(Math.max(0, page - 1) * pageSize);
+        q.setMaxResults(pageSize);
+        return q.getResultList();
+    }
+
+    @Override
+    public long countByStatus(String status) {
+        String normalized = normalizeStatus(status);
+        String jpql = normalized == null
+                ? "select count(o) from PaymentOrder o"
+                : "select count(o) from PaymentOrder o where o.status = :status";
+
+        var q = factory.getObject().getCurrentSession().createQuery(jpql, Long.class);
+        if (normalized != null) {
+            q.setParameter("status", PaymentOrder.PaymentStatus.valueOf(normalized));
+        }
+        return q.getSingleResult();
+    }
+
+    @Override
+    public List<PaymentOrder> findExpiredOrders() {
+        return factory.getObject().getCurrentSession()
+                .createQuery("""
+                    select o from PaymentOrder o join fetch o.user
+                    where o.status = :status and o.expiredAt < :now
+                    order by o.expiredAt asc
+                """, PaymentOrder.class)
+                .setParameter("status", PaymentOrder.PaymentStatus.PENDING)
+                .setParameter("now", LocalDateTime.now())
+                .getResultList();
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status)) {
+            return null;
+        }
+        return status.trim().toUpperCase();
+    }
+}
