@@ -250,7 +250,7 @@ const HealthList = () => {
             }
           </span>
           <Button size="sm" variant="outline-primary" href="/recommendations" className="ms-auto text-nowrap">
-            Xem gợi ý AI
+            Xem gợi ý cho bạn
           </Button>
         </Alert>
       )}

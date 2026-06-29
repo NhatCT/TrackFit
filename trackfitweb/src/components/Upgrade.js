@@ -134,6 +134,27 @@ const Upgrade = () => {
         .text-orange {
           color: #ff6b35;
         }
+        .compare-table {
+          background: #111a2b;
+          border: 1px solid #1f2d47;
+          border-radius: 16px;
+          overflow: hidden;
+        }
+        .compare-table th,
+        .compare-table td {
+          padding: 12px 16px;
+          border-color: rgba(255,255,255,0.06) !important;
+          vertical-align: middle;
+        }
+        .compare-table thead th {
+          background: #0f172a;
+          color: #9fb0c5;
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .compare-check { color: #22c55e; }
+        .compare-cross { color: #6b7280; }
       `}</style>
 
       {step === 1 && (
@@ -141,6 +162,40 @@ const Upgrade = () => {
           <div className="text-center mb-5">
             <h1 className="text-white fw-bold mb-2">⚡ Nâng Cấp Tài Khoản GUTIM PRO 👑</h1>
             <p className="text-light-50">Mở khoá đầy đủ các tính năng thông minh để tối ưu hoá hiệu quả tập luyện.</p>
+          </div>
+
+          <div className="compare-table mb-5 mx-auto" style={{ maxWidth: 720 }}>
+            <table className="table table-dark table-borderless mb-0">
+              <thead>
+                <tr>
+                  <th>Tính năng</th>
+                  <th className="text-center">Free</th>
+                  <th className="text-center text-warning">PRO</th>
+                </tr>
+              </thead>
+              <tbody className="text-light">
+                <tr>
+                  <td>Chat với Gutim Coach</td>
+                  <td className="text-center">3 tin / ngày</td>
+                  <td className="text-center"><span className="compare-check">✓</span> Không giới hạn</td>
+                </tr>
+                <tr>
+                  <td>Tìm phòng tập</td>
+                  <td className="text-center">Bán kính 1 km</td>
+                  <td className="text-center"><span className="compare-check">✓</span> Lên tới 10 km</td>
+                </tr>
+                <tr>
+                  <td>Gợi ý bài tập thông minh</td>
+                  <td className="text-center"><span className="compare-cross">—</span></td>
+                  <td className="text-center"><span className="compare-check">✓</span></td>
+                </tr>
+                <tr>
+                  <td>Huy hiệu VIP PRO</td>
+                  <td className="text-center"><span className="compare-cross">—</span></td>
+                  <td className="text-center"><span className="compare-check">✓</span></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           <Row className="justify-content-center g-4">
@@ -155,7 +210,7 @@ const Upgrade = () => {
                 </div>
                 <hr className="border-secondary my-3" />
                 <div className="flex-grow-1 mb-4">
-                  <div className="feature-item">✅ 💬 Chat không giới hạn với AI Coach</div>
+                  <div className="feature-item">✅ 💬 Chat không giới hạn với Gutim Coach</div>
                   <div className="feature-item">✅ 🗺️ Tìm phòng tập bán kính lên tới 10km</div>
                   <div className="feature-item">✅ 🔮 Gợi ý bài tập nâng cao tùy biến</div>
                   <div className="feature-item">✅ 👑 Huy hiệu VIP PRO nổi bật</div>
@@ -183,7 +238,7 @@ const Upgrade = () => {
                 <hr className="border-secondary my-3" />
                 <div className="flex-grow-1 mb-4">
                   <div className="feature-item text-orange">🚀 Đầy đủ quyền lợi Pro toàn diện</div>
-                  <div className="feature-item">✅ 💬 Chat không giới hạn với AI Coach</div>
+                  <div className="feature-item">✅ 💬 Chat không giới hạn với Gutim Coach</div>
                   <div className="feature-item">✅ 🗺️ Tìm phòng tập bán kính lên tới 10km</div>
                   <div className="feature-item">✅ 🔮 Gợi ý bài tập nâng cao tùy biến</div>
                   <div className="feature-item">✅ 👑 Huy hiệu VIP PRO nổi bật</div>

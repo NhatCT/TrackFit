@@ -107,10 +107,10 @@ const Home = () => {
                 GUTIM — SỨC KHỎE & TẬP LUYỆN
               </div>
               <h1 className="fw-bold" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
-                Theo dõi sức khỏe,<br />tập luyện thông minh cùng AI
+                Theo dõi sức khỏe,<br />tập luyện thông minh mỗi ngày
               </h1>
               <p className="lead mb-4" style={{ opacity: .9, maxWidth: 560 }}>
-                Gutim giúp bạn xây dựng kế hoạch tập luyện cá nhân hóa, nhận gợi ý bài tập từ AI
+                Gutim giúp bạn xây dựng kế hoạch tập luyện cá nhân hóa, nhận gợi ý bài tập phù hợp
                 và theo dõi hành trình sức khỏe mỗi ngày.
               </p>
               <div className="d-flex flex-wrap gap-2">
@@ -262,7 +262,7 @@ const Home = () => {
               <Card.Body>
                 <h2 className="fw-bold mb-3">Bắt đầu hành trình sức khỏe của bạn</h2>
                 <p className="text-muted mb-4" style={{ maxWidth: 520, margin: "0 auto" }}>
-                  Đăng ký miễn phí để nhận kế hoạch tập luyện cá nhân hóa, gợi ý bài tập từ AI
+                  Đăng ký miễn phí để nhận kế hoạch tập luyện cá nhân hóa, gợi ý bài tập phù hợp
                   và theo dõi tiến trình sức khỏe hàng ngày.
                 </p>
                 <div className="d-flex justify-content-center gap-3">

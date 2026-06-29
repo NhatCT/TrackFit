@@ -6,7 +6,7 @@ export default function Chatbot() {
   const [user] = useContext(MyUserContext);
   const sessionId = user?.username || "guest";
 
-  const [status, setStatus] = React.useState("Đang kiểm tra AI…");
+  const [status, setStatus] = React.useState("Đang kiểm tra kết nối…");
   const [question, setQuestion] = React.useState("");
   const [answer, setAnswer] = React.useState("");
   const [model, setModel] = React.useState("");
@@ -15,8 +15,8 @@ export default function Chatbot() {
   React.useEffect(() => {
     let mounted = true;
     authApis().get(endpoints.aiHealth)
-      .then(res => mounted && setStatus(res?.data?.ok ? "AI: OK" : "AI: lỗi"))
-      .catch(() => mounted && setStatus("AI: lỗi"));
+      .then(res => mounted && setStatus(res?.data?.ok ? "Sẵn sàng" : "Mất kết nối"))
+      .catch(() => mounted && setStatus("Mất kết nối"));
     return () => { mounted = false; };
   }, []);
 
@@ -30,7 +30,7 @@ export default function Chatbot() {
       setAnswer(data?.answer || "(không có trả lời)");
       setModel(data?.model || "");
     } catch (e) {
-      setAnswer(`Lỗi gọi chatbot${e?.response?.status ? ` (${e.response.status})` : ""}`);
+      setAnswer(`Lỗi gửi tin nhắn${e?.response?.status ? ` (${e.response.status})` : ""}`);
       setModel("");
     } finally {
       setLoading(false);
@@ -40,7 +40,7 @@ export default function Chatbot() {
   return (
     <div className="container">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2 className="h5 fw-semibold">Chatbot</h2>
+        <h2 className="h5 fw-semibold">Trợ lý sức khỏe</h2>
         <span className="text-muted small">{status}</span>
       </div>
 

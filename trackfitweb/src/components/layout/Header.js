@@ -185,7 +185,7 @@ const Header = (props) => {
               <Nav.Link as={Link} to="/health" className="text-white">Sức khỏe</Nav.Link>
               <Nav.Link as={Link} to="/gyms" className="text-white">Phòng tập</Nav.Link>
               <Nav.Link as={Link} to="/recommendations" className="text-white">
-                Gợi ý
+                Gợi ý cho bạn
               </Nav.Link>
 
               <Nav.Link as={Link} to="/stats/summary" className="text-white">Thống kê</Nav.Link>

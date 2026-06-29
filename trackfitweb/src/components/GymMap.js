@@ -27,6 +27,7 @@ const GymMap = () => {
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [userLoc, setUserLoc] = useState(null); // { lat, lon }
   const [radius, setRadius] = useState(() => user?.isPremium ? 3000 : 1000);
+  const radiusSyncedRef = useRef(false);
   const [gyms, setGyms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -75,6 +76,17 @@ const GymMap = () => {
       }
     };
   }, []);
+
+  // Sync default radius when user profile loads (context may be null on first render)
+  useEffect(() => {
+    if (!user) return;
+    if (!user.isPremium) {
+      setRadius((prev) => (prev > 1000 ? 1000 : prev));
+    } else if (!radiusSyncedRef.current) {
+      setRadius((prev) => (prev === 1000 ? 3000 : prev));
+      radiusSyncedRef.current = true;
+    }
+  }, [user]);
 
   // Request browser geolocation
   const getUserLocation = () => {
@@ -418,7 +430,7 @@ const GymMap = () => {
         <Col md={7}>
           <h2 className="text-white mb-2">🗺️ Bản đồ Tìm Phòng Tập</h2>
           <p className="text-light-50 mb-0">
-            Khám phá các phòng tập thể hình, gym, fitness xung quanh bạn sử dụng OpenStreetMap. 
+            Khám phá các phòng tập thể hình, gym, fitness xung quanh bạn qua OpenStreetMap (miễn phí, không cần API key).
             Nhấp chuột vào bất cứ đâu trên bản đồ để thay đổi tâm điểm tìm kiếm.
           </p>
         </Col>

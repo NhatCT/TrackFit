@@ -220,6 +220,11 @@ export default function ChatWidget({ requireAuth = false }) {
     if (!q || sending) return;
     setInput("");
     setMsgs(prev => [...prev, { role: "user", text: q }]);
+    if (!user?.isPremium) {
+      const countKey = `tf_chat_count_${user?.userId || "anon"}`;
+      const prev = parseInt(localStorage.getItem(countKey) || "0", 10);
+      localStorage.setItem(countKey, String(prev + 1));
+    }
     setSending(true);
     try {
       const { data } = await authApis().post(endpoints.aiChatAsk, { sessionId, question: q, topK: 4 });
@@ -227,8 +232,8 @@ export default function ChatWidget({ requireAuth = false }) {
       setModel(data?.model || "");
     } catch (e) {
       const msg = e?.response?.status === 401
-        ? "Bạn cần đăng nhập để dùng chatbot."
-        : `Có lỗi khi gọi chatbot${e?.response?.status ? ` (${e.response.status})` : ""}. Vui lòng thử lại.`;
+        ? "Bạn cần đăng nhập để dùng Gutim Coach."
+        : `Có lỗi khi gửi tin nhắn${e?.response?.status ? ` (${e.response.status})` : ""}. Vui lòng thử lại.`;
       setMsgs(prev => [...prev, { role: "bot", text: msg }]);
     } finally {
       setSending(false);
@@ -256,7 +261,7 @@ export default function ChatWidget({ requireAuth = false }) {
     <>
       <style dangerouslySetInnerHTML={{ __html: STYLE }} />
 
-      <button className="gutim-fab" aria-label="Mở Chatbot" onClick={() => setOpen(v => !v)}>
+      <button className="gutim-fab" aria-label="Mở Gutim Coach" onClick={() => setOpen(v => !v)}>
         <div className="gutim-fab-inner">💬</div>
       </button>
 
@@ -264,7 +269,7 @@ export default function ChatWidget({ requireAuth = false }) {
         <div className="gutim-panel">
           <div className="gutim-hd">
             <div className="gutim-avatar">
-              {gutimAvatar ? <img src={gutimAvatar} alt="Gutim Coach AI" /> : <FallbackChibi />}
+              {gutimAvatar ? <img src={gutimAvatar} alt="Gutim Coach" /> : <FallbackChibi />}
               <span className="gutim-dot" style={{ background: statusOk ? "#22c55e" : "#ef4444" }} />
             </div>
             <div className="gutim-title">
@@ -279,7 +284,7 @@ export default function ChatWidget({ requireAuth = false }) {
           <div className="gutim-body" ref={bodyRef}>
             {!authed && (
               <div className="gutim-msg bot">
-                Vui lòng <a href="/login" style={{ color:"#93c5fd", fontWeight:800 }}>đăng nhập</a> để sử dụng chatbot.
+                Vui lòng <a href="/login" style={{ color:"#93c5fd", fontWeight:800 }}>đăng nhập</a> để trò chuyện với Gutim Coach.
               </div>
             )}
             
