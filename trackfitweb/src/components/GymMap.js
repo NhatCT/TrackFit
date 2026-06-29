@@ -174,19 +174,49 @@ const GymMap = () => {
   const fetchGyms = async (lat, lon, r) => {
     setLoading(true);
     setError(null);
-    try {
-      const query = `[out:json][timeout:25];(node["leisure"="fitness_centre"](around:${r},${lat},${lon});node["amenity"="gym"](around:${r},${lat},${lon});way["leisure"="fitness_centre"](around:${r},${lat},${lon});way["amenity"="gym"](around:${r},${lat},${lon}););out center;`;
-      const response = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        body: query,
-      });
-
-      if (!response.ok) {
-        throw new Error("Không thể kết nối tới dịch vụ bản đồ (Overpass API).");
+    
+    const endpoints = [
+      "https://overpass-api.de/api/interpreter",
+      "https://lz4.overpass-api.de/api/interpreter",
+      "https://overpass.kumi.systems/api/interpreter"
+    ];
+    
+    const query = `[out:json][timeout:25];(node["leisure"="fitness_centre"](around:${r},${lat},${lon});node["amenity"="gym"](around:${r},${lat},${lon});way["leisure"="fitness_centre"](around:${r},${lat},${lon});way["amenity"="gym"](around:${r},${lat},${lon}););out center;`;
+    
+    let success = false;
+    let data = null;
+    let lastError = null;
+    
+    for (const url of endpoints) {
+      try {
+        console.log(`[Overpass] Querying ${url}...`);
+        const response = await fetch(url, {
+          method: "POST",
+          body: query,
+        });
+        
+        if (response.ok) {
+          data = await response.json();
+          success = true;
+          console.log(`[Overpass] Success with ${url}`);
+          break;
+        } else {
+          console.warn(`[Overpass] ${url} failed with status: ${response.status}`);
+          lastError = `HTTP ${response.status}`;
+        }
+      } catch (err) {
+        console.warn(`[Overpass] ${url} request failed:`, err);
+        lastError = err.message || err;
       }
+    }
+    
+    if (!success) {
+      setError(`Không thể kết nối tới các dịch vụ bản đồ (Overpass API). Lỗi: ${lastError}. Vui lòng thử lại sau.`);
+      setLoading(false);
+      return;
+    }
 
-      const data = await response.json();
-      
+    try {
       // Parse results
       const results = (data.elements || []).map((el) => {
         // Ways in Overpass API have a "center" field when using out center
