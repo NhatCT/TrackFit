@@ -14,11 +14,15 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import org.springframework.cache.annotation.CachingConfigurer;
+import org.springframework.cache.interceptor.CacheErrorHandler;
+import org.springframework.cache.Cache;
+
 import java.time.Duration;
 
 @Configuration
 @EnableCaching
-public class CacheConfig {
+public class CacheConfig implements CachingConfigurer {
 
     @Value("${redis.host:localhost}")
     private String redisHost;
@@ -49,5 +53,30 @@ public class CacheConfig {
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
                 .build();
+     }
+
+    @Override
+    public CacheErrorHandler errorHandler() {
+        return new CacheErrorHandler() {
+            @Override
+            public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
+                System.err.println("Redis Cache GET Error: " + exception.getMessage());
+            }
+
+            @Override
+            public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
+                System.err.println("Redis Cache PUT Error: " + exception.getMessage());
+            }
+
+            @Override
+            public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
+                System.err.println("Redis Cache EVICT Error: " + exception.getMessage());
+            }
+
+            @Override
+            public void handleCacheClearError(RuntimeException exception, Cache cache) {
+                System.err.println("Redis Cache CLEAR Error: " + exception.getMessage());
+            }
+        };
     }
 }
