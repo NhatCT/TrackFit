@@ -71,7 +71,7 @@ const Upgrade = () => {
           <div className="fs-1 mb-3">👑</div>
           <h2 className="text-white mb-3">Bạn đã sở hữu GUTIM PRO</h2>
           <p className="text-light-50 mb-4">
-            Tài khoản của bạn hiện đang là hội viên **Premium**. Bạn có toàn quyền truy cập bản đồ không giới hạn, chat với AI Coach 24/7 và nhận các gợi ý bài tập thông minh.
+            Tài khoản của bạn hiện đang là hội viên <strong>Premium</strong>. Bạn có toàn quyền truy cập bản đồ không giới hạn, chat với Gutim Coach 24/7 và nhận các gợi ý bài tập thông minh.
           </p>
           <Button variant="warning" onClick={() => navigate("/")} className="px-4 py-2 fw-bold text-dark">
             Về Trang Chủ
@@ -211,18 +211,35 @@ const Upgrade = () => {
               </Button>
             </div>
             
-            <Row className="g-4 align-items-center">
+            <Row className="g-4 align-items-start">
               {/* Payment Info */}
               <Col md={6}>
-                <h3 className="text-white mb-3">Thông tin chuyển khoản</h3>
+                <h3 className="text-white mb-3">Hướng dẫn thanh toán</h3>
                 <div className="qr-card text-light">
+                  {/* Step-by-step guide */}
+                  <div className="mb-4 p-3" style={{ background: "rgba(255,107,53,0.06)", border: "1px solid rgba(255,107,53,0.15)", borderRadius: "12px" }}>
+                    <div className="fw-bold text-orange small mb-2">Hướng dẫn 3 bước:</div>
+                    <div className="d-flex align-items-start gap-2 mb-2">
+                      <span className="badge bg-warning text-dark" style={{ minWidth: "24px" }}>1</span>
+                      <span className="small">Mở ứng dụng ngân hàng hoặc quét mã QR bên cạnh</span>
+                    </div>
+                    <div className="d-flex align-items-start gap-2 mb-2">
+                      <span className="badge bg-warning text-dark" style={{ minWidth: "24px" }}>2</span>
+                      <span className="small">Chuyển khoản đúng số tiền và nội dung bên dưới</span>
+                    </div>
+                    <div className="d-flex align-items-start gap-2">
+                      <span className="badge bg-warning text-dark" style={{ minWidth: "24px" }}>3</span>
+                      <span className="small">Bấm nút <strong>"Xác nhận đã chuyển khoản"</strong> để hệ thống xác minh</span>
+                    </div>
+                  </div>
+
                   <div className="mb-3">
                     <span className="text-light-50 text-uppercase small d-block">Gói đăng ký</span>
                     <span className="fw-bold fs-5 text-orange">{selectedPlan.name}</span>
                   </div>
                   <div className="mb-3">
                     <span className="text-light-50 text-uppercase small d-block">Ngân hàng</span>
-                    <span className="fw-semibold">Ngân hàng Quân Đội (MBBank)</span>
+                    <span className="fw-semibold">🏦 Ngân hàng Quân Đội (MBBank)</span>
                   </div>
                   <div className="mb-3">
                     <span className="text-light-50 text-uppercase small d-block">Số tài khoản</span>
@@ -241,6 +258,13 @@ const Upgrade = () => {
                     <span className="fw-bold font-monospace bg-dark text-white p-2 rounded d-inline-block mt-1">
                       GUTIM_PRO_{user.username}
                     </span>
+                  </div>
+
+                  {/* Demo disclaimer */}
+                  <div className="mb-3 p-2 text-center" style={{ background: "rgba(13,110,253,0.08)", border: "1px solid rgba(13,110,253,0.2)", borderRadius: "8px" }}>
+                    <small className="text-info">
+                      ℹ️ Đây là môi trường demo — giao dịch được mô phỏng để trải nghiệm.
+                    </small>
                   </div>
 
                   {error && <Alert variant="danger">{error}</Alert>}
@@ -266,7 +290,7 @@ const Upgrade = () => {
               {/* VietQR Dynamic Code */}
               <Col md={6} className="text-center">
                 <Card className="p-4 border-0" style={{ background: "#111a2b", borderRadius: "16px" }}>
-                  <h5 className="text-white mb-3">Mã VietQR Thanh Toán Tự Động</h5>
+                  <h5 className="text-white mb-3">Mã QR Thanh Toán Nhanh</h5>
                   <div className="bg-white p-3 rounded d-inline-block mx-auto mb-3" style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.3)" }}>
                     <img 
                       src={`https://img.vietqr.io/image/mb-0382766336-compact2.png?amount=${selectedPlan.price}&addInfo=GUTIM_PRO_${user.username}&accountName=GUTIM%20FITNESS%20SYSTEM`}
@@ -290,8 +314,22 @@ const Upgrade = () => {
             <div className="fs-1 mb-3 text-warning">👑 🎉</div>
             <h1 className="text-white fw-bold mb-3">Chúc mừng bạn đã nâng cấp thành công!</h1>
             <p className="text-light-50 fs-5 mb-4">
-              Tài khoản của bạn đã được chuyển sang chế độ **GUTIM PRO**. Hãy trải nghiệm đầy đủ tất cả các đặc quyền cao cấp ngay từ bây giờ!
+              Tài khoản của bạn đã được chuyển sang chế độ <strong>GUTIM PRO</strong>.
             </p>
+            <div className="text-start mx-auto mb-4" style={{ maxWidth: "360px" }}>
+              <div className="mb-2 d-flex align-items-center gap-2 text-light">
+                <span className="text-success">✅</span> Chat không giới hạn với Gutim Coach
+              </div>
+              <div className="mb-2 d-flex align-items-center gap-2 text-light">
+                <span className="text-success">✅</span> Tìm phòng tập bán kính lên tới 10km
+              </div>
+              <div className="mb-2 d-flex align-items-center gap-2 text-light">
+                <span className="text-success">✅</span> Gợi ý bài tập thông minh nâng cao
+              </div>
+              <div className="mb-2 d-flex align-items-center gap-2 text-light">
+                <span className="text-success">✅</span> Huy hiệu VIP PRO nổi bật
+              </div>
+            </div>
             <Button variant="warning" onClick={() => navigate("/")} className="px-5 py-3 fw-bold text-dark fs-5">
               Khám Phá GUTIM PRO Ngay
             </Button>

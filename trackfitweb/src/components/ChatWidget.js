@@ -187,7 +187,7 @@ export default function ChatWidget({ requireAuth = false }) {
   const [statusOk, setStatusOk] = React.useState(true);
   const [msgs, setMsgs] = React.useState(() => {
     const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved) : [{ role: "bot", text: "Xin chào! Mình là Gutim Coach AI 🤖💪 — hỏi mình về bài tập, dinh dưỡng hay lịch tập nhé!" }];
+    return saved ? JSON.parse(saved) : [{ role: "bot", text: "Xin chào! Mình là Gutim Coach 💪 — hỏi mình về bài tập, dinh dưỡng hay lịch tập nhé!" }];
   });
   const [input, setInput] = React.useState("");
   const [sending, setSending] = React.useState(false);
@@ -244,10 +244,11 @@ export default function ChatWidget({ requireAuth = false }) {
 
   const clearHistory = () => {
     if (window.confirm("Bạn có chắc chắn muốn xoá lịch sử trò chuyện này?")) {
-      const defaultMsg = [{ role: "bot", text: "Xin chào! Mình là Gutim Coach AI 🤖💪 — hỏi mình về bài tập, dinh dưỡng hay lịch tập nhé!" }];
+      const defaultMsg = [{ role: "bot", text: "Xin chào! Mình là Gutim Coach 💪 — hỏi mình về bài tập, dinh dưỡng hay lịch tập nhé!" }];
       setMsgs(defaultMsg);
       localStorage.setItem(storageKey, JSON.stringify(defaultMsg));
       setModel("");
+      // Note: message count is NOT reset — stored separately to prevent bypass
     }
   };
 
@@ -267,8 +268,8 @@ export default function ChatWidget({ requireAuth = false }) {
               <span className="gutim-dot" style={{ background: statusOk ? "#22c55e" : "#ef4444" }} />
             </div>
             <div className="gutim-title">
-              <div className="gutim-name">Gutim Coach AI</div>
-              <div className="gutim-sub">{statusOk ? "Sẵn sàng hỗ trợ" : "Mất kết nối AI"}</div>
+              <div className="gutim-name">Gutim Coach</div>
+              <div className="gutim-sub">{statusOk ? "Sẵn sàng hỗ trợ" : "Mất kết nối"}</div>
             </div>
             
             <button className="gutim-clear-history" onClick={clearHistory} title="Xoá cuộc hội thoại">🗑️</button>
@@ -304,7 +305,16 @@ export default function ChatWidget({ requireAuth = false }) {
           </div>
 
           <div className="gutim-ft">
-            {!user?.isPremium && msgs.filter(m => m.role === "user").length >= 3 ? (
+            {!user?.isPremium && (() => {
+              // Use persistent count from localStorage to prevent bypass via clearing chat history
+              const countKey = `tf_chat_count_${user?.userId || 'anon'}`;
+              const persistentCount = parseInt(localStorage.getItem(countKey) || '0', 10);
+              const currentCount = msgs.filter(m => m.role === "user").length;
+              // Sync: keep the higher of localStorage vs state count
+              const totalCount = Math.max(persistentCount, currentCount);
+              if (currentCount > persistentCount) localStorage.setItem(countKey, String(currentCount));
+              return totalCount >= 3;
+            })() ? (
               <div className="w-100 p-2 text-center" style={{ background: "rgba(255,107,53,0.1)", border: "1px solid rgba(255,107,53,0.3)", borderRadius: "12px" }}>
                 <div className="small text-warning mb-1.5 fw-bold">👑 Mở khoá lượt chat không giới hạn</div>
                 <a href="/upgrade" className="btn btn-sm btn-warning fw-bold text-dark px-3 py-1" style={{ fontSize: "0.8rem", textDecoration: "none" }}>

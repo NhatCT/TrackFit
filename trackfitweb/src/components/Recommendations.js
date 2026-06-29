@@ -117,14 +117,16 @@ const Recommendations = () => {
     <>
       <div className="d-flex justify-content-between align-items-end mb-3">
         <div>
-          <h3 className="mb-1">Gợi ý bài tập (AI Agent)</h3>
+          <h3 className="mb-1">Gợi ý bài tập dành cho bạn</h3>
           <div className="text-muted small">
-            Danh sách dưới đây được AI tạo tự động dựa trên hồ sơ và lịch sử của bạn.
+            Được phân tích dựa trên hồ sơ và lịch sử tập luyện của bạn.
           </div>
         </div>
-        <Button variant="outline-primary" onClick={loadAuto} disabled={loading}>
-          {loading ? <Spinner size="sm" /> : "Làm mới gợi ý"}
-        </Button>
+        {user?.isPremium && (
+          <Button variant="outline-primary" onClick={loadAuto} disabled={loading}>
+            {loading ? <Spinner size="sm" /> : "Làm mới gợi ý"}
+          </Button>
+        )}
       </div>
 
       {err && <Alert variant="danger">{err}</Alert>}
@@ -154,7 +156,7 @@ const Recommendations = () => {
               <div className="fs-1 mb-3">👑</div>
               <h4 className="text-white mb-3">Tính Năng Dành Riêng Cho Hội Viên PRO</h4>
               <p className="text-light-50 small mb-4">
-                Chức năng gợi ý bài tập thông minh được tối ưu hóa bởi AI Agent phân tích riêng cho thể trạng của bạn chỉ dành cho tài khoản PRO.
+                Chức năng gợi ý bài tập thông minh được tối ưu hóa và phân tích riêng cho thể trạng của bạn chỉ dành cho tài khoản PRO.
               </p>
               <Button href="/upgrade" variant="warning" className="fw-bold text-dark px-4 py-2.5">
                 Nâng Cấp GUTIM PRO Ngay

@@ -26,7 +26,7 @@ const GymMap = () => {
   const [user] = useContext(MyUserContext);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [userLoc, setUserLoc] = useState(null); // { lat, lon }
-  const [radius, setRadius] = useState(3000); // 3km default
+  const [radius, setRadius] = useState(() => user?.isPremium ? 3000 : 1000);
   const [gyms, setGyms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -438,11 +438,18 @@ const GymMap = () => {
       {error && (
         <Alert variant="danger" className="d-flex justify-content-between align-items-center">
           <span>{error}</span>
-          {error.includes("hội viên PRO") && (
-            <Button size="sm" variant="warning" className="fw-bold text-dark text-nowrap ms-2" href="/upgrade">
-              Nâng cấp PRO 👑
-            </Button>
-          )}
+          <div className="d-flex gap-2 ms-2">
+            {error.includes("hội viên PRO") && (
+              <Button size="sm" variant="warning" className="fw-bold text-dark text-nowrap" href="/upgrade">
+                Nâng cấp PRO 👑
+              </Button>
+            )}
+            {error.includes("Overpass") && userLoc && (
+              <Button size="sm" variant="outline-light" className="text-nowrap" onClick={() => fetchGyms(userLoc.lat, userLoc.lon, radius)}>
+                🔄 Thử lại
+              </Button>
+            )}
+          </div>
         </Alert>
       )}
 

@@ -80,8 +80,8 @@ const Home = () => {
     },
     {
       icon: sIcon2,
-      title: "Gợi ý AI thông minh",
-      desc: "AI phân tích hồ sơ sức khỏe và lịch sử tập luyện để đề xuất bài tập tối ưu.",
+      title: "Gợi ý thông minh",
+      desc: "Hệ thống phân tích hồ sơ sức khỏe và lịch sử tập luyện để đề xuất bài tập tối ưu.",
     },
     {
       icon: sIcon3,
@@ -90,8 +90,8 @@ const Home = () => {
     },
     {
       icon: sIcon4,
-      title: "Trợ lý Chatbot",
-      desc: "Trò chuyện với AI Coach về dinh dưỡng, kỹ thuật bài tập và chế độ sinh hoạt.",
+      title: "Trợ lý sức khỏe",
+      desc: "Trò chuyện và nhận tư vấn về dinh dưỡng, kỹ thuật bài tập và chế độ sinh hoạt.",
     },
   ];
 
@@ -120,7 +120,7 @@ const Home = () => {
                       📋 Kế hoạch của tôi
                     </Button>
                     <Button href="/recommendations" variant="outline-light" className="fw-semibold px-4">
-                      🤖 Gợi ý AI
+                      ✨ Gợi ý cho bạn
                     </Button>
                   </>
                 ) : (

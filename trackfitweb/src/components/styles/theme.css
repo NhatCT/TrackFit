@@ -46,3 +46,27 @@ html, body, #root{
   content:""; position:absolute; inset:0; background: rgba(0,0,0,.4);
 }
 .rounded-16{ border-radius: 16px; }
+
+/* ===== Smooth Scroll ===== */
+html{ scroll-behavior: smooth; }
+
+/* ===== Selection ===== */
+::selection{ background: rgba(255,107,53,0.3); color: #fff; }
+
+/* ===== Utility classes ===== */
+.bg-surface{ background-color: var(--surface) !important; }
+.text-light-50{ color: var(--muted) !important; }
+
+/* ===== Custom scrollbar for dark theme ===== */
+::-webkit-scrollbar{ width: 8px; }
+::-webkit-scrollbar-track{ background: var(--bg); }
+::-webkit-scrollbar-thumb{
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover{ background: #2a4066; }
+
+/* ===== Smooth transitions for interactive elements ===== */
+a{ transition: color 0.2s ease; }
+.btn{ transition: all 0.2s ease; }
+

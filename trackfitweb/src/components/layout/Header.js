@@ -184,14 +184,8 @@ const Header = (props) => {
               <Nav.Link as={Link} to="/goals" className="text-white">Mục tiêu</Nav.Link>
               <Nav.Link as={Link} to="/health" className="text-white">Sức khỏe</Nav.Link>
               <Nav.Link as={Link} to="/gyms" className="text-white">Phòng tập</Nav.Link>
-              <Nav.Link
-                as={Link}
-                to="/recommendations"
-                className="text-white d-inline-flex align-items-center gap-1 position-relative"
-                style={{ lineHeight: 1 }}
-              >
+              <Nav.Link as={Link} to="/recommendations" className="text-white">
                 Gợi ý
-                <span className="tf-new-badge">NEW</span>
               </Nav.Link>
 
               <Nav.Link as={Link} to="/stats/summary" className="text-white">Thống kê</Nav.Link>
