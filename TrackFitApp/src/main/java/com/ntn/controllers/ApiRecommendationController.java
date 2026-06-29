@@ -2,6 +2,7 @@ package com.ntn.controllers;
 
 import com.ntn.dto.RecommendationItemDTO;
 import com.ntn.dto.RecommendationParamsDTO;
+import com.ntn.services.PremiumService;
 import com.ntn.services.RecommendationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,9 +17,11 @@ import java.util.List;
 public class ApiRecommendationController {
 
     @Autowired private RecommendationService recommendationService;
+    @Autowired private PremiumService premiumService;
 
     @GetMapping("/auto")
     public ResponseEntity<?> auto(@RequestParam(value = "size", required = false) Integer size, Principal principal) {
+        premiumService.requirePremium(principal.getName());
         RecommendationParamsDTO params = new RecommendationParamsDTO();
         params.setSize(size);
         List<RecommendationItemDTO> data = recommendationService.recommendExercises(principal.getName(), params);

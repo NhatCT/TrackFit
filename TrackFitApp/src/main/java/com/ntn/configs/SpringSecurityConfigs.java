@@ -37,7 +37,8 @@ import java.util.List;
     "com.ntn.controllers",
     "com.ntn.repositories",
     "com.ntn.services",
-    "com.ntn.configs"
+    "com.ntn.configs",
+    "com.ntn.messaging"
 })
 public class SpringSecurityConfigs {
 

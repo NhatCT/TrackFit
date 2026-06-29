@@ -24,6 +24,11 @@ public class UserResponseDTO {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime updatedAt;
 
+    private Boolean isPremium;
+
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private LocalDateTime premiumExpiresAt;
+
     // Getters và Setters
     public Integer getUserId() {
         return userId;
@@ -119,6 +124,22 @@ public class UserResponseDTO {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getIsPremium() {
+        return isPremium;
+    }
+
+    public void setIsPremium(Boolean isPremium) {
+        this.isPremium = isPremium;
+    }
+
+    public LocalDateTime getPremiumExpiresAt() {
+        return premiumExpiresAt;
+    }
+
+    public void setPremiumExpiresAt(LocalDateTime premiumExpiresAt) {
+        this.premiumExpiresAt = premiumExpiresAt;
     }
 
     /**

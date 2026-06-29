@@ -84,6 +84,12 @@ public class User implements Serializable {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "is_premium")
+    private Boolean isPremium = false;
+
+    @Column(name = "premium_expires_at")
+    private LocalDateTime premiumExpiresAt;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "userId")
     private Set<Notification> notificationSet;
 
@@ -211,6 +217,22 @@ public class User implements Serializable {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getIsPremium() {
+        return isPremium;
+    }
+
+    public void setIsPremium(Boolean isPremium) {
+        this.isPremium = isPremium;
+    }
+
+    public LocalDateTime getPremiumExpiresAt() {
+        return premiumExpiresAt;
+    }
+
+    public void setPremiumExpiresAt(LocalDateTime premiumExpiresAt) {
+        this.premiumExpiresAt = premiumExpiresAt;
     }
 
     public Set<Notification> getNotificationSet() {

@@ -192,7 +192,18 @@ export default function ChatWidget({ requireAuth = false }) {
   const [input, setInput] = React.useState("");
   const [sending, setSending] = React.useState(false);
   const [model, setModel] = React.useState("");
+  const [chatRemaining, setChatRemaining] = React.useState(null);
   const bodyRef = React.useRef(null);
+
+  const refreshChatQuota = React.useCallback(() => {
+    if (!authed || user?.isPremium) {
+      setChatRemaining(null);
+      return;
+    }
+    authApis().get(endpoints.subscriptionStatus)
+      .then((r) => setChatRemaining(r.data?.chatRemaining ?? 0))
+      .catch(() => setChatRemaining(0));
+  }, [authed, user?.isPremium]);
 
   // Health check
   React.useEffect(() => {
@@ -205,6 +216,10 @@ export default function ChatWidget({ requireAuth = false }) {
     const iv = setInterval(ping, 30000);
     return () => { mounted = false; clearInterval(iv); };
   }, []);
+
+  React.useEffect(() => {
+    if (open) refreshChatQuota();
+  }, [open, refreshChatQuota]);
 
   // Persist & autoscroll
   React.useEffect(() => {
@@ -220,21 +235,23 @@ export default function ChatWidget({ requireAuth = false }) {
     if (!q || sending) return;
     setInput("");
     setMsgs(prev => [...prev, { role: "user", text: q }]);
-    if (!user?.isPremium) {
-      const countKey = `tf_chat_count_${user?.userId || "anon"}`;
-      const prev = parseInt(localStorage.getItem(countKey) || "0", 10);
-      localStorage.setItem(countKey, String(prev + 1));
-    }
     setSending(true);
     try {
       const { data } = await authApis().post(endpoints.aiChatAsk, { sessionId, question: q, topK: 4 });
       setMsgs(prev => [...prev, { role: "bot", text: data?.answer || "Mình chưa có câu trả lời." }]);
       setModel(data?.model || "");
+      refreshChatQuota();
     } catch (e) {
-      const msg = e?.response?.status === 401
-        ? "Bạn cần đăng nhập để dùng Gutim Coach."
-        : `Có lỗi khi gửi tin nhắn${e?.response?.status ? ` (${e.response.status})` : ""}. Vui lòng thử lại.`;
-      setMsgs(prev => [...prev, { role: "bot", text: msg }]);
+      if (e?.response?.status === 429) {
+        setChatRemaining(0);
+        const msg = e?.response?.data?.message || "Bạn đã hết lượt chat miễn phí hôm nay.";
+        setMsgs(prev => [...prev, { role: "bot", text: msg }]);
+      } else {
+        const msg = e?.response?.status === 401
+          ? "Bạn cần đăng nhập để dùng Gutim Coach."
+          : `Có lỗi khi gửi tin nhắn${e?.response?.status ? ` (${e.response.status})` : ""}. Vui lòng thử lại.`;
+        setMsgs(prev => [...prev, { role: "bot", text: msg }]);
+      }
     } finally {
       setSending(false);
     }
@@ -253,9 +270,10 @@ export default function ChatWidget({ requireAuth = false }) {
       setMsgs(defaultMsg);
       localStorage.setItem(storageKey, JSON.stringify(defaultMsg));
       setModel("");
-      // Note: message count is NOT reset — stored separately to prevent bypass
     }
   };
+
+  const chatBlocked = authed && !user?.isPremium && chatRemaining !== null && chatRemaining <= 0;
 
   return (
     <>
@@ -310,16 +328,7 @@ export default function ChatWidget({ requireAuth = false }) {
           </div>
 
           <div className="gutim-ft">
-            {!user?.isPremium && (() => {
-              // Use persistent count from localStorage to prevent bypass via clearing chat history
-              const countKey = `tf_chat_count_${user?.userId || 'anon'}`;
-              const persistentCount = parseInt(localStorage.getItem(countKey) || '0', 10);
-              const currentCount = msgs.filter(m => m.role === "user").length;
-              // Sync: keep the higher of localStorage vs state count
-              const totalCount = Math.max(persistentCount, currentCount);
-              if (currentCount > persistentCount) localStorage.setItem(countKey, String(currentCount));
-              return totalCount >= 3;
-            })() ? (
+            {chatBlocked ? (
               <div className="w-100 p-2 text-center" style={{ background: "rgba(255,107,53,0.1)", border: "1px solid rgba(255,107,53,0.3)", borderRadius: "12px" }}>
                 <div className="small text-warning mb-1.5 fw-bold">👑 Mở khoá lượt chat không giới hạn</div>
                 <a href="/upgrade" className="btn btn-sm btn-warning fw-bold text-dark px-3 py-1" style={{ fontSize: "0.8rem", textDecoration: "none" }}>

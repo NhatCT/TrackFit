@@ -40,6 +40,18 @@ const WebSocketListener = ({ user }) => {
           console.error("[WebSocket] Error parsing notification body:", e);
         }
       });
+
+      client.subscribe("/user/queue/events", (message) => {
+        try {
+          const data = JSON.parse(message.body);
+          console.log("[WebSocket] Event received:", data);
+          if (data.type === "SUBSCRIPTION_ACTIVATED") {
+            window.dispatchEvent(new CustomEvent("trackfit-premium-activated", { detail: data }));
+          }
+        } catch (e) {
+          console.error("[WebSocket] Error parsing event body:", e);
+        }
+      });
     };
 
     client.onStompError = (frame) => {

@@ -1,5 +1,7 @@
 package com.ntn.controllers;
 
+import com.ntn.exceptions.ChatQuotaExceededException;
+import com.ntn.exceptions.PremiumRequiredException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -72,6 +74,25 @@ public class ApiExceptionHandler {
     public ResponseEntity<?> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
                 .body(Map.of("message", "Phương thức không được hỗ trợ"));
+    }
+
+    @ExceptionHandler(PremiumRequiredException.class)
+    public ResponseEntity<?> handlePremiumRequired(PremiumRequiredException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of(
+                        "message", ex.getMessage(),
+                        "code", "PREMIUM_REQUIRED"
+                ));
+    }
+
+    @ExceptionHandler(ChatQuotaExceededException.class)
+    public ResponseEntity<?> handleChatQuota(ChatQuotaExceededException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of(
+                        "message", ex.getMessage(),
+                        "code", "CHAT_QUOTA_EXCEEDED",
+                        "dailyLimit", ex.getDailyLimit()
+                ));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

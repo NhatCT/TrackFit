@@ -24,6 +24,7 @@ public class DispatcherServletInit extends AbstractAnnotationConfigDispatcherSer
             RestClientConfigs.class,
             SchedulingConfig.class,
             CacheConfig.class,
+            KafkaConfig.class,
             WebSocketConfig.class
         };
     }

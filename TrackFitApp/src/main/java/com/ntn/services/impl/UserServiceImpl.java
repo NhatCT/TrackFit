@@ -11,6 +11,7 @@ import com.ntn.pojo.HealthData;
 import com.ntn.pojo.User;
 import com.ntn.repositories.UserRepository;
 import com.ntn.services.UserService;
+import com.ntn.services.PremiumService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -40,6 +41,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private Cloudinary cloudinary;
+
+    @Autowired
+    private PremiumService premiumService;
 
     @Override
     public UserResponseDTO getUserByUsername(String username) {
@@ -198,6 +202,8 @@ public class UserServiceImpl implements UserService {
         dto.setRole(user.getRole());
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
+        dto.setIsPremium(premiumService.isPremiumActive(user));
+        dto.setPremiumExpiresAt(user.getPremiumExpiresAt());
         return dto;
     }
 

@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import { Container, Row, Col, Card, Button, Spinner, Alert } from "react-bootstrap";
 import { MyUserContext } from "../configs/Context";
 import { useNavigate } from "react-router-dom";
+import { authApis, endpoints } from "../configs/Apis";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -47,21 +48,35 @@ const Upgrade = () => {
   };
 
   const handleSelectPlan = (planKey) => {
-    setSelectedPlan(plans[planKey]);
+    setSelectedPlan({ ...plans[planKey], planKey });
     setStep(2);
   };
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
+    if (!selectedPlan?.planKey) return;
     setLoading(true);
     setError(null);
 
-    // Simulate verification check (3 seconds)
-    setTimeout(() => {
-      setLoading(false);
-      // Upgrade user in context
-      dispatch({ type: "updateProfile", payload: { isPremium: true } });
+    try {
+      const res = await authApis().post(endpoints.subscriptionConfirm, {
+        planKey: selectedPlan.planKey,
+        transferRef: `GUTIM_PRO_${user.username}`,
+      });
+      const updated = res.data?.user;
+      if (updated) {
+        dispatch({ type: "updateProfile", payload: updated });
+      } else {
+        dispatch({ type: "updateProfile", payload: { isPremium: true } });
+      }
       setStep(3);
-    }, 3000);
+    } catch (e) {
+      setError(
+        e?.response?.data?.message ||
+          "Không thể xác nhận thanh toán. Vui lòng thử lại sau."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (user.isPremium && step !== 3) {

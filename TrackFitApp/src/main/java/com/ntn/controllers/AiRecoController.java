@@ -1,10 +1,15 @@
 package com.ntn.controllers;
 
 import com.ntn.dto.*;
+import com.ntn.pojo.User;
+import com.ntn.repositories.UserRepository;
 import com.ntn.services.AiRecoService;
+import com.ntn.services.ChatQuotaService;
+import com.ntn.services.PremiumService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -13,6 +18,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class AiRecoController {
 
     private final AiRecoService ai;
+    @Autowired private UserRepository userRepo;
+    @Autowired private PremiumService premiumService;
+    @Autowired private ChatQuotaService chatQuotaService;
+
     @Autowired
     public AiRecoController(AiRecoService ai) {
         this.ai = ai;
@@ -58,7 +67,11 @@ public class AiRecoController {
     }
 
     @PostMapping("/chat/ask")
-    public ResponseEntity<ChatAnswerDTO> chatAsk(@RequestBody ChatRequestDTO body){
+    public ResponseEntity<ChatAnswerDTO> chatAsk(@RequestBody ChatRequestDTO body, Principal principal){
+        User u = userRepo.getUserByUsername(principal.getName());
+        boolean premium = premiumService.isPremiumActive(u);
+        chatQuotaService.consumeOrThrow(u.getUserId(), premium);
+
         ChatAnswerDTO ans = ai.chatAsk(
                 body.getSessionId(), body.getQuestion(), body.getTopK()
         );

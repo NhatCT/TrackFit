@@ -53,6 +53,10 @@ adminUsers: (kw = "", limit = 100) =>
   recommendations: "secure/recommendations",
   recommendationsAuto: "secure/recommendations/auto",
   
+  // ==== Subscription / PRO ====
+  subscriptionStatus: "secure/subscription/status",
+  subscriptionConfirm: "secure/subscription/confirm",
+
   // ==== AI Services ====
   aiHealth: "secure/ai/health",
   aiReindex: "secure/ai/reindex",

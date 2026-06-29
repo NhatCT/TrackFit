@@ -141,6 +141,12 @@
             <artifactId>lettuce-core</artifactId>
             <version>6.4.1.RELEASE</version>
         </dependency>
+        <!-- Kafka (event-driven notifications) -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+            <version>3.3.2</version>
+        </dependency>
     </dependencies>
 
     <build>

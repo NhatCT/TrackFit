@@ -12,6 +12,7 @@ import { useReducer, useEffect, useState } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import cookie from "react-cookies";
+import { authApis, endpoints } from "./configs/Apis";
 import "./components/styles/theme.css";
 
 import Profile from "./components/Profile";
@@ -47,6 +48,33 @@ const App = () => {
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
   }, []);
+
+  // Đồng bộ profile từ server (isPremium, avatar, ...) sau F5
+  useEffect(() => {
+    const token = cookie.load("token");
+    if (!token) return;
+    authApis()
+      .get(endpoints.profile())
+      .then((res) => {
+        if (res.data) dispatch({ type: "login", payload: res.data });
+      })
+      .catch(() => {});
+  }, [dispatch]);
+
+  useEffect(() => {
+    const onPremium = (e) => {
+      const data = e.detail?.data || {};
+      dispatch({
+        type: "updateProfile",
+        payload: {
+          isPremium: true,
+          premiumExpiresAt: data.premiumExpiresAt || null,
+        },
+      });
+    };
+    window.addEventListener("trackfit-premium-activated", onPremium);
+    return () => window.removeEventListener("trackfit-premium-activated", onPremium);
+  }, [dispatch]);
 
   useEffect(() => {
     const handleNotification = (e) => {
