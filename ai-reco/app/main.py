@@ -1,4 +1,4 @@
-import os, time
+import os, time, traceback
 from typing import List, Optional
 
 import httpx
@@ -36,6 +36,7 @@ if USE_LLM:
     except Exception as e:
         llm = None
         print(f"[AI-RECO] LLM disabled at startup: {e}")
+        traceback.print_exc()
 
 # ========= PROMPT =========
 SYS_CONCISE = (
@@ -140,6 +141,8 @@ def chat(body: ChatIn):
     try:
         answer = llm.invoke(messages).content.strip()
     except Exception as e:
+        print(f"[AI-RECO] LLM invoke error: {e}")
+        traceback.print_exc()
         safe = "Tạm thời không gọi được mô hình. Bạn có thể dựa vào ngữ cảnh trên để chọn 3–5 bài phù hợp, mỗi bài 2–4 hiệp x 8–12 reps, và khởi động 5–10 phút."
         return {"answer": safe, "sources": sources, "model": f"{MODEL_NAME} (error: {type(e).__name__})"}
 

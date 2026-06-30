@@ -8,6 +8,7 @@ export default function StreakWidget() {
   const [streak, setStreak] = useState(0);
   const [recentCompletion, setRecentCompletion] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const loadStreak = async () => {
     try {
@@ -77,6 +78,7 @@ export default function StreakWidget() {
       setRecentCompletion(last7Days);
     } catch (e) {
       console.error("Error loading streak data:", e);
+      setError("Không tải được dữ liệu streak.");
     } finally {
       setLoading(false);
     }
@@ -105,6 +107,10 @@ export default function StreakWidget() {
 
   if (loading) {
     return <span className="text-muted small">Đang tải...</span>;
+  }
+
+  if (error) {
+    return <span className="text-muted small">{error}</span>;
   }
 
   return (

@@ -50,6 +50,7 @@ const Upgrade = () => {
       }
     } catch (e) {
       console.error("Error loading current order:", e);
+      setError(e?.response?.data?.message || "Không tải được thông tin đơn hàng. Vui lòng thử lại.");
     } finally {
       setInitialLoading(false);
     }

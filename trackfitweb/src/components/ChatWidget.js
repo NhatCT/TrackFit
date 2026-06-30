@@ -202,7 +202,10 @@ export default function ChatWidget({ requireAuth = false }) {
     }
     authApis().get(endpoints.subscriptionStatus)
       .then((r) => setChatRemaining(r.data?.chatRemaining ?? 0))
-      .catch(() => setChatRemaining(0));
+      .catch((err) => {
+        console.error("[ChatWidget] Failed to load chat quota:", err?.response?.status || err.message);
+        setChatRemaining(null);
+      });
   }, [authed, user?.isPremium]);
 
   // Health check

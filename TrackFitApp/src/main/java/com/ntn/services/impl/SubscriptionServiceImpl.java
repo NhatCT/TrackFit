@@ -241,6 +241,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             byte[] hash = md.digest(raw.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hash);
         } catch (Exception e) {
+            System.err.println("[Subscription] SHA-256 idempotency key generation failed, using raw fallback: " + e.getMessage());
+            e.printStackTrace();
             return userId + "_" + planKey + "_" + LocalDate.now();
         }
     }

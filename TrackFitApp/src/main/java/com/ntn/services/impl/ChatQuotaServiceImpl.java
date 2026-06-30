@@ -56,7 +56,8 @@ public class ChatQuotaServiceImpl implements ChatQuotaService {
             String v = redisTemplate.opsForValue().get(key(userId));
             return v == null ? 0L : Long.parseLong(v);
         } catch (Exception e) {
-            System.err.println("[ChatQuota] Redis read error: " + e.getMessage());
+            System.err.println("[ChatQuota] Redis read error (failing open): " + e.getMessage());
+            e.printStackTrace();
             return 0L;
         }
     }
@@ -70,7 +71,8 @@ public class ChatQuotaServiceImpl implements ChatQuotaService {
             }
             return count == null ? 1L : count;
         } catch (Exception e) {
-            System.err.println("[ChatQuota] Redis increment error: " + e.getMessage());
+            System.err.println("[ChatQuota] Redis increment error (failing closed): " + e.getMessage());
+            e.printStackTrace();
             return dailyLimit + 1L;
         }
     }

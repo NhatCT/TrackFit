@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Button, Image, Badge } from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Image, Badge, Alert } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
 import cookie from "react-cookies";
 import TodayWorkout from "./TodayWorkout";
@@ -38,6 +38,7 @@ const toClassItem = (ex, fallbackImg) => ({
 const Home = () => {
   const [exercises, setExercises] = useState([]);
   const [stats, setStats] = useState(null);
+  const [fetchError, setFetchError] = useState(null);
 
   const isLoggedIn = !!cookie.load("token");
 
@@ -53,6 +54,7 @@ const Home = () => {
         setStats(stRes?.data || null);
       } catch (e) {
         console.error("Home fetch error:", e);
+        setFetchError("Không tải được dữ liệu. Vui lòng thử lại.");
       }
     };
     load();
@@ -171,6 +173,14 @@ const Home = () => {
           </Row>
         </Container>
       </section>
+
+      {fetchError && isLoggedIn && (
+        <section className="py-2">
+          <Container>
+            <Alert variant="warning" dismissible onClose={() => setFetchError(null)}>{fetchError}</Alert>
+          </Container>
+        </section>
+      )}
 
       {isLoggedIn && (
         <section className="py-4">

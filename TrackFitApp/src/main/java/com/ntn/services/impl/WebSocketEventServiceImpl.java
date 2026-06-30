@@ -38,7 +38,8 @@ public class WebSocketEventServiceImpl implements WebSocketEventService {
         try {
             messagingTemplate.convertAndSendToUser(username, "/queue/events", event);
         } catch (Exception e) {
-            System.err.println("[WebSocket] push events failed: " + e.getMessage());
+            System.err.println("[WebSocket] push events failed for user '" + username + "': " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -88,6 +89,7 @@ public class WebSocketEventServiceImpl implements WebSocketEventService {
                 return;
             } catch (Exception e) {
                 System.err.println("[Kafka] publish failed, fallback direct: " + e.getMessage());
+                e.printStackTrace();
             }
         }
         directFallback.run();

@@ -52,6 +52,7 @@ public class GutimEventConsumer {
             }
         } catch (Exception e) {
             System.err.println("[Kafka] consume error: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -77,7 +78,9 @@ public class GutimEventConsumer {
         } else if (created instanceof String s) {
             try {
                 dto.setCreatedAt(java.sql.Timestamp.valueOf(s.replace("T", " ").substring(0, 19)));
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                System.err.println("[Kafka] Failed to parse createdAt timestamp: " + s + " - " + e.getMessage());
+            }
         }
         messagingTemplate.convertAndSendToUser(env.getUsername(), "/queue/notifications", dto);
     }

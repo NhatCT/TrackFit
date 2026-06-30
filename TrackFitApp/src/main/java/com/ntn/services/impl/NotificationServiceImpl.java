@@ -158,7 +158,8 @@ public class NotificationServiceImpl implements NotificationService {
         try {
             webSocketEventService.publishNotificationCreated(u.getUsername(), dto);
         } catch (Exception e) {
-            System.err.println("Failed to publish notification event: " + e.getMessage());
+            System.err.println("[Notification] Failed to publish event for user '" + u.getUsername() + "': " + e.getMessage());
+            e.printStackTrace();
         }
         return dto;
     }

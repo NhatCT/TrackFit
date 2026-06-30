@@ -80,8 +80,9 @@ public class AiRecoServiceImpl implements AiRecoService {
                 lastIo = e;
                 Thread.sleep(backoffMs * (long) attempt);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 lastInt = e;
-                Thread.sleep(backoffMs * (long) attempt);
+                break;
             }
         }
         if (lastIo != null) throw lastIo;
@@ -210,6 +211,7 @@ public class AiRecoServiceImpl implements AiRecoService {
 
         } catch (Exception ex) {
             System.err.println("[AI CHAT] error: " + ex.getMessage());
+            ex.printStackTrace();
             return fallback;
         }
     }
