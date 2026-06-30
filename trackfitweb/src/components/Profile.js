@@ -60,6 +60,8 @@ const Profile = () => {
       setProfile(res.data);
     } catch (err) {
       console.error("Không tải được hồ sơ:", err);
+      setMsg("Không tải được hồ sơ. Vui lòng thử lại.");
+      setMsgVariant("danger");
     } finally {
       setLoading(false);
     }
@@ -130,6 +132,8 @@ const Profile = () => {
       });
     } catch (err) {
       console.error("Lỗi khi tải thành tựu:", err);
+      setMsg("Không tải được thành tựu.");
+      setMsgVariant("warning");
     } finally {
       setAchMapLoading(false);
     }

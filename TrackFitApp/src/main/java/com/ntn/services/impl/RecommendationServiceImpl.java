@@ -165,6 +165,7 @@ public class RecommendationServiceImpl implements RecommendationService {
                 aiOk = true;
             } catch (RuntimeException ex) {
                 System.err.println("AI service error: " + ex.getMessage());
+                ex.printStackTrace();
             }
         } else {
             System.out.println("[AI_RECO] Bypass – chỉ dùng DB baseline");
@@ -302,7 +303,7 @@ public class RecommendationServiceImpl implements RecommendationService {
                     if (sc >= 400 && sc < 500) throw e;
                 }
                 try { Thread.sleep(initialBackoffMs * (long) Math.max(1, i)); }
-                catch (InterruptedException ignored) {}
+                catch (InterruptedException ie) { Thread.currentThread().interrupt(); break; }
             }
         }
         throw last;

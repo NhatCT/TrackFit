@@ -58,7 +58,9 @@ const App = () => {
       .then((res) => {
         if (res.data) dispatch({ type: "login", payload: res.data });
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("[App] Profile sync failed:", err?.response?.status || err.message);
+      });
   }, [dispatch]);
 
   useEffect(() => {

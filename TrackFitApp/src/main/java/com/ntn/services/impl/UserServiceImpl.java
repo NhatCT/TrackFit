@@ -92,7 +92,7 @@ public class UserServiceImpl implements UserService {
                         ObjectUtils.asMap("resource_type", "auto"));
                 user.setAvatarUrl(res.get("secure_url").toString());
             } catch (IOException ex) {
-                throw new RuntimeException("Không thể tải ảnh đại diện");
+                throw new RuntimeException("Không thể tải ảnh đại diện", ex);
             }
         }
 
@@ -120,7 +120,7 @@ public class UserServiceImpl implements UserService {
             this.userRepo.updateUser(user);
             return true;
         } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi cập nhật thông tin sức khỏe");
+            throw new RuntimeException("Lỗi khi cập nhật thông tin sức khỏe", e);
         }
     }
 
@@ -164,7 +164,7 @@ public class UserServiceImpl implements UserService {
             this.userRepo.updateUser(user);
             return mapToUserResponseDTO(user);
         } catch (IOException ex) {
-            throw new RuntimeException("Không thể tải ảnh đại diện");
+            throw new RuntimeException("Không thể tải ảnh đại diện", ex);
         }
     }
 
@@ -265,7 +265,7 @@ public class UserServiceImpl implements UserService {
                 );
                 u.setAvatarUrl(res.get("secure_url").toString());
             } catch (IOException e) {
-                throw new RuntimeException("Không thể tải ảnh đại diện");
+                throw new RuntimeException("Không thể tải ảnh đại diện", e);
             }
         }
 
@@ -310,7 +310,7 @@ public class UserServiceImpl implements UserService {
                 );
                 u.setAvatarUrl(res.get("secure_url").toString());
             } catch (IOException e) {
-                throw new RuntimeException("Không thể tải ảnh đại diện");
+                throw new RuntimeException("Không thể tải ảnh đại diện", e);
             }
         }
 

@@ -88,7 +88,8 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
 
         try {
             cq.orderBy(cb.desc(root.get("createdAt")));
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            System.err.println("[ExercisesRepo] orderBy createdAt failed, falling back to exercisesId: " + e.getMessage());
             cq.orderBy(cb.desc(root.get("exercisesId")));
         }
 
