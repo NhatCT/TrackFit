@@ -28,3 +28,4 @@ mcp-mysql-server/
 
 # Exclude learning notes
 LEARNING.md
+__pycache__/
