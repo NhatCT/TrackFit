@@ -98,6 +98,7 @@ public class SpringSecurityConfigs {
     public SecurityFilterChain mvc(HttpSecurity http) throws Exception {
         http
                 .securityMatcher("/**")
+                .cors(c -> c.configurationSource(cors()))
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
