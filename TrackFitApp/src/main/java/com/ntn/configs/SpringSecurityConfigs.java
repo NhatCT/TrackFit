@@ -83,9 +83,7 @@ public class SpringSecurityConfigs {
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/login", "/api/register").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // admin API
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                // secure API (USER hoặc ADMIN)
                 .requestMatchers("/api/secure/**").authenticated()
                 .anyRequest().denyAll()
                 )
@@ -118,10 +116,9 @@ public class SpringSecurityConfigs {
     @Bean
     public CorsConfigurationSource cors() {
         var cfg = new CorsConfiguration();
-        List<String> origins = Arrays.asList(allowedOriginsProp.split(","));
-        cfg.setAllowedOrigins(origins);
+        cfg.setAllowedOriginPatterns(List.of("*"));
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        cfg.setAllowedHeaders(List.of("*"));
         cfg.setExposedHeaders(List.of("Authorization"));
         cfg.setAllowCredentials(true);
         var src = new UrlBasedCorsConfigurationSource();
@@ -129,7 +126,6 @@ public class SpringSecurityConfigs {
         return src;
     }
 
-    // optional beans
     @Bean
     public HandlerMappingIntrospector mvcHandlerMappingIntrospector() {
         return new HandlerMappingIntrospector();
