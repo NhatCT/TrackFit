@@ -5,7 +5,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { authApis, endpoints } from "../configs/Apis";
 import MySpinner from "./layout/MySpinner";
 import VideoPlayer from "./common/VideoPlayer";
+import SimplePagination from "./common/SimplePagination";
 import ExerciseCard from "./ExerciseCard";
+import { toHttpUrl } from "../utils/youtubeUtils";
 import { MyUserContext } from "../configs/Context";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -74,24 +76,6 @@ const ExercisesBrowse = () => {
   };
 
   const closePreview = () => setPreview({ open: false, loading: false, data: null, error: "" });
-
-  // Helpers
-  const getYoutubeThumbnail = (url) => {
-    if (!url) return null;
-    const m =
-      url.match(/(?:v=|vi=)([A-Za-z0-9_-]{11})/) ||
-      url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/) ||
-      url.match(/\/embed\/([A-Za-z0-9_-]{11})/);
-    return m ? `https://i.ytimg.com/vi/${m[1]}/hqdefault.jpg` : null;
-  };
-
-  const toHttp = (u) => {
-    if (!u) return "#";
-    const s = u.trim();
-    if (/^https?:\/\//i.test(s)) return s;
-    if (s.startsWith("//")) return `https:${s}`;
-    return `https://${s}`;
-  };
 
   // Lọc + sort phía client
   const itemsFilteredSorted = useMemo(() => {
@@ -247,7 +231,7 @@ const ExercisesBrowse = () => {
                   <ExerciseCard
                     item={x}
                     onPreview={openPreview}
-                    getYoutubeThumbnail={getYoutubeThumbnail}
+
                     allowManage={isAdmin}
                     onEdit={onEdit}
                     onDelete={onDelete}
@@ -263,17 +247,12 @@ const ExercisesBrowse = () => {
             )}
           </Row>
 
-          {res && res.totalPages > 1 && (
-            <div className="d-flex gap-2 justify-content-center py-3">
-              <Button size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                Trước
-              </Button>
-              <div className="align-self-center small">Trang {page}/{res.totalPages}</div>
-              <Button size="sm" disabled={page >= res.totalPages} onClick={() => setPage((p) => p + 1)}>
-                Sau
-              </Button>
-            </div>
-          )}
+          <SimplePagination
+            page={page}
+            totalPages={res?.totalPages}
+            onPageChange={setPage}
+            className="py-3"
+          />
         </>
       )}
 
@@ -293,7 +272,7 @@ const ExercisesBrowse = () => {
                 <>
                   <VideoPlayer url={preview.data.videoUrl} height="360px" />
                   <div className="mt-2">
-                    <a href={toHttp(preview.data.videoUrl)} target="_blank" rel="noreferrer">
+                    <a href={toHttpUrl(preview.data.videoUrl)} target="_blank" rel="noreferrer">
                       Mở trên YouTube
                     </a>
                   </div>

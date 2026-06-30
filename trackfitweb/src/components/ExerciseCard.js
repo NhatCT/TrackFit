@@ -1,9 +1,9 @@
 import { Card, Badge, Button } from "react-bootstrap";
+import { getYoutubeThumbnail } from "../utils/youtubeUtils";
 
 const ExerciseCard = ({
   item,
   onPreview,
-  getYoutubeThumbnail,
   onEdit,
   onDelete,
   allowManage = false

@@ -6,6 +6,7 @@ import com.ntn.pojo.User;
 import com.ntn.repositories.HealthDataRepository;
 import com.ntn.repositories.UserRepository;
 import com.ntn.services.HealthDataService;
+import com.ntn.utils.UserLookupService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -20,12 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class HealthDataServiceImpl implements HealthDataService {
 
+    @Autowired private UserLookupService userLookup;
     @Autowired private UserRepository userRepo;
     @Autowired private HealthDataRepository healthRepo;
 
     @Override
     public void create(String username, HealthDataDTO dto) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
 
         HealthData h = new HealthData();
         h.setUserId(user);
@@ -45,7 +47,7 @@ public class HealthDataServiceImpl implements HealthDataService {
 
     @Override
     public List<HealthDataDTO> listByUsername(String username) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
         return healthRepo.findByUserId(user.getUserId()).stream().map(h -> {
             HealthDataDTO d = new HealthDataDTO();
             d.setHealthId(h.getHealthId());                                  
@@ -66,7 +68,7 @@ public class HealthDataServiceImpl implements HealthDataService {
 
     @Override
     public void update(String username, Integer healthId, HealthDataDTO dto) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
         HealthData h = mustGetOwnedHealth(user, healthId);
 
         if (dto.getHeight() != null) h.setHeight(new BigDecimal(dto.getHeight()));
@@ -84,23 +86,17 @@ public class HealthDataServiceImpl implements HealthDataService {
 
     @Override
     public void delete(String username, Integer healthId) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
         HealthData h = mustGetOwnedHealth(user, healthId);
         healthRepo.deleteHealthData(h);
     }
 
     @Override
     public HealthData getLatestEntity(String username) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
         return healthRepo.findByUserId(user.getUserId()).stream()
                 .sorted(Comparator.comparing(HealthData::getUpdatedAt).reversed())
                 .findFirst().orElse(null);
-    }
-
-    private User mustGetUser(String username) {
-        User u = userRepo.getUserByUsername(username);
-        if (u == null) throw new IllegalArgumentException("Không tìm thấy người dùng");
-        return u;
     }
 
     private HealthData mustGetOwnedHealth(User u, Integer id) {

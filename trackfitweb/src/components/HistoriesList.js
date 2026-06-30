@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button, Form, Table, Card } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
 import MySpinner from "./layout/MySpinner";
+import SimplePagination from "./common/SimplePagination";
 
 const HistoriesList = () => {
   const [res, setRes] = useState(null);
@@ -242,30 +243,11 @@ const HistoriesList = () => {
             </Table>
           </Card>
 
-          {/* Phân trang */}
-          {res && res.totalPages > 1 && (
-            <div className="d-flex gap-2 mt-3">
-              <Button
-                disabled={filters.page <= 1}
-                onClick={() =>
-                  setFilters((f) => ({ ...f, page: f.page - 1 }))
-                }
-              >
-                Trước
-              </Button>
-              <div className="align-self-center">
-                Trang {filters.page}/{res.totalPages}
-              </div>
-              <Button
-                disabled={filters.page >= res.totalPages}
-                onClick={() =>
-                  setFilters((f) => ({ ...f, page: f.page + 1 }))
-                }
-              >
-                Sau
-              </Button>
-            </div>
-          )}
+          <SimplePagination
+            page={filters.page}
+            totalPages={res?.totalPages}
+            onPageChange={(p) => setFilters((f) => ({ ...f, page: p }))}
+          />
         </>
       )}
     </>

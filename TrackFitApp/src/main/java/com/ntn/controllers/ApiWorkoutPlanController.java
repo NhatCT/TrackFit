@@ -2,6 +2,7 @@ package com.ntn.controllers;
 
 import com.ntn.dto.*;
 import com.ntn.services.WorkoutPlanService;
+import com.ntn.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,15 +23,10 @@ public class ApiWorkoutPlanController {
     @Autowired
     private WorkoutPlanService workoutPlanService;
 
-    private boolean isAdmin(Authentication auth) {
-        return auth != null && auth.getAuthorities().stream()
-                .anyMatch(a -> "ROLE_ADMIN".equalsIgnoreCase(a.getAuthority()));
-    }
-
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> create(@Valid @RequestBody WorkoutPlanCreateRequest req, Principal principal) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean admin = isAdmin(auth);
+        boolean admin = SecurityUtils.isAdmin(auth);
         if (!admin && req.getUserId() != null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("message", "Bạn không có quyền tạo kế hoạch cho người khác"));
@@ -87,7 +83,7 @@ public class ApiWorkoutPlanController {
                                         @RequestBody WorkoutPlanCreateRequest req,
                                         Principal principal) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        boolean admin = isAdmin(auth);
+        boolean admin = SecurityUtils.isAdmin(auth);
         if (!admin) {
             req.setIsTemplate(null);
         }

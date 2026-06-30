@@ -9,6 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import com.ntn.utils.AppConstants;
+import com.ntn.utils.SecurityUtils;
+
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -23,17 +26,11 @@ public class ApiNotificationController {
     @Autowired
     private NotificationService service;
 
-    private static final ZoneId VN = ZoneId.of("Asia/Ho_Chi_Minh");
-
-    private String getUsername(Principal principal) {
-        if (principal != null) return principal.getName();
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        return auth != null ? auth.getName() : null;
-    }
+    private static final ZoneId VN = AppConstants.VN_ZONE;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> create(@Valid @RequestBody NotificationCreateDTO req, Principal principal) {
-        String username = getUsername(principal);
+        String username = SecurityUtils.getUsername(principal);
         return ResponseEntity.ok(service.createForUser(username, req));
     }
 
@@ -44,13 +41,13 @@ public class ApiNotificationController {
                                   @RequestParam(value="isRead", required=false) Boolean isRead,
                                   @RequestParam(value="type", required=false) String type,
                                   @RequestParam(value="kw", required=false) String kw) {
-        String username = getUsername(principal);
+        String username = SecurityUtils.getUsername(principal);
         return ResponseEntity.ok(service.listByUserPaged(username, page, pageSize, isRead, type, kw));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> get(@PathVariable("id") Integer id, Principal principal) {
-        String username = getUsername(principal);
+        String username = SecurityUtils.getUsername(principal);
         return ResponseEntity.ok(service.get(username, id));
     }
 
@@ -58,21 +55,21 @@ public class ApiNotificationController {
     public ResponseEntity<?> markRead(@PathVariable("id") Integer id,
                                       @RequestParam("value") boolean value,
                                       Principal principal) {
-        String username = getUsername(principal);
+        String username = SecurityUtils.getUsername(principal);
         service.markRead(username, id, value);
         return ResponseEntity.ok(Map.of("message", value ? "Đã đánh dấu đã đọc" : "Đã đánh dấu chưa đọc"));
     }
 
     @GetMapping("/unread-count")
     public ResponseEntity<?> unread(Principal principal) {
-        String username = getUsername(principal);
+        String username = SecurityUtils.getUsername(principal);
         long c = service.unreadCount(username);
         return ResponseEntity.ok(Map.of("count", c));
     }
 
     @PutMapping("/read-all")
     public ResponseEntity<?> readAll(Principal principal) {
-        String username = getUsername(principal);
+        String username = SecurityUtils.getUsername(principal);
         int affected = service.markAllRead(username);
         return ResponseEntity.ok(Map.of("affected", affected));
     }
@@ -80,7 +77,7 @@ public class ApiNotificationController {
     @DeleteMapping("/cleanup")
     public ResponseEntity<?> cleanup(Principal principal,
                                      @RequestParam("olderThanDays") int olderThanDays) {
-        String username = getUsername(principal);
+        String username = SecurityUtils.getUsername(principal);
         LocalDate d = LocalDate.now(VN).minusDays(Math.max(olderThanDays, 1));
         Date dt = Date.from(d.atStartOfDay(VN).toInstant());
         int removed = service.cleanupReadOlderThan(username, dt);
@@ -89,7 +86,7 @@ public class ApiNotificationController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable("id") Integer id, Principal principal) {
-        String username = getUsername(principal);
+        String username = SecurityUtils.getUsername(principal);
         service.delete(username, id);
         return ResponseEntity.ok(Map.of("message", "Xóa thông báo thành công"));
     }

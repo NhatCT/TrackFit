@@ -3,6 +3,7 @@ import { Button, Form, Table, Card, Badge } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { authApis, endpoints } from "../configs/Apis";
 import MySpinner from "./layout/MySpinner";
+import SimplePagination from "./common/SimplePagination";
 import "./styles/Plans.css";
 
 const PlansList = () => {
@@ -120,13 +121,11 @@ const PlansList = () => {
             </Table>
           </Card>
 
-          {res && res.totalPages > 1 && (
-            <div className="d-flex gap-2 justify-content-center mt-3">
-              <Button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Trước</Button>
-              <div className="align-self-center small">Trang {page}/{res.totalPages}</div>
-              <Button disabled={page >= res.totalPages} onClick={() => setPage((p) => p + 1)}>Sau</Button>
-            </div>
-          )}
+          <SimplePagination
+            page={page}
+            totalPages={res?.totalPages}
+            onPageChange={setPage}
+          />
         </>
       )}
     </>

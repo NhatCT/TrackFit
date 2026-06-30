@@ -8,6 +8,7 @@ import com.ntn.pojo.User;
 import com.ntn.pojo.WorkoutPlan;
 import com.ntn.repositories.*;
 import com.ntn.services.WorkoutPlanService;
+import com.ntn.utils.UserLookupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class WorkoutPlanServiceImpl implements WorkoutPlanService {
 
+    @Autowired
+    private UserLookupService userLookup;
     @Autowired
     private UserRepository userRepo;
     @Autowired
@@ -35,15 +38,9 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         User owner;
 
         if (req.getUserId() != null) {
-            owner = userRepo.findById(req.getUserId());
-            if (owner == null) {
-                throw new IllegalArgumentException("UserId không hợp lệ");
-            }
+            owner = userLookup.requireById(req.getUserId());
         } else {
-            owner = userRepo.getUserByUsername(username);
-            if (owner == null) {
-                throw new IllegalArgumentException("Không tìm thấy người dùng");
-            }
+            owner = userLookup.requireByUsername(username);
         }
 
         WorkoutPlan plan = new WorkoutPlan();
@@ -83,7 +80,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
 
     @Override
     public Map<String, Object> listPlansByUserPaged(String username, Integer page, Integer pageSize, String kw) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
 
         Map<String, String> params = new HashMap<>();
         if (kw != null && !kw.isBlank()) {
@@ -114,7 +111,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
 
     @Override
     public void deletePlan(String username, Integer planId) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
         WorkoutPlan p = planRepo.findById(planId);
         if (p == null || !p.getUserId().getUserId().equals(user.getUserId())) {
             throw new IllegalArgumentException("Kế hoạch không tồn tại hoặc không thuộc về bạn");
@@ -164,14 +161,6 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
             throw new IllegalArgumentException("Không tìm thấy dòng chi tiết");
         }
         detailRepo.delete(d);
-    }
-
-    private User mustGetUser(String username) {
-        User u = userRepo.getUserByUsername(username);
-        if (u == null) {
-            throw new IllegalArgumentException("Không tìm thấy người dùng");
-        }
-        return u;
     }
 
     private String displayUserName(User u) {

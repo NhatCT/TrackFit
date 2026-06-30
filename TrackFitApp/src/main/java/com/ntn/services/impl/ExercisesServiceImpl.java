@@ -5,6 +5,7 @@ import com.ntn.dto.ExerciseDTO;
 import com.ntn.pojo.Exercises;
 import com.ntn.repositories.ExercisesRepository;
 import com.ntn.services.ExercisesService;
+import com.ntn.utils.PaginationHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -49,8 +50,8 @@ public class ExercisesServiceImpl implements ExercisesService {
     @Override
     @Cacheable(value = "exercises_list", key = "(#page == null ? 1 : #page) + '_' + (#pageSize == null ? 10 : #pageSize) + '_' + (#kw == null ? '' : #kw.trim())")
     public Map<String, Object> list(Integer page, Integer pageSize, String kw) {
-        int pageNum = (page != null && page > 0) ? page : 1;
-        int ps = (pageSize != null && pageSize > 0) ? pageSize : 10;
+        int pageNum = PaginationHelper.normalizePage(page);
+        int ps = PaginationHelper.normalizePageSize(pageSize, 10);
 
         Map<String, String> params = new HashMap<>();
         if (kw != null && !kw.isBlank()) {
@@ -64,15 +65,7 @@ public class ExercisesServiceImpl implements ExercisesService {
                 .collect(Collectors.toList());
 
         long total = repo.countExercises(params);
-        int totalPages = (int) Math.ceil(total * 1.0 / ps);
-
-        Map<String, Object> res = new HashMap<>();
-        res.put("page", pageNum);
-        res.put("pageSize", ps);
-        res.put("totalPages", Math.max(totalPages, 1));
-        res.put("totalElements", total);
-        res.put("items", items);
-        return res;
+        return PaginationHelper.buildResponse(pageNum, ps, total, items);
     }
 
     @Override

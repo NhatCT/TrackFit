@@ -7,25 +7,20 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import com.ntn.utils.PaginationHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.hibernate.Session;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @Transactional
-public class ExercisesRepositoryImpl implements ExercisesRepository {
-
-    @Autowired
-    private LocalSessionFactoryBean factory;
+public class ExercisesRepositoryImpl extends BaseHibernateRepository implements ExercisesRepository {
 
     @Override
     public long countAll() {
-        Session s = factory.getObject().getCurrentSession();
+        var s = currentSession();
         var cb = s.getCriteriaBuilder();
         var cq = cb.createQuery(Long.class);
         var root = cq.from(Exercises.class);
@@ -35,35 +30,29 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
 
     @Override
     public Exercises save(Exercises e) {
-        Session s = factory.getObject().getCurrentSession();
-        if (e.getExercisesId() == null) {
-            s.persist(e);
-            return e;
-        }
-        return (Exercises) s.merge(e);
+        return saveOrMerge(e, e.getExercisesId());
     }
 
     @Override
     public Exercises findById(Integer id) {
-        return factory.getObject().getCurrentSession().get(Exercises.class, id);
+        return currentSession().get(Exercises.class, id);
     }
 
     @Override
     public List<Exercises> findAll() {
-        Session s = factory.getObject().getCurrentSession();
+        var s = currentSession();
         TypedQuery<Exercises> q = s.createNamedQuery("Exercises.findAll", Exercises.class);
         return q.getResultList();
     }
 
     @Override
     public void delete(Exercises e) {
-        Session s = factory.getObject().getCurrentSession();
-        s.remove(s.contains(e) ? e : s.merge(e));
+        removeEntity(e);
     }
 
     @Override
     public List<Exercises> getExercises(Map<String, String> params) {
-        Session s = this.factory.getObject().getCurrentSession();
+        var s = currentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
         CriteriaQuery<Exercises> cq = cb.createQuery(Exercises.class);
         Root<Exercises> root = cq.from(Exercises.class);
@@ -94,19 +83,8 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
 
         TypedQuery<Exercises> q = s.createQuery(cq);
 
-        // ✅ đọc page & pageSize động từ params
-        int page = 1;
-        if (params != null && params.get("page") != null) {
-            try {
-                page = Math.max(Integer.parseInt(params.get("page")), 1);
-            } catch (NumberFormatException ignore) {}
-        }
-        int pageSize = 10;
-        if (params != null && params.get("pageSize") != null) {
-            try {
-                pageSize = Math.max(Integer.parseInt(params.get("pageSize")), 1);
-            } catch (NumberFormatException ignore) {}
-        }
+        int page = PaginationHelper.parseParam(params, "page", 1);
+        int pageSize = PaginationHelper.parseParam(params, "pageSize", 10);
 
         int start = (page - 1) * pageSize;
         q.setFirstResult(start);
@@ -117,7 +95,7 @@ public class ExercisesRepositoryImpl implements ExercisesRepository {
 
     @Override
     public long countExercises(Map<String, String> params) {
-        Session s = this.factory.getObject().getCurrentSession();
+        var s = currentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
         CriteriaQuery<Long> cq = cb.createQuery(Long.class);
         Root<Exercises> root = cq.from(Exercises.class);

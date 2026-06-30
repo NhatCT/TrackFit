@@ -7,6 +7,8 @@ import com.ntn.pojo.User;
 import com.ntn.repositories.NotificationRepository;
 import com.ntn.repositories.UserRepository;
 import com.ntn.services.NotificationService;
+import com.ntn.utils.PaginationHelper;
+import com.ntn.utils.UserLookupService;
 import com.ntn.services.WebSocketEventService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ import java.util.stream.Collectors;
 public class NotificationServiceImpl implements NotificationService {
 
     @Autowired
+    private UserLookupService userLookup;
+    @Autowired
     private UserRepository userRepo;
     @Autowired
     private NotificationRepository repo;
@@ -28,28 +32,25 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public NotificationDTO createForUser(String username, NotificationCreateDTO req) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         return save(u, req);
     }
 
     @Override
     public NotificationDTO createForUsername(String username, NotificationCreateDTO req) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         return save(u, req);
     }
 
     @Override
     public NotificationDTO createForUserId(Integer userId, NotificationCreateDTO req) {
-        User u = userRepo.findById(userId);
-        if (u == null) {
-            throw new IllegalArgumentException("Không tìm thấy người dùng");
-        }
+        User u = userLookup.requireById(userId);
         return save(u, req);
     }
 
     @Override
     public NotificationDTO get(String username, Integer id) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         Notification n = repo.findById(id);
         if (n == null || !n.getUserId().getUserId().equals(u.getUserId())) {
             throw new IllegalArgumentException("Thông báo không tồn tại hoặc không thuộc về bạn");
@@ -60,17 +61,16 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public Map<String, Object> listByUserPaged(String username, Integer page, Integer pageSize,
             Boolean isRead, String type, String kw) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         if (pageSize == null || pageSize <= 0) {
             List<NotificationDTO> items = repo.findByUserIdFiltered(u.getUserId(), isRead, type, kw)
                     .stream().map(this::toDTO).collect(Collectors.toList());
             long total = items.size();
-            return Map.of("page", 1, "pageSize", total, "totalPages", (total == 0 ? 0 : 1),
-                    "totalElements", total, "items", items);
+            return PaginationHelper.buildResponse(1, (int) total, total, items);
         }
-        int p = (page == null || page < 1) ? 1 : page;
+        int p = PaginationHelper.normalizePage(page);
         long total = repo.countByUserId(u.getUserId(), isRead, type, kw);
-        int totalPages = (int) Math.ceil(total * 1.0 / pageSize);
+        int totalPages = PaginationHelper.computeTotalPages(total, pageSize);
         if (p > totalPages && totalPages > 0) {
             p = totalPages;
         }
@@ -78,13 +78,12 @@ public class NotificationServiceImpl implements NotificationService {
         List<NotificationDTO> items = repo.findByUserIdPaged(u.getUserId(), isRead, type, kw, p, pageSize)
                 .stream().map(this::toDTO).collect(Collectors.toList());
 
-        return Map.of("page", p, "pageSize", pageSize, "totalPages", totalPages,
-                "totalElements", total, "items", items);
+        return PaginationHelper.buildResponse(p, pageSize, total, items);
     }
 
     @Override
     public void markRead(String username, Integer id, boolean value) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         Notification n = repo.findById(id);
         if (n == null || !n.getUserId().getUserId().equals(u.getUserId())) {
             throw new IllegalArgumentException("Thông báo không tồn tại hoặc không thuộc về bạn");
@@ -95,7 +94,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void delete(String username, Integer id) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         Notification n = repo.findById(id);
         if (n == null || !n.getUserId().getUserId().equals(u.getUserId())) {
             throw new IllegalArgumentException("Thông báo không tồn tại hoặc không thuộc về bạn");
@@ -105,29 +104,20 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public long unreadCount(String username) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         return repo.countUnread(u.getUserId());
     }
 
     @Override
     public int markAllRead(String username) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         return repo.markAllRead(u.getUserId());
     }
 
     @Override
     public int cleanupReadOlderThan(String username, Date olderThan) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         return repo.cleanupReadOlderThan(u.getUserId(), olderThan);
-    }
-
-    // ===== helpers =====
-    private User mustUser(String username) {
-        User u = userRepo.getUserByUsername(username);
-        if (u == null) {
-            throw new IllegalArgumentException("Không tìm thấy người dùng");
-        }
-        return u;
     }
 
     private String normalizeType(String t) {

@@ -9,10 +9,10 @@ import com.ntn.pojo.User;
 import com.ntn.pojo.UserWorkoutHistory;
 import com.ntn.pojo.WorkoutPlan;
 import com.ntn.repositories.ExercisesRepository;
-import com.ntn.repositories.UserRepository;
 import com.ntn.repositories.UserWorkoutHistoryRepository;
 import com.ntn.repositories.WorkoutPlanRepository;
 import com.ntn.services.UserWorkoutHistoryService;
+import com.ntn.utils.UserLookupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,14 +26,14 @@ import java.util.stream.Collectors;
 @Transactional
 public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService {
 
-    @Autowired private UserRepository userRepo;
+    @Autowired private UserLookupService userLookup;
     @Autowired private ExercisesRepository exercisesRepo;
     @Autowired private WorkoutPlanRepository planRepo;
     @Autowired private UserWorkoutHistoryRepository repo;
 
     @Override
     public HistoryDTO create(String username, HistoryCreateUpdateDTO req) {
-        User u  = mustUser(username);
+        User u  = userLookup.requireByUsername(username);
         Exercises ex = mustExercise(req.getExerciseId());
         WorkoutPlan plan = null;
         if (req.getPlanId() != null) plan = mustPlan(req.getPlanId(), u);
@@ -54,7 +54,7 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
 
     @Override
     public HistoryDTO get(String username, Integer id) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         UserWorkoutHistory h = repo.findById(id);
         if (h == null || !h.getUserId().getUserId().equals(u.getUserId()))
             throw new IllegalArgumentException("Lịch sử không tồn tại hoặc không thuộc về bạn");
@@ -63,7 +63,7 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
 
     @Override
     public HistoryDTO update(String username, Integer id, HistoryCreateUpdateDTO req) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         UserWorkoutHistory h = repo.findById(id);
         if (h == null || !h.getUserId().getUserId().equals(u.getUserId()))
             throw new IllegalArgumentException("Lịch sử không tồn tại hoặc không thuộc về bạn");
@@ -80,7 +80,7 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
 
     @Override
     public void delete(String username, Integer id) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         UserWorkoutHistory h = repo.findById(id);
         if (h == null || !h.getUserId().getUserId().equals(u.getUserId()))
             throw new IllegalArgumentException("Lịch sử không tồn tại hoặc không thuộc về bạn");
@@ -90,7 +90,7 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
     @Override
     public Map<String, Object> listByUserPaged(String username, Integer page, Integer pageSize,
                                                Integer planId, Integer exerciseId, String status) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
 
         if (pageSize == null || pageSize <= 0) {
             var items = repo.findByUserIdFiltered(u.getUserId(), planId, exerciseId, status)
@@ -112,14 +112,8 @@ public class UserWorkoutHistoryServiceImpl implements UserWorkoutHistoryService 
     }
     @Override
     public List<ExerciseShare> aggregateExerciseShare(String username, Date from, Date toExclusive) {
-        User u = mustUser(username);
+        User u = userLookup.requireByUsername(username);
         return repo.countByExercise(u.getUserId(), from, toExclusive);
-    }
-
-    private User mustUser(String username) {
-        User u = userRepo.getUserByUsername(username);
-        if (u == null) throw new IllegalArgumentException("Không tìm thấy người dùng");
-        return u;
     }
 
     private Exercises mustExercise(Integer id) {

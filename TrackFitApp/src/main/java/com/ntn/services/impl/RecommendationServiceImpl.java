@@ -7,6 +7,7 @@ import com.ntn.pojo.HealthData;
 import com.ntn.pojo.User;
 import com.ntn.repositories.*;
 import com.ntn.services.RecommendationService;
+import com.ntn.utils.UserLookupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class RecommendationServiceImpl implements RecommendationService {
 
-    @Autowired private UserRepository userRepo;
+    @Autowired private UserLookupService userLookup;
     @Autowired private GoalRepository goalRepo;
     @Autowired private ExercisesRepository exercisesRepo;
     @Autowired private UserWorkoutHistoryRepository historyRepo;
@@ -55,7 +56,7 @@ public class RecommendationServiceImpl implements RecommendationService {
              + "(#p1.goalType==null?'':#p1.goalType)"
     )
     public List<RecommendationItemDTO> recommendExercises(String username, RecommendationParamsDTO params) {
-        User u = mustGetUser(username);
+        User u = userLookup.requireByUsername(username);
 
         Goal latestGoal = goalRepo.findByUserId(u.getUserId())
                 .stream()
@@ -245,12 +246,6 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     // ======================== helpers ========================
-
-    private User mustGetUser(String username) {
-        User u = userRepo.getUserByUsername(username);
-        if (u == null) throw new IllegalArgumentException("Không tìm thấy user");
-        return u;
-    }
 
     private String pick(String... opts) {
         for (String s : opts) if (s != null && !s.isBlank()) return s;

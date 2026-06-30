@@ -7,6 +7,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
+import com.ntn.utils.AppConstants;
+
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -19,7 +21,7 @@ public class ApiStatsController {
 
     @Autowired private StatsService statsService;
 
-    private static final ZoneId VN = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final ZoneId VN = AppConstants.VN_ZONE;
 
 @GetMapping("/summary")
 public ResponseEntity<StatsSummaryDTO> summary(

@@ -6,38 +6,32 @@ import jakarta.persistence.LockModeType;
 import jakarta.persistence.NoResultException;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.hibernate.Session;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 @Transactional
-public class PaymentOrderRepositoryImpl implements PaymentOrderRepository {
-
-    @Autowired
-    private LocalSessionFactoryBean factory;
+public class PaymentOrderRepositoryImpl extends BaseHibernateRepository implements PaymentOrderRepository {
 
     @Override
     public PaymentOrder save(PaymentOrder order) {
-        factory.getObject().getCurrentSession().persist(order);
+        currentSession().persist(order);
         return order;
     }
 
     @Override
     public PaymentOrder update(PaymentOrder order) {
-        return (PaymentOrder) factory.getObject().getCurrentSession().merge(order);
+        return (PaymentOrder) currentSession().merge(order);
     }
 
     @Override
     public PaymentOrder findById(Integer orderId) {
-        return factory.getObject().getCurrentSession().get(PaymentOrder.class, orderId);
+        return currentSession().get(PaymentOrder.class, orderId);
     }
 
     @Override
     public PaymentOrder findByIdForUpdate(Integer orderId) {
-        Session s = factory.getObject().getCurrentSession();
+        Session s = currentSession();
         try {
             return s.createQuery(
                     "select o from PaymentOrder o join fetch o.user where o.orderId = :orderId",
@@ -52,7 +46,7 @@ public class PaymentOrderRepositoryImpl implements PaymentOrderRepository {
 
     @Override
     public PaymentOrder findByIdempotencyKey(String idempotencyKey) {
-        Session s = factory.getObject().getCurrentSession();
+        Session s = currentSession();
         try {
             return s.createQuery(
                     "select o from PaymentOrder o join fetch o.user where o.idempotencyKey = :key",
@@ -66,7 +60,7 @@ public class PaymentOrderRepositoryImpl implements PaymentOrderRepository {
 
     @Override
     public List<PaymentOrder> findByUserAndStatusIn(Integer userId, List<String> statuses) {
-        return factory.getObject().getCurrentSession()
+        return currentSession()
                 .createQuery("""
                     select o from PaymentOrder o join fetch o.user
                     where o.user.userId = :userId and o.status in (:statuses)
@@ -86,7 +80,7 @@ public class PaymentOrderRepositoryImpl implements PaymentOrderRepository {
                 ? "select o from PaymentOrder o join fetch o.user order by o.createdAt desc, o.orderId desc"
                 : "select o from PaymentOrder o join fetch o.user where o.status = :status order by o.createdAt desc, o.orderId desc";
 
-        var q = factory.getObject().getCurrentSession().createQuery(jpql, PaymentOrder.class);
+        var q = currentSession().createQuery(jpql, PaymentOrder.class);
         if (normalized != null) {
             q.setParameter("status", PaymentOrder.PaymentStatus.valueOf(normalized));
         }
@@ -102,7 +96,7 @@ public class PaymentOrderRepositoryImpl implements PaymentOrderRepository {
                 ? "select count(o) from PaymentOrder o"
                 : "select count(o) from PaymentOrder o where o.status = :status";
 
-        var q = factory.getObject().getCurrentSession().createQuery(jpql, Long.class);
+        var q = currentSession().createQuery(jpql, Long.class);
         if (normalized != null) {
             q.setParameter("status", PaymentOrder.PaymentStatus.valueOf(normalized));
         }
@@ -111,7 +105,7 @@ public class PaymentOrderRepositoryImpl implements PaymentOrderRepository {
 
     @Override
     public List<PaymentOrder> findExpiredOrders() {
-        return factory.getObject().getCurrentSession()
+        return currentSession()
                 .createQuery("""
                     select o from PaymentOrder o join fetch o.user
                     where o.status = :status and o.expiredAt < :now

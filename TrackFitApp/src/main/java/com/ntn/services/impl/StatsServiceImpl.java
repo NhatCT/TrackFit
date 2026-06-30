@@ -7,6 +7,8 @@ import com.ntn.repositories.PlanDetailRepository;
 import com.ntn.repositories.UserRepository;
 import com.ntn.repositories.UserWorkoutHistoryRepository;
 import com.ntn.services.StatsService;
+import com.ntn.utils.AppConstants;
+import com.ntn.utils.UserLookupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +23,9 @@ public class StatsServiceImpl implements StatsService {
 
     @Autowired private UserWorkoutHistoryRepository historyRepo;
     @Autowired private PlanDetailRepository planDetailRepo;
-    @Autowired private UserRepository userRepo;
+    @Autowired private UserLookupService userLookup;
 
-    private static final ZoneId VN = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final ZoneId VN = AppConstants.VN_ZONE;
 
     @Override
     public StatsSummaryDTO summarySystem(Date from, Date to) {
@@ -35,8 +37,7 @@ public class StatsServiceImpl implements StatsService {
         if (username == null || username.isBlank())
             throw new IllegalArgumentException("username không được trống");
 
-        User u = userRepo.getUserByUsername(username);
-        if (u == null) throw new IllegalArgumentException("Không tìm thấy người dùng: " + username);
+        User u = userLookup.requireByUsername(username);
 
         return computeSummary(u.getUserId(), from, to);
     }

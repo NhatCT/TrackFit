@@ -7,9 +7,7 @@ import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
-import org.hibernate.Session;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,17 +16,14 @@ import java.util.List;
 
 @Repository
 @Transactional
-public class UserRepositoryImpl implements UserRepository {
-
-    @Autowired
-    private LocalSessionFactoryBean factory;
+public class UserRepositoryImpl extends BaseHibernateRepository implements UserRepository {
 
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
     @Override
     public long countAll() {
-        Session s = factory.getObject().getCurrentSession();
+        var s = currentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
         CriteriaQuery<Long> cq = cb.createQuery(Long.class);
         Root<User> root = cq.from(User.class);
@@ -38,7 +33,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public User getUserByUsername(String username) {
-        Session s = this.factory.getObject().getCurrentSession();
+        var s = currentSession();
         TypedQuery<User> q = s.createNamedQuery("User.findByUsername", User.class);
         q.setParameter("username", username);
         try {
@@ -50,7 +45,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public User getUserByEmail(String email) {
-        Session s = this.factory.getObject().getCurrentSession();
+        var s = currentSession();
         TypedQuery<User> q = s.createNamedQuery("User.findByEmail", User.class);
         q.setParameter("email", email);
         try {
@@ -62,15 +57,13 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public User addUser(User user) {
-        Session s = this.factory.getObject().getCurrentSession();
-        s.persist(user);
+        currentSession().persist(user);
         return user;
     }
 
     @Override
     public void updateUser(User user) {
-        Session s = this.factory.getObject().getCurrentSession();
-        s.merge(user);
+        currentSession().merge(user);
     }
 
     @Override
@@ -81,25 +74,23 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public List<User> findAll() {
-        Session s = factory.getObject().getCurrentSession();
-        return s.createNamedQuery("User.findAll", User.class)
+        return currentSession().createNamedQuery("User.findAll", User.class)
                 .getResultList();
     }
 
     @Override
     public User findById(Integer id) {
-        return factory.getObject().getCurrentSession().get(User.class, id);
+        return currentSession().get(User.class, id);
     }
 
     @Override
     public void delete(User user) {
-        Session s = factory.getObject().getCurrentSession();
-        s.remove(s.contains(user) ? user : s.merge(user));
+        removeEntity(user);
     }
 
     @Override
     public List<User> findAllPaged(int page, int pageSize) {
-        Session s = factory.getObject().getCurrentSession();
+        var s = currentSession();
         return s.createNamedQuery("User.findAll", User.class)
                 .setFirstResult(Math.max(0, (page - 1) * pageSize))
                 .setMaxResults(pageSize)

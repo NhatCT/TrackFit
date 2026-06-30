@@ -8,6 +8,7 @@ import com.ntn.repositories.GoalRepository;
 import com.ntn.repositories.HealthDataRepository;
 import com.ntn.repositories.UserRepository;
 import com.ntn.services.UserService;
+import com.ntn.utils.ImageValidator;
 import com.ntn.utils.JwtUtils;
 import jakarta.validation.Valid;
 
@@ -51,8 +52,7 @@ public class ApiUserController {
             @RequestParam(value = "intensity", required = false) String intensity   
     ) {
         if (avatar != null && !avatar.isEmpty()) {
-            String contentType = avatar.getContentType();
-            if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+            if (!ImageValidator.isAllowedContentType(avatar.getContentType())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("message", "Chỉ hỗ trợ file JPEG hoặc PNG"));
             }
@@ -160,8 +160,7 @@ public class ApiUserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Ảnh đại diện không được để trống"));
         }
-        String contentType = avatar.getContentType();
-        if (!"image/jpeg".equals(contentType) && !"image/png".equals(contentType)) {
+        if (!ImageValidator.isAllowedContentType(avatar.getContentType())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("message", "Chỉ hỗ trợ file JPEG hoặc PNG"));
         }

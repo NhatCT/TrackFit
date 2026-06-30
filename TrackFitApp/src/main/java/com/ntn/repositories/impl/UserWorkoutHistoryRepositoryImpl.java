@@ -4,10 +4,7 @@ import com.ntn.dto.ExerciseShare;
 import com.ntn.pojo.UserWorkoutHistory;
 import com.ntn.repositories.UserWorkoutHistoryRepository;
 import jakarta.persistence.criteria.*;
-import org.hibernate.Session;
 import org.hibernate.query.Query;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,14 +12,11 @@ import java.util.*;
 
 @Repository
 @Transactional
-public class UserWorkoutHistoryRepositoryImpl implements UserWorkoutHistoryRepository {
-
-    @Autowired
-    private LocalSessionFactoryBean factory;
+public class UserWorkoutHistoryRepositoryImpl extends BaseHibernateRepository implements UserWorkoutHistoryRepository {
 
     @Override
     public List<UserWorkoutHistory> findBetweenAll(Date from, Date to, String status) {
-        Session s = factory.getObject().getCurrentSession();
+        var s = currentSession();
         var cb = s.getCriteriaBuilder();
         var cq = cb.createQuery(UserWorkoutHistory.class);
         var root = cq.from(UserWorkoutHistory.class);
@@ -48,25 +42,17 @@ public class UserWorkoutHistoryRepositoryImpl implements UserWorkoutHistoryRepos
 
     @Override
     public UserWorkoutHistory save(UserWorkoutHistory h) {
-        Session s = factory.getObject().getCurrentSession();
-        if (h.getHistoryId() == null) {
-            s.persist(h);
-            return h;
-        }
-        return (UserWorkoutHistory) s.merge(h);
+        return saveOrMerge(h, h.getHistoryId());
     }
 
     @Override
-    public UserWorkoutHistory
-            findById(Integer id) {
-        return factory.getObject().getCurrentSession().get(UserWorkoutHistory.class,
-                 id);
+    public UserWorkoutHistory findById(Integer id) {
+        return currentSession().get(UserWorkoutHistory.class, id);
     }
 
     @Override
     public void delete(UserWorkoutHistory h) {
-        Session s = factory.getObject().getCurrentSession();
-        s.remove(s.contains(h) ? h : s.merge(h));
+        removeEntity(h);
     }
 
     @Override
@@ -82,7 +68,7 @@ public class UserWorkoutHistoryRepositoryImpl implements UserWorkoutHistoryRepos
 
     @Override
     public long countByUserId(Integer userId, Integer planId, Integer exerciseId, String status) {
-        Session s = factory.getObject().getCurrentSession();
+        var s = currentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
         CriteriaQuery<Long> cq = cb.createQuery(Long.class
         );
@@ -97,7 +83,7 @@ public class UserWorkoutHistoryRepositoryImpl implements UserWorkoutHistoryRepos
 
     @Override
     public long countCompletedBetween(Integer userId, Date from, Date to) {
-        Session s = factory.getObject().getCurrentSession();
+        var s = currentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
         CriteriaQuery<Long> cq = cb.createQuery(Long.class
         );
@@ -111,7 +97,7 @@ public class UserWorkoutHistoryRepositoryImpl implements UserWorkoutHistoryRepos
 
     @Override
     public List<UserWorkoutHistory> findBetween(Integer userId, Date from, Date to, String status) {
-        Session s = factory.getObject().getCurrentSession();
+        var s = currentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
         CriteriaQuery<UserWorkoutHistory> cq = cb.createQuery(UserWorkoutHistory.class
         );
@@ -127,7 +113,7 @@ public class UserWorkoutHistoryRepositoryImpl implements UserWorkoutHistoryRepos
 
     // ==== helpers ====
     private List<UserWorkoutHistory> queryBase(Integer userId, Integer planId, Integer exerciseId, String status, Integer first, Integer max) {
-        Session s = factory.getObject().getCurrentSession();
+        var s = currentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
         CriteriaQuery<UserWorkoutHistory> cq = cb.createQuery(UserWorkoutHistory.class
         );
@@ -148,7 +134,7 @@ public class UserWorkoutHistoryRepositoryImpl implements UserWorkoutHistoryRepos
 
     @Override
     public List<Integer> findRecentExerciseIds(Integer userId, int limit) {
-        Session s = factory.getObject().getCurrentSession();
+        var s = currentSession();
         CriteriaBuilder cb = s.getCriteriaBuilder();
         CriteriaQuery<Integer> cq = cb.createQuery(Integer.class);
         Root<UserWorkoutHistory> root = cq.from(UserWorkoutHistory.class);

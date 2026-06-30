@@ -4,9 +4,6 @@ import com.ntn.pojo.Goal;
 import com.ntn.repositories.GoalRepository;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.Query;
-import org.hibernate.Session;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,25 +11,16 @@ import java.util.List;
 
 @Repository
 @Transactional
-public class GoalRepositoryImpl implements GoalRepository {
-
-    @Autowired
-    private LocalSessionFactoryBean factory;
+public class GoalRepositoryImpl extends BaseHibernateRepository implements GoalRepository {
 
     @Override
     public Goal saveGoal(Goal goal) {
-        Session s = this.factory.getObject().getCurrentSession();
-        if (goal.getGoalId() == null) {
-            s.persist(goal);
-        } else {
-            goal = (Goal) s.merge(goal);
-        }
-        return goal;
+        return saveOrMerge(goal, goal.getGoalId());
     }
 
     @Override
     public List<Goal> findByUserId(Integer userId) {
-        Session s = this.factory.getObject().getCurrentSession();
+        var s = currentSession();
         Query q = s.createNamedQuery("Goal.findByUserId", Goal.class);
         q.setParameter("userId", userId);
         return q.getResultList();
@@ -40,7 +28,7 @@ public class GoalRepositoryImpl implements GoalRepository {
 
     @Override
     public Goal findById(Integer goalId) {
-        Session s = this.factory.getObject().getCurrentSession();
+        var s = currentSession();
         Query q = s.createNamedQuery("Goal.findByGoalId", Goal.class);
         q.setParameter("goalId", goalId);
         try {
@@ -52,7 +40,6 @@ public class GoalRepositoryImpl implements GoalRepository {
 
     @Override
     public void deleteGoal(Goal goal) {
-        Session s = this.factory.getObject().getCurrentSession();
-        s.delete(s.contains(goal) ? goal : s.merge(goal));
+        removeEntity(goal);
     }
 }

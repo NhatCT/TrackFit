@@ -4,8 +4,8 @@ import com.ntn.dto.GoalDTO;
 import com.ntn.pojo.Goal;
 import com.ntn.pojo.User;
 import com.ntn.repositories.GoalRepository;
-import com.ntn.repositories.UserRepository;
 import com.ntn.services.GoalService;
+import com.ntn.utils.UserLookupService;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,13 +18,13 @@ import org.springframework.transaction.annotation.Transactional;
 public class GoalServiceImpl implements GoalService {
 
     @Autowired
-    private UserRepository userRepo;
+    private UserLookupService userLookup;
     @Autowired
     private GoalRepository goalRepo;
 
     @Override
     public void create(String username, GoalDTO dto) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
         Goal g = new Goal();
         g.setUserId(user);
         g.setGoalType(dto.getGoalType());
@@ -36,7 +36,7 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     public List<GoalDTO> listByUsername(String username) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
         return goalRepo.findByUserId(user.getUserId()).stream().map(g -> {
             GoalDTO d = new GoalDTO();
             d.setGoalId(g.getGoalId());
@@ -56,7 +56,7 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     public void update(String username, Integer goalId, GoalDTO dto) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
         Goal g = mustGetOwnedGoal(user, goalId);
 
         if (dto.getGoalType() != null) {
@@ -73,17 +73,9 @@ public class GoalServiceImpl implements GoalService {
 
     @Override
     public void delete(String username, Integer goalId) {
-        User user = mustGetUser(username);
+        User user = userLookup.requireByUsername(username);
         Goal g = mustGetOwnedGoal(user, goalId);
         goalRepo.deleteGoal(g);
-    }
-
-    private User mustGetUser(String username) {
-        User u = userRepo.getUserByUsername(username);
-        if (u == null) {
-            throw new IllegalArgumentException("Không tìm thấy người dùng");
-        }
-        return u;
     }
 
     private Goal mustGetOwnedGoal(User u, Integer id) {
