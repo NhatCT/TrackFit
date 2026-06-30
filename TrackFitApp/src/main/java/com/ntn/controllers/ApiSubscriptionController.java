@@ -25,11 +25,6 @@ public class ApiSubscriptionController {
         return ResponseEntity.ok(subscriptionService.getStatus(principal.getName()));
     }
 
-    /**
-     * Tạo đơn hàng thanh toán (idempotent).
-     * POST /api/secure/subscription/create-order
-     * Body: { "planKey": "monthly" }
-     */
     @PostMapping("/create-order")
     public ResponseEntity<?> createOrder(
             @Valid @RequestBody CreateOrderDTO body,
@@ -47,10 +42,6 @@ public class ApiSubscriptionController {
         }
     }
 
-    /**
-     * User xác nhận đã chuyển khoản: PENDING → SUBMITTED.
-     * PUT /api/secure/subscription/orders/{id}/submitted
-     */
     @PutMapping("/orders/{id}/submitted")
     public ResponseEntity<?> submitOrder(
             @PathVariable("id") int orderId,
@@ -69,10 +60,6 @@ public class ApiSubscriptionController {
         }
     }
 
-    /**
-     * Lấy đơn hàng hiện tại (PENDING/SUBMITTED) của user.
-     * GET /api/secure/subscription/orders/current
-     */
     @GetMapping("/orders/current")
     public ResponseEntity<?> getCurrentOrder(Principal principal) {
         PaymentOrderDTO order = subscriptionService.getCurrentOrder(principal.getName());
@@ -81,11 +68,6 @@ public class ApiSubscriptionController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Legacy confirm endpoint — giữ tương thích ngược.
-     * POST /api/secure/subscription/confirm
-     * Chuyển hướng sang createOrder + submitOrder.
-     */
     @PostMapping("/confirm")
     public ResponseEntity<?> confirmLegacy(
             @RequestBody Map<String, String> body,
@@ -94,7 +76,6 @@ public class ApiSubscriptionController {
         String planKey = body.getOrDefault("planKey", "monthly");
         try {
             PaymentOrderDTO order = subscriptionService.createOrder(principal.getName(), planKey);
-            // Auto-submit cho legacy flow
             if ("PENDING".equals(order.getStatus())) {
                 order = subscriptionService.submitOrder(principal.getName(), order.getOrderId());
             }

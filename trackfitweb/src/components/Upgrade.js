@@ -421,13 +421,6 @@ const Upgrade = () => {
                     </span>
                   </div>
 
-                  {/* Demo disclaimer */}
-                  <div className="mb-3 p-2 text-center" style={{ background: "rgba(13,110,253,0.08)", border: "1px solid rgba(13,110,253,0.2)", borderRadius: "8px" }}>
-                    <small className="text-info">
-                      ℹ️ Đây là môi trường demo — giao dịch được mô phỏng để trải nghiệm.
-                    </small>
-                  </div>
-
                   {error && <Alert variant="danger">{error}</Alert>}
 
                   {currentOrder.status === "PENDING" ? (
