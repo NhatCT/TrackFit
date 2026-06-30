@@ -16,7 +16,6 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/secure/plans")
-@CrossOrigin
 public class ApiWorkoutPlanController {
 
     @Autowired

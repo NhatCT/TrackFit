@@ -52,9 +52,13 @@ app = FastAPI(title="AI Reco", version="1.0")
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    safe_errors = [
+        {"loc": e.get("loc"), "msg": e.get("msg"), "type": e.get("type")}
+        for e in exc.errors()
+    ]
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors(), "body": (await request.body()).decode("utf-8","ignore")},
+        content={"detail": safe_errors},
     )
 
 # ========= SCHEMAS (Pydantic v2) =========

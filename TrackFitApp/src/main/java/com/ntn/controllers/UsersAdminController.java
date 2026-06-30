@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/users")
-@CrossOrigin
 public class UsersAdminController {
 
     @Autowired private UserRepository userRepo;

@@ -14,7 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/secure/subscription")
-@CrossOrigin
 public class ApiSubscriptionController {
 
     @Autowired

@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 // com/ntn/controllers/NotificationsAiAdminController.java
 @RestController
 @RequestMapping("/api/admin/notifications/ai")
-@CrossOrigin
 public class NotificationsAiAdminController {
 
     @Autowired private AiAdviceService adviceService;

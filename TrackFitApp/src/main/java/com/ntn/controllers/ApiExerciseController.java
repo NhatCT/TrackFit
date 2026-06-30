@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/secure/exercises")
-@CrossOrigin
 public class ApiExerciseController {
 
     @Autowired

@@ -14,7 +14,6 @@ import java.util.Date;
 
 @RestController
 @RequestMapping("/api/secure/stats")
-@CrossOrigin
 public class ApiStatsController {
 
     @Autowired private StatsService statsService;

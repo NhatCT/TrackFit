@@ -12,7 +12,6 @@ import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/secure/health")
-@CrossOrigin
 public class ApiHealthController {
 
     @Autowired

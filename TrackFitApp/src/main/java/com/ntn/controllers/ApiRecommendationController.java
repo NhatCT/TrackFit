@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/secure/recommendations")
-@CrossOrigin
 public class ApiRecommendationController {
 
     @Autowired private RecommendationService recommendationService;

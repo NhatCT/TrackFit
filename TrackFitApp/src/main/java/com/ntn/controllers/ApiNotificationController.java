@@ -17,7 +17,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/secure/notifications")
-@CrossOrigin
 public class ApiNotificationController {
 
     @Autowired

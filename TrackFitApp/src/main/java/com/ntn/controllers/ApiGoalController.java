@@ -12,7 +12,6 @@ import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/secure/goals")
-@CrossOrigin
 public class ApiGoalController {
 
     @Autowired

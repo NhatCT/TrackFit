@@ -11,10 +11,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class JwtUtils {
-    private static final String SECRET = "12345678901234567890123456789012";
+    private static final String SECRET;
     private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000L; 
 
     private static final String CLAIM_ROLES = "roles";
+
+    static {
+        String env = System.getenv("JWT_SECRET");
+        if (env == null || env.isBlank() || env.length() < 32) {
+            String prop = System.getProperty("jwt.secret");
+            if (prop == null || prop.isBlank() || prop.length() < 32) {
+                throw new IllegalStateException(
+                    "JWT_SECRET env var (or jwt.secret system property) must be set and at least 32 characters");
+            }
+            env = prop;
+        }
+        SECRET = env;
+    }
 
     public static String generateToken(String username, List<String> roles) throws JOSEException {
         JWSSigner signer = new MACSigner(SECRET);

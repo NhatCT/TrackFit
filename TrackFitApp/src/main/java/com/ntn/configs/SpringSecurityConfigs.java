@@ -48,13 +48,13 @@ public class SpringSecurityConfigs {
     @Value("${allowed.origins:http://localhost:3000,http://127.0.0.1:3000}")
     private String allowedOriginsProp;
 
-    @Value("${cloudinary.cloud-name:dywix6n0z}")
+    @Value("${cloudinary.cloud-name:}")
     private String cloudinaryCloudName;
 
-    @Value("${cloudinary.api-key:198396299352167}")
+    @Value("${cloudinary.api-key:}")
     private String cloudinaryApiKey;
 
-    @Value("${cloudinary.api-secret:Hlh12SuOkmrk7ZRQTX8f-nkDwTY}")
+    @Value("${cloudinary.api-secret:}")
     private String cloudinaryApiSecret;
 
     @Bean
@@ -117,9 +117,13 @@ public class SpringSecurityConfigs {
     @Bean
     public CorsConfigurationSource cors() {
         var cfg = new CorsConfiguration();
-        cfg.setAllowedOriginPatterns(List.of("*"));
+        List<String> origins = Arrays.stream(allowedOriginsProp.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        cfg.setAllowedOrigins(origins);
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         cfg.setExposedHeaders(List.of("Authorization"));
         cfg.setAllowCredentials(true);
         var src = new UrlBasedCorsConfigurationSource();

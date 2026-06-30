@@ -14,7 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/secure/histories")
-@CrossOrigin
 public class ApiUserWorkoutHistoryController {
 
     @Autowired
