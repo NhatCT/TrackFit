@@ -1,21 +1,25 @@
-/* Thêm chống "mờ" font và tăng tương phản cho theme tối */
+/* Font rendering */
 html, body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+body { color: var(--text, #e6edf3); }
 
-body { color: var(--bs-body-color, #e9eef5); }
-
-.text-muted { color: rgba(229, 236, 245, 0.65) !important; } /* muted sáng hơn chút để dễ đọc */
-
-.plan-card { background: #101827; color: #e9eef5; }
-.plan-card .card-header { background: #0f1623 !important; color: #e9eef5; border-bottom: 1px solid rgba(255,255,255,.08); }
-
-.table-dark-soft thead tr th {
-  background: #161e2c;
-  color: #e9eef5;
-  border-color: rgba(255,255,255,.06);
+.plan-card {
+  background: var(--surface, #111a2b);
+  color: var(--text, #e6edf3);
+  border: 1px solid var(--border, #203049);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.plan-card .card-header {
+  background: var(--surface-2, #0f172a) !important;
+  color: var(--text, #e6edf3);
+  border-bottom: 1px solid var(--border, #203049);
 }
 
-.hoverable { transition: transform .15s ease, box-shadow .15s ease; }
-.hoverable:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,0,0,.18) !important; }
+.table-dark-soft thead tr th {
+  background: var(--surface-2, #0f172a);
+  color: var(--text, #e6edf3);
+  border-color: rgba(255,255,255,.06);
+}
 
 .search-pill { border-radius: 999px; padding-inline: 16px; }
 
@@ -25,5 +29,16 @@ body { color: var(--bs-body-color, #e9eef5); }
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 12px;
 }
-.pick-card { cursor: pointer; border: 2px solid transparent !important; background: #101827; color: #e9eef5; }
-.pick-card.active { border-color: var(--bs-primary) !important; }
+.pick-card {
+  cursor: pointer;
+  border: 2px solid transparent !important;
+  background: var(--surface, #111a2b);
+  color: var(--text, #e6edf3);
+  border-radius: 12px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.pick-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255,107,53,0.3) !important;
+}
+.pick-card.active { border-color: var(--accent, #ff6b35) !important; }

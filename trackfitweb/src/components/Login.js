@@ -51,14 +51,20 @@ const Login = () => {
   return (
     <div className="form-container login-form">
       <Form onSubmit={login}>
+        <div className="text-center mb-4">
+          <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>💪</div>
+          <h2 className="fw-bold text-white mb-1">Chào mừng trở lại</h2>
+          <p className="text-muted small mb-0">Đăng nhập để tiếp tục hành trình sức khỏe</p>
+        </div>
+
         {msg && <Alert variant="danger">{msg}</Alert>}
-        <h1 className="text-center mb-3">ĐĂNG NHẬP</h1>
+
         {[
-          { title: "Tên đăng nhập", field: "username", type: "text" },
-          { title: "Mật khẩu", field: "password", type: "password" },
+          { title: "Tên đăng nhập", field: "username", type: "text", icon: "👤" },
+          { title: "Mật khẩu", field: "password", type: "password", icon: "🔒" },
         ].map((i) => (
           <Form.Group key={i.field} className="mb-3" controlId={i.field}>
-            <Form.Label>{i.title}</Form.Label>
+            <Form.Label>{i.icon} {i.title}</Form.Label>
             <Form.Control
               required
               value={user[i.field] || ""}
@@ -68,20 +74,22 @@ const Login = () => {
             />
           </Form.Group>
         ))}
-        <div className="d-flex justify-content-end gap-2">
-          {loading ? (
-            <MySpinner />
-          ) : (
-            <>
-              <Button variant="outline-primary" onClick={onRegisterClick}>
-                Đăng Kí
+
+        {loading ? (
+          <div className="text-center py-2"><MySpinner /></div>
+        ) : (
+          <div className="d-grid gap-2 mt-4">
+            <Button variant="primary" type="submit" size="lg" className="fw-bold py-2">
+              Đăng Nhập
+            </Button>
+            <div className="text-center mt-2">
+              <span className="text-muted small">Chưa có tài khoản? </span>
+              <Button variant="link" onClick={onRegisterClick} className="p-0 text-decoration-none" style={{ color: "var(--accent)" }}>
+                Đăng ký ngay
               </Button>
-              <Button variant="primary" type="submit">
-                Đăng Nhập
-              </Button>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        )}
       </Form>
     </div>
   );

@@ -64,10 +64,9 @@ public class User implements Serializable {
     @Column(name = "avatar_url")
     private String avatarUrl;
 
-    @NotBlank(message = "Giới tính không được để trống")
-    @Pattern(regexp = "^(Male|Female)$", message = "Giới tính phải là Male, Female")
-    @Size(max = 6)
-    @Column(name = "gender")
+    @Pattern(regexp = "^(Male|Female|Other)$", message = "Giới tính phải là Male, Female hoặc Other")
+    @Size(max = 20)
+    @Column(name = "gender", length = 20)
     private String gender;
 
     @Past(message = "Ngày sinh phải trước ngày hiện tại")

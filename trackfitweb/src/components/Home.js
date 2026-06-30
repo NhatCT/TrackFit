@@ -100,8 +100,8 @@ const Home = () => {
   return (
     <>
       {/* ===== HERO ===== */}
-      <section style={{ ...bg(heroBg), position: "relative", color: "#fff", padding: "100px 0" }}>
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)" }} />
+      <section style={{ ...bg(heroBg), position: "relative", color: "#fff", padding: "120px 0 100px" }}>
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(11,18,32,0.7) 0%, rgba(0,0,0,0.5) 50%, rgba(11,18,32,0.85) 100%)" }} />
         <Container style={{ position: "relative", zIndex: 1 }}>
           <Row className="align-items-center">
             <Col lg={isLoggedIn ? 8 : 12}>
@@ -294,36 +294,22 @@ const Home = () => {
         <section className="py-5" data-aos="fade-up">
           <Container>
             <Row className="g-4">
-              <Col md={4}>
-                <Card className="border-0 shadow-sm h-100 text-center p-4">
-                  <Card.Body>
-                    <div style={{ fontSize: "2.5rem" }} className="mb-3">📊</div>
-                    <h5 className="fw-bold">Thống kê chi tiết</h5>
-                    <p className="text-muted small">Biểu đồ phút tập, số buổi và tỷ lệ bài tập trong 30 ngày</p>
-                    <Button variant="outline-primary" size="sm" href="/stats/summary">Xem thống kê</Button>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4}>
-                <Card className="border-0 shadow-sm h-100 text-center p-4">
-                  <Card.Body>
-                    <div style={{ fontSize: "2.5rem" }} className="mb-3">💚</div>
-                    <h5 className="fw-bold">Sức khỏe</h5>
-                    <p className="text-muted small">Theo dõi cân nặng, BMI, huyết áp và xu hướng biến đổi</p>
-                    <Button variant="outline-primary" size="sm" href="/health">Cập nhật sức khỏe</Button>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4}>
-                <Card className="border-0 shadow-sm h-100 text-center p-4">
-                  <Card.Body>
-                    <div style={{ fontSize: "2.5rem" }} className="mb-3">🎯</div>
-                    <h5 className="fw-bold">Mục tiêu</h5>
-                    <p className="text-muted small">Thiết lập mục tiêu giảm cân, tăng cơ hoặc tăng sức bền</p>
-                    <Button variant="outline-primary" size="sm" href="/goals">Quản lý mục tiêu</Button>
-                  </Card.Body>
-                </Card>
-              </Col>
+              {[
+                { emoji: "📊", title: "Thống kê chi tiết", desc: "Biểu đồ phút tập, số buổi và tỷ lệ bài tập trong 30 ngày", href: "/stats/summary", label: "Xem thống kê", gradient: "rgba(255,107,53,0.08)" },
+                { emoji: "💚", title: "Sức khỏe", desc: "Theo dõi cân nặng, BMI, huyết áp và xu hướng biến đổi", href: "/health", label: "Cập nhật sức khỏe", gradient: "rgba(76,201,240,0.08)" },
+                { emoji: "🎯", title: "Mục tiêu", desc: "Thiết lập mục tiêu giảm cân, tăng cơ hoặc tăng sức bền", href: "/goals", label: "Quản lý mục tiêu", gradient: "rgba(255,193,7,0.08)" },
+              ].map((item, i) => (
+                <Col md={4} key={i}>
+                  <Card className="border-0 h-100 text-center p-4 hoverable" style={{ background: `linear-gradient(135deg, var(--surface), ${item.gradient})` }}>
+                    <Card.Body>
+                      <div style={{ fontSize: "2.5rem" }} className="mb-3">{item.emoji}</div>
+                      <h5 className="fw-bold">{item.title}</h5>
+                      <p className="text-muted small">{item.desc}</p>
+                      <Button variant="outline-primary" size="sm" href={item.href}>{item.label}</Button>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              ))}
             </Row>
           </Container>
         </section>

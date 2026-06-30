@@ -117,26 +117,20 @@ const Register = () => {
   };
 
   return (
-    <div className="form-container">
-      <Form
-        onSubmit={register}
-        style={{
-          width: "71.5%",
-          backgroundColor: "#add8e678",
-          margin: "0 auto",
-          padding: "2rem",
-          boxShadow: "5px 5px 5px #55555599",
-          borderRadius: "1rem",
-          fontWeight: "bold",
-        }}
-      >
-        <h1 className="text-center mb-3" style={{ color: "#0e3a57" }}>
-          ĐĂNG KÝ
-        </h1>
+    <div className="form-container register-form">
+      <Form onSubmit={register}>
+        <div className="text-center mb-4">
+          <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>🏋️</div>
+          <h2 className="fw-bold text-white mb-1">Tạo tài khoản</h2>
+          <p className="text-muted small mb-0">Bắt đầu hành trình sức khỏe cùng GUTIM</p>
+        </div>
 
         {msg && <Alert variant="danger">{msg}</Alert>}
 
-        {/* Cột trái/phải cho base fields */}
+        {/* Thông tin tài khoản */}
+        <h6 className="text-uppercase small fw-bold mb-3" style={{ color: "var(--accent)", letterSpacing: "1px" }}>
+          Thông tin tài khoản
+        </h6>
         <Row>
           <Col md={6}>
             {baseInfo.slice(0, 3).map((i) => (
@@ -168,7 +162,11 @@ const Register = () => {
           </Col>
         </Row>
 
-        {/* Optional fields (gender, birthDate) */}
+        {/* Thông tin cá nhân */}
+        <hr style={{ borderColor: "var(--border)" }} />
+        <h6 className="text-uppercase small fw-bold mb-3" style={{ color: "var(--accent)", letterSpacing: "1px" }}>
+          Thông tin cá nhân
+        </h6>
         <Row>
           {optionalFields.map((i) => (
             <Col md={6} key={i.field}>
@@ -197,7 +195,10 @@ const Register = () => {
         </Row>
 
         {/* Thông tin Sức khỏe */}
-        <h5 className="mt-3" style={{ color: "#0e3a57" }}>Thông tin sức khỏe (tuỳ chọn)</h5>
+        <hr style={{ borderColor: "var(--border)" }} />
+        <h6 className="text-uppercase small fw-bold mb-3" style={{ color: "var(--accent)", letterSpacing: "1px" }}>
+          Sức khỏe <span className="text-muted fw-normal">(tuỳ chọn)</span>
+        </h6>
         <Row>
           {healthFields.map((i) => (
             <Col md={6} key={i.field}>
@@ -217,7 +218,10 @@ const Register = () => {
         </Row>
 
         {/* Mục tiêu luyện tập */}
-        <h5 className="mt-2" style={{ color: "#0e3a57" }}>Mục tiêu luyện tập (tuỳ chọn)</h5>
+        <hr style={{ borderColor: "var(--border)" }} />
+        <h6 className="text-uppercase small fw-bold mb-3" style={{ color: "var(--accent)", letterSpacing: "1px" }}>
+          Mục tiêu luyện tập <span className="text-muted fw-normal">(tuỳ chọn)</span>
+        </h6>
         <Row>
           {goalFields.map((i) => (
             <Col md={6} key={i.field}>
@@ -237,24 +241,27 @@ const Register = () => {
         </Row>
 
         {/* Avatar */}
-        <Form.Group className="mb-3" controlId="avatar">
-          <Form.Label>Ảnh đại diện</Form.Label>
+        <hr style={{ borderColor: "var(--border)" }} />
+        <Form.Group className="mb-4" controlId="avatar">
+          <Form.Label>📸 Ảnh đại diện</Form.Label>
           <Form.Control type="file" ref={avatar} accept="image/png,image/jpeg" />
           <Form.Text>Chỉ hỗ trợ JPEG hoặc PNG</Form.Text>
         </Form.Group>
 
         {loading ? (
-          <MySpinner />
+          <div className="text-center py-2"><MySpinner /></div>
         ) : (
-          <Form.Group className="mb-3" style={{ direction: "rtl" }}>
-            <Button
-              type="submit"
-              style={{ backgroundColor: "#0e3a57", color: "white", border: "none" }}
-              className="mt-2"
-            >
-              Đăng ký
+          <div className="d-grid gap-2">
+            <Button variant="primary" type="submit" size="lg" className="fw-bold py-2">
+              Tạo tài khoản
             </Button>
-          </Form.Group>
+            <div className="text-center mt-2">
+              <span className="text-muted small">Đã có tài khoản? </span>
+              <Button variant="link" onClick={() => nav("/login")} className="p-0 text-decoration-none" style={{ color: "var(--accent)" }}>
+                Đăng nhập
+              </Button>
+            </div>
+          </div>
         )}
       </Form>
     </div>

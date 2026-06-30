@@ -70,3 +70,83 @@ html{ scroll-behavior: smooth; }
 a{ transition: color 0.2s ease; }
 .btn{ transition: all 0.2s ease; }
 
+/* ===== Form containers (Login / Register) ===== */
+.form-container{
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 60vh;
+  padding: 2rem 1rem;
+}
+.form-container > form{
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+.form-container.register-form > form{
+  max-width: 720px;
+}
+
+/* Dark form controls */
+.form-container .form-control,
+.form-container .form-select{
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.form-container .form-control:focus,
+.form-container .form-select:focus{
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+}
+.form-container .form-control::placeholder{
+  color: var(--muted);
+  opacity: 0.6;
+}
+.form-container .form-label{
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+.form-container .form-text{
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* ===== Animated gradient border for accent cards ===== */
+@keyframes borderGlow {
+  0%, 100% { border-color: var(--accent); box-shadow: 0 0 12px rgba(255,107,53,0.15); }
+  50% { border-color: var(--accent-2); box-shadow: 0 0 12px rgba(76,201,240,0.15); }
+}
+.glow-border{
+  animation: borderGlow 4s ease-in-out infinite;
+}
+
+/* ===== Alert improvements for dark theme ===== */
+.form-container .alert{
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+/* ===== Page section headers ===== */
+.section-title{
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+.section-subtitle{
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+

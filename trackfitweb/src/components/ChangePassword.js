@@ -1,20 +1,14 @@
 // src/components/ChangePassword.jsx
-import { useEffect, useState } from "react";
-import { Alert, Button, Form, Card } from "react-bootstrap";
+import { useState } from "react";
+import { Alert, Button, Form } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
 import { Link } from "react-router-dom";
-import AOS from "aos";
-import "aos/dist/aos.css";
 
 const ChangePassword = () => {
   const [form, setForm] = useState({ oldPassword: "", newPassword: "", confirmNew: "" });
   const [msg, setMsg] = useState("");
   const [variant, setVariant] = useState("info");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    AOS.init({ duration: 700, once: true });
-  }, []);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -45,59 +39,55 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="container" style={{ maxWidth: 640 }}>
-      <div className="d-flex justify-content-between align-items-center mb-3" data-aos="fade-right">
-        <div className="d-flex align-items-center gap-2">
-          <h3 className="m-0">Đổi mật khẩu</h3>
-        </div>
-        <div className="d-flex align-items-center gap-2">
-          <Button as={Link} to="/profile" variant="outline-secondary">
+    <div className="form-container">
+      <Form onSubmit={submit}>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h4 className="m-0 fw-bold text-white">🔐 Đổi mật khẩu</h4>
+          <Button as={Link} to="/profile" variant="outline-secondary" size="sm">
             Về hồ sơ
           </Button>
         </div>
-      </div>
 
-      <Card className="shadow-sm border-0 hoverable" data-aos="fade-up">
-        <Card.Body>
-          {msg && <Alert variant={variant}>{msg}</Alert>}
-          <Form onSubmit={submit}>
-            <Form.Group className="mb-3">
-              <Form.Label className="small text-uppercase text-muted">Mật khẩu cũ</Form.Label>
-              <Form.Control
-                type="password"
-                value={form.oldPassword}
-                onChange={(e) => setForm({ ...form, oldPassword: e.target.value })}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label className="small text-uppercase text-muted">Mật khẩu mới</Form.Label>
-              <Form.Control
-                type="password"
-                value={form.newPassword}
-                onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
-                minLength={6}
-                required
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label className="small text-uppercase text-muted">Xác nhận mật khẩu mới</Form.Label>
-              <Form.Control
-                type="password"
-                value={form.confirmNew}
-                onChange={(e) => setForm({ ...form, confirmNew: e.target.value })}
-                minLength={6}
-                required
-              />
-            </Form.Group>
-            <div className="text-end mt-3">
-              <Button type="submit" disabled={loading}>
-                {loading ? "Đang lưu..." : "Lưu"}
-              </Button>
-            </div>
-          </Form>
-        </Card.Body>
-      </Card>
+        {msg && <Alert variant={variant}>{msg}</Alert>}
+
+        <Form.Group className="mb-3">
+          <Form.Label>Mật khẩu cũ</Form.Label>
+          <Form.Control
+            type="password"
+            value={form.oldPassword}
+            onChange={(e) => setForm({ ...form, oldPassword: e.target.value })}
+            placeholder="Nhập mật khẩu hiện tại"
+            required
+          />
+        </Form.Group>
+        <Form.Group className="mb-3">
+          <Form.Label>Mật khẩu mới</Form.Label>
+          <Form.Control
+            type="password"
+            value={form.newPassword}
+            onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
+            placeholder="Tối thiểu 6 ký tự"
+            minLength={6}
+            required
+          />
+        </Form.Group>
+        <Form.Group className="mb-4">
+          <Form.Label>Xác nhận mật khẩu mới</Form.Label>
+          <Form.Control
+            type="password"
+            value={form.confirmNew}
+            onChange={(e) => setForm({ ...form, confirmNew: e.target.value })}
+            placeholder="Nhập lại mật khẩu mới"
+            minLength={6}
+            required
+          />
+        </Form.Group>
+        <div className="d-grid">
+          <Button type="submit" variant="primary" disabled={loading} className="fw-bold py-2">
+            {loading ? "Đang lưu..." : "Cập nhật mật khẩu"}
+          </Button>
+        </div>
+      </Form>
     </div>
   );
 };
