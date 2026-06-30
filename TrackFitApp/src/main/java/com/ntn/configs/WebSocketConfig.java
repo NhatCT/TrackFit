@@ -1,7 +1,6 @@
 package com.ntn.configs;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -16,9 +15,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Autowired
     private WebSocketAuthInterceptor authInterceptor;
 
-    @Value("${allowed.origins:http://localhost:3000,http://127.0.0.1:3000}")
-    private String allowedOriginsProp;
-
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic", "/queue");
@@ -27,17 +23,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Support both SockJS (fallback for older browsers) and native WebSocket
-        String[] origins = allowedOriginsProp.split(",");
-
-        // SockJS endpoint (with CORS allowed origins/patterns)
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(origins)
+                .setAllowedOriginPatterns("*")
                 .withSockJS();
-
-        // Native WebSocket endpoint (for modern browsers & production proxies)
-        registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(origins);
     }
 
     @Override
