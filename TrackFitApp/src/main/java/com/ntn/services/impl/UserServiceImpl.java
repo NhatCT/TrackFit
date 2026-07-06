@@ -10,6 +10,7 @@ import com.ntn.dto.UserResponseDTO;
 import com.ntn.pojo.HealthData;
 import com.ntn.pojo.User;
 import com.ntn.repositories.UserRepository;
+import com.ntn.repositories.HealthDataRepository;
 import com.ntn.services.UserService;
 import com.ntn.services.PremiumService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private PremiumService premiumService;
+
+    @Autowired
+    private HealthDataRepository healthRepo;
 
     @Override
     public UserResponseDTO getUserByUsername(String username) {
@@ -118,9 +122,13 @@ public class UserServiceImpl implements UserService {
             user.setUpdatedAt(LocalDateTime.now());
 
             this.userRepo.updateUser(user);
+            
+            // Save health data to database
+            healthRepo.saveHealthData(healthDataEntity);
+            
             return true;
         } catch (Exception e) {
-            throw new RuntimeException("Lỗi khi cập nhật thông tin sức khỏe");
+            throw new RuntimeException("Lỗi khi cập nhật thông tin sức khỏe", e);
         }
     }
 
