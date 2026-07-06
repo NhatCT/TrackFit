@@ -89,8 +89,8 @@ public class SpringSecurityConfigs {
                 .requestMatchers("/api/secure/**").authenticated()
                 .anyRequest().denyAll()
                 )
-                .addFilterBefore(rateLimitFilter(), JwtFilter.class)
-                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(rateLimitFilter(), JwtFilter.class);
 
         return http.build();
     }
@@ -118,8 +118,12 @@ public class SpringSecurityConfigs {
     @Bean
     public CorsConfigurationSource cors() {
         var cfg = new CorsConfiguration();
-        List<String> origins = Arrays.asList(allowedOriginsProp.split(","));
-        cfg.setAllowedOrigins(origins);
+        List<String> origins = Arrays.stream(allowedOriginsProp.split(","))
+                .map(String::trim)
+                .map(s -> s.endsWith("/") ? s.substring(0, s.length() - 1) : s)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        cfg.setAllowedOriginPatterns(origins);
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         cfg.setExposedHeaders(List.of("Authorization"));

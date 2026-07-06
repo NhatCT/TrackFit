@@ -9,7 +9,12 @@ const WebSocketListener = ({ user }) => {
     const token = cookie.load("token");
     if (!token) return;
 
-    const wsUrl = process.env.REACT_APP_WS_URL || "http://localhost:8080/TrackFit/ws";
+    let wsUrl = process.env.REACT_APP_WS_URL || "http://localhost:8080/TrackFit/ws";
+    if (wsUrl.startsWith("ws://")) {
+      wsUrl = wsUrl.replace("ws://", "http://");
+    } else if (wsUrl.startsWith("wss://")) {
+      wsUrl = wsUrl.replace("wss://", "https://");
+    }
     const socket = new SockJS(wsUrl);
     const client = new Client({
       webSocketFactory: () => socket,
