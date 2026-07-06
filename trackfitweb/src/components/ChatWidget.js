@@ -207,6 +207,9 @@ export default function ChatWidget({ requireAuth = false }) {
 
   // Health check
   React.useEffect(() => {
+    const token = cookie.load("token");
+    if (!token) return;
+
     let mounted = true;
     const ping = () =>
       authApis().get(endpoints.aiHealth)
@@ -215,7 +218,7 @@ export default function ChatWidget({ requireAuth = false }) {
     ping();
     const iv = setInterval(ping, 30000);
     return () => { mounted = false; clearInterval(iv); };
-  }, []);
+  }, [user]);
 
   React.useEffect(() => {
     if (open) refreshChatQuota();
