@@ -33,7 +33,7 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [user, dispatch] = useContext(MyUserContext);
+  const [, dispatch] = useContext(MyUserContext);
 
   // Đổi avatar
   const [msg, setMsg] = useState("");
@@ -211,15 +211,7 @@ const Profile = () => {
           <h3 className="m-0">Hồ sơ cá nhân</h3>
         </div>
         <div className="d-flex align-items-center gap-2">
-          {!user?.isPremium ? (
-            <Button as={Link} to="/upgrade" variant="warning" className="fw-bold text-dark me-2">
-              Nâng cấp PRO 👑
-            </Button>
-          ) : (
-            <Button as={Link} to="/upgrade" variant="outline-warning" className="fw-bold me-2">
-              Gói dịch vụ PRO 👑
-            </Button>
-          )}
+
           <Button as={Link} to="/profile/password" variant="outline-primary">
             Đổi mật khẩu
           </Button>
@@ -275,11 +267,7 @@ const Profile = () => {
                     <Badge bg={roleColor} className="align-middle me-2">
                       {roleText}
                     </Badge>
-                    {user?.isPremium && (
-                      <Badge bg="warning" className="align-middle text-dark fw-bold" style={{ boxShadow: "0 0 8px rgba(255,193,7,0.5)" }}>
-                        👑 PRO MEMBER
-                      </Badge>
-                    )}
+
                   </div>
                 </Col>
 

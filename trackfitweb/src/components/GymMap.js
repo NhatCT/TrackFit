@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Container, Row, Col, Card, Form, Button, Spinner, Alert } from "react-bootstrap";
-import { MyUserContext } from "../configs/Context";
+
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -23,11 +23,10 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
 };
 
 const GymMap = () => {
-  const [user] = useContext(MyUserContext);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [userLoc, setUserLoc] = useState(null); // { lat, lon }
-  const [radius, setRadius] = useState(() => user?.isPremium ? 3000 : 1000);
-  const radiusSyncedRef = useRef(false);
+  const [radius, setRadius] = useState(3000);
+
   const [gyms, setGyms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -77,16 +76,7 @@ const GymMap = () => {
     };
   }, []);
 
-  // Sync default radius when user profile loads (context may be null on first render)
-  useEffect(() => {
-    if (!user) return;
-    if (!user.isPremium) {
-      setRadius((prev) => (prev > 1000 ? 1000 : prev));
-    } else if (!radiusSyncedRef.current) {
-      setRadius((prev) => (prev === 1000 ? 3000 : prev));
-      radiusSyncedRef.current = true;
-    }
-  }, [user]);
+
 
   // Request browser geolocation
   const getUserLocation = () => {
@@ -473,12 +463,8 @@ const GymMap = () => {
               value={radius} 
               onChange={(e) => {
                 const val = Number(e.target.value);
-                if (val > 1000 && !user?.isPremium) {
-                  setError("Bán kính quét lớn hơn 1km chỉ dành cho hội viên PRO! Vui lòng nâng cấp tài khoản để sử dụng.");
-                  setRadius(1000);
-                } else {
                   setRadius(val);
-                }
+
               }}
               style={{ background: "#111a2b", color: "#fff", borderColor: "#1f2d47" }}
             >

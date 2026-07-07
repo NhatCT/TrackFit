@@ -192,18 +192,11 @@ export default function ChatWidget({ requireAuth = false }) {
   const [input, setInput] = React.useState("");
   const [sending, setSending] = React.useState(false);
   const [model, setModel] = React.useState("");
-  const [chatRemaining, setChatRemaining] = React.useState(null);
   const bodyRef = React.useRef(null);
 
   const refreshChatQuota = React.useCallback(() => {
-    if (!authed || user?.isPremium) {
-      setChatRemaining(null);
-      return;
-    }
-    authApis().get(endpoints.subscriptionStatus)
-      .then((r) => setChatRemaining(r.data?.chatRemaining ?? 0))
-      .catch(() => setChatRemaining(0));
-  }, [authed, user?.isPremium]);
+    // No-op: chat is unlimited
+  }, []);
 
   // Health check
   React.useEffect(() => {
@@ -246,8 +239,7 @@ export default function ChatWidget({ requireAuth = false }) {
       refreshChatQuota();
     } catch (e) {
       if (e?.response?.status === 429) {
-        setChatRemaining(0);
-        const msg = e?.response?.data?.message || "Bạn đã hết lượt chat miễn phí hôm nay.";
+        const msg = e?.response?.data?.message || "Bạn đã tạm thời bị giới hạn tần suất gửi tin. Vui lòng thử lại sau ít phút.";
         setMsgs(prev => [...prev, { role: "bot", text: msg }]);
       } else {
         const msg = e?.response?.status === 401
@@ -276,7 +268,7 @@ export default function ChatWidget({ requireAuth = false }) {
     }
   };
 
-  const chatBlocked = authed && !user?.isPremium && chatRemaining !== null && chatRemaining <= 0;
+  const chatBlocked = false;
 
   return (
     <>

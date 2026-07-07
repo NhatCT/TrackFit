@@ -30,25 +30,12 @@ public class ChatQuotaServiceImpl implements ChatQuotaService {
 
     @Override
     public int getRemaining(Integer userId, boolean isPremium) {
-        if (isPremium || userId == null) {
-            return Integer.MAX_VALUE;
-        }
-        long used = currentCount(userId);
-        return (int) Math.max(0, dailyLimit - used);
+        return Integer.MAX_VALUE;
     }
 
     @Override
     public void consumeOrThrow(Integer userId, boolean isPremium) {
-        if (isPremium) {
-            return;
-        }
-        if (userId == null) {
-            throw new ChatQuotaExceededException(dailyLimit);
-        }
-        long used = increment(userId);
-        if (used > dailyLimit) {
-            throw new ChatQuotaExceededException(dailyLimit);
-        }
+        // No-op: everyone has unlimited chats
     }
 
     private long currentCount(Integer userId) {

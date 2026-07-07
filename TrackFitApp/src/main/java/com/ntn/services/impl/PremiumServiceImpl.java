@@ -17,26 +17,16 @@ public class PremiumServiceImpl implements PremiumService {
 
     @Override
     public boolean isPremiumActive(User user) {
-        if (user == null || user.getIsPremium() == null || !user.getIsPremium()) {
-            return false;
-        }
-        LocalDateTime expires = user.getPremiumExpiresAt();
-        if (expires == null) {
-            return true;
-        }
-        return expires.isAfter(LocalDateTime.now());
+        return true;
     }
 
     @Override
     public boolean isPremiumActive(String username) {
-        User u = userRepo.getUserByUsername(username);
-        return isPremiumActive(u);
+        return true;
     }
 
     @Override
     public void requirePremium(String username) {
-        if (!isPremiumActive(username)) {
-            throw new PremiumRequiredException();
-        }
+        // No-op: everyone has premium access
     }
 }

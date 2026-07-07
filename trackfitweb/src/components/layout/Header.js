@@ -147,15 +147,6 @@ const Header = (props) => {
       />
       <span className="text-white d-none d-sm-inline">
         {user?.username || "Tài khoản"}
-        {user?.isPremium && (
-          <span 
-            className="ms-1.5 px-1 py-0.5 rounded text-dark bg-warning fw-bold" 
-            style={{ fontSize: "0.6rem", letterSpacing: "0.5px", boxShadow: "0 0 8px rgba(255, 193, 7, 0.6)" }}
-            title="Premium Member"
-          >
-            PRO 👑
-          </span>
-        )}
       </span>
     </span>
   );
@@ -190,16 +181,7 @@ const Header = (props) => {
 
               <Nav.Link as={Link} to="/stats/summary" className="text-white">Thống kê</Nav.Link>
 
-              {!user?.isPremium && (
-                <Nav.Link
-                  as={Link}
-                  to="/upgrade"
-                  className="text-warning fw-bold"
-                  style={{ textShadow: "0 0 8px rgba(255, 193, 7, 0.4)" }}
-                >
-                  Nâng cấp PRO ⚡
-                </Nav.Link>
-              )}
+
 
               <Nav.Link
                 as={Link}

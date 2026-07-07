@@ -28,8 +28,8 @@ import PlansList from "./components/PlansList";
 import PlanForm from "./components/PlanForm";
 import HistoriesList from "./components/HistoriesList";
 import GymMap from "./components/GymMap";
-import Upgrade from "./components/Upgrade";
 import ChatWidget from "./components/ChatWidget";
+
 import WebSocketListener from "./components/layout/WebSocketListener";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import CompleteProfile from "./components/CompleteProfile";
@@ -62,20 +62,7 @@ const App = () => {
       .catch(() => {});
   }, [dispatch]);
 
-  useEffect(() => {
-    const onPremium = (e) => {
-      const data = e.detail?.data || {};
-      dispatch({
-        type: "updateProfile",
-        payload: {
-          isPremium: true,
-          premiumExpiresAt: data.premiumExpiresAt || null,
-        },
-      });
-    };
-    window.addEventListener("trackfit-premium-activated", onPremium);
-    return () => window.removeEventListener("trackfit-premium-activated", onPremium);
-  }, [dispatch]);
+
 
   useEffect(() => {
     const handleNotification = (e) => {
@@ -147,7 +134,7 @@ const App = () => {
               <Route path="/plans/:id" element={user ? <PlanForm /> : <Navigate to="/login" />} />
               <Route path="/histories" element={user ? <HistoriesList /> : <Navigate to="/login" />} />
               <Route path="/gyms" element={user ? <GymMap /> : <Navigate to="/login" />} />
-              <Route path="/upgrade" element={user ? <Upgrade /> : <Navigate to="/login" />} />
+
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
             </ErrorBoundary>
