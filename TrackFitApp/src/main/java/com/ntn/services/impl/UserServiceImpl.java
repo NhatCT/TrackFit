@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ntn.dto.CompleteProfileDTO;
 import com.ntn.pojo.Goal;
