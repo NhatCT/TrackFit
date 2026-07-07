@@ -1,7 +1,7 @@
 // src/components/Profile.jsx
 import { useEffect, useMemo, useRef, useState, useContext } from "react";
 import { authApis, endpoints } from "../configs/Apis";
-import { Card, Button, Row, Col, Badge, Form, Alert, Spinner } from "react-bootstrap";
+import { Card, Button, Row, Col, Badge, Form, Alert, Spinner, ProgressBar } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import AOS from "aos";
 import "aos/dist/aos.css";
