@@ -331,6 +331,101 @@ const Profile = () => {
               }/6
             </span>
           </Card.Title>
+
+          {!achMapLoading && (
+            <div className="mb-4 p-3 rounded" style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <Row className="align-items-center">
+                <Col md={8}>
+                  <div className="text-muted small text-uppercase" style={{ fontSize: "0.75rem", letterSpacing: "1px" }}>Danh hiệu hiện tại</div>
+                  <h5 className="fw-bold my-1" style={{ 
+                    color: [
+                      achievements.streak >= 1,
+                      achievements.streak >= 7,
+                      achievements.streak >= 30,
+                      achievements.plansCount > 0,
+                      achievements.goalsCount > 0,
+                      achievements.healthCount >= 3
+                    ].filter(Boolean).length >= 5 ? "#ffc107" : 
+                    [
+                      achievements.streak >= 1,
+                      achievements.streak >= 7,
+                      achievements.streak >= 30,
+                      achievements.plansCount > 0,
+                      achievements.goalsCount > 0,
+                      achievements.healthCount >= 3
+                    ].filter(Boolean).length >= 3 ? "#0dcaf0" : 
+                    [
+                      achievements.streak >= 1,
+                      achievements.streak >= 7,
+                      achievements.streak >= 30,
+                      achievements.plansCount > 0,
+                      achievements.goalsCount > 0,
+                      achievements.healthCount >= 3
+                    ].filter(Boolean).length >= 1 ? "#198754" : "#6c757d"
+                  }}>
+                    {
+                      [
+                        achievements.streak >= 1,
+                        achievements.streak >= 7,
+                        achievements.streak >= 30,
+                        achievements.plansCount > 0,
+                        achievements.goalsCount > 0,
+                        achievements.healthCount >= 3
+                      ].filter(Boolean).length >= 5 ? "Huyền thoại Gutim 👑" : 
+                      [
+                        achievements.streak >= 1,
+                        achievements.streak >= 7,
+                        achievements.streak >= 30,
+                        achievements.plansCount > 0,
+                        achievements.goalsCount > 0,
+                        achievements.healthCount >= 3
+                      ].filter(Boolean).length >= 3 ? "Chiến binh kiên cường 💪" : 
+                      [
+                        achievements.streak >= 1,
+                        achievements.streak >= 7,
+                        achievements.streak >= 30,
+                        achievements.plansCount > 0,
+                        achievements.goalsCount > 0,
+                        achievements.healthCount >= 3
+                      ].filter(Boolean).length >= 1 ? "Chiến binh tập sự 🏃‍♂️" : "Người tập sự 🏋️‍♂️"
+                    }
+                  </h5>
+                  <p className="text-muted small mb-0">Mở khóa thêm các huy hiệu thành tựu tiếp theo để thăng hạng phong hiệu!</p>
+                </Col>
+                <Col md={4} className="mt-3 mt-md-0">
+                  <div className="d-flex justify-content-between text-muted small mb-1" style={{ fontSize: "0.75rem" }}>
+                    <span>Tiến trình danh hiệu</span>
+                    <span>
+                      {
+                        [
+                          achievements.streak >= 1,
+                          achievements.streak >= 7,
+                          achievements.streak >= 30,
+                          achievements.plansCount > 0,
+                          achievements.goalsCount > 0,
+                          achievements.healthCount >= 3
+                        ].filter(Boolean).length
+                      }/6 Huy hiệu
+                    </span>
+                  </div>
+                  <ProgressBar 
+                    now={(
+                      [
+                        achievements.streak >= 1,
+                        achievements.streak >= 7,
+                        achievements.streak >= 30,
+                        achievements.plansCount > 0,
+                        achievements.goalsCount > 0,
+                        achievements.healthCount >= 3
+                      ].filter(Boolean).length / 6
+                    ) * 100} 
+                    variant="warning" 
+                    style={{ height: "10px", backgroundColor: "rgba(255,255,255,0.08)" }} 
+                  />
+                </Col>
+              </Row>
+            </div>
+          )}
           
           {achMapLoading ? (
             <div className="text-center py-4">

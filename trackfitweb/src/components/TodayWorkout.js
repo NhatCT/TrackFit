@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
-import { Card, Button, Badge, Row, Col, ProgressBar, Form, Alert } from "react-bootstrap";
+import { Card, Button, Badge, Row, Col, ProgressBar, Form, Alert, Modal } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
 import MySpinner from "./layout/MySpinner";
+import ReactPlayer from "react-player";
 
 const DOW_LABELS = {
   1: "Thứ Hai",
@@ -26,6 +27,107 @@ export default function TodayWorkout() {
   const [loading, setLoading] = useState(true);
   const [submittingId, setSubmittingId] = useState(null);
   const [msg, setMsg] = useState("");
+
+  const [activeWorkoutOpen, setActiveWorkoutOpen] = useState(false);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [isResting, setIsResting] = useState(false);
+
+  // Active Workout Timer Effect
+  useEffect(() => {
+    let interval = null;
+    if (timerRunning && secondsLeft > 0) {
+      interval = setInterval(() => {
+        setSecondsLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (secondsLeft === 0 && timerRunning) {
+      setTimerRunning(false);
+      if (isResting) {
+        handleRestFinished();
+      }
+    }
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timerRunning, secondsLeft, isResting]);
+
+  const handleRestFinished = () => {
+    setIsResting(false);
+    const nextIdx = findNextUncompletedIndex(currentExerciseIndex);
+    if (nextIdx !== -1) {
+      setCurrentExerciseIndex(nextIdx);
+      const nextEx = todayExercises[nextIdx];
+      setSecondsLeft((nextEx.duration || 5) * 60);
+      setTimerRunning(true);
+    } else {
+      // All completed!
+      setCurrentExerciseIndex(-1);
+    }
+  };
+
+  const findNextUncompletedIndex = (currentIdx) => {
+    for (let i = currentIdx + 1; i < todayExercises.length; i++) {
+      const ex = todayExercises[i];
+      const recorded = historyToday.find((h) => h.exerciseId === ex.exerciseId);
+      if (!recorded || (recorded.status !== "COMPLETED" && recorded.status !== "SKIPPED")) {
+        return i;
+      }
+    }
+    for (let i = 0; i <= currentIdx; i++) {
+      const ex = todayExercises[i];
+      const recorded = historyToday.find((h) => h.exerciseId === ex.exerciseId);
+      if (!recorded || (recorded.status !== "COMPLETED" && recorded.status !== "SKIPPED")) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  const handleActiveExerciseComplete = async (exerciseId, duration) => {
+    await logWorkout(exerciseId, "COMPLETED", duration);
+    const nextIdx = findNextUncompletedIndex(currentExerciseIndex);
+    if (nextIdx !== -1) {
+      setIsResting(true);
+      setSecondsLeft(30); // 30s rest
+      setTimerRunning(true);
+    } else {
+      setCurrentExerciseIndex(-1);
+      setTimerRunning(false);
+    }
+  };
+
+  const handleActiveExerciseSkip = async (exerciseId) => {
+    await logWorkout(exerciseId, "SKIPPED", 0);
+    const nextIdx = findNextUncompletedIndex(currentExerciseIndex);
+    if (nextIdx !== -1) {
+      setCurrentExerciseIndex(nextIdx);
+      const nextEx = todayExercises[nextIdx];
+      setSecondsLeft((nextEx.duration || 5) * 60);
+      setTimerRunning(true);
+    } else {
+      setCurrentExerciseIndex(-1);
+      setTimerRunning(false);
+    }
+  };
+
+  const startActiveWorkout = () => {
+    const firstUncompletedIdx = todayExercises.findIndex(ex => {
+      const recorded = historyToday.find((h) => h.exerciseId === ex.exerciseId);
+      return !recorded || (recorded.status !== "COMPLETED" && recorded.status !== "SKIPPED");
+    });
+    
+    if (firstUncompletedIdx !== -1) {
+      setCurrentExerciseIndex(firstUncompletedIdx);
+      const ex = todayExercises[firstUncompletedIdx];
+      setSecondsLeft((ex.duration || 5) * 60);
+      setIsResting(false);
+      setTimerRunning(true);
+      setActiveWorkoutOpen(true);
+    } else {
+      setCurrentExerciseIndex(-1);
+      setActiveWorkoutOpen(true);
+    }
+  };
 
   const todayDow = useMemo(() => getTodayDow(), []);
   const todayLabel = useMemo(() => DOW_LABELS[todayDow] || "Hôm nay", [todayDow]);
@@ -171,142 +273,290 @@ export default function TodayWorkout() {
     );
   }
 
+  const currentEx = todayExercises[currentExerciseIndex];
+
+  const formatTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  };
+
   return (
-    <Card className="shadow-sm border-0 mb-4" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px" }} data-aos="fade-up">
-      <Card.Header className="bg-transparent border-0 pt-4 pb-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-        <div>
-          <h4 className="fw-bold m-0 text-light">🏋️ Kế hoạch hôm nay ({todayLabel})</h4>
-          <p className="text-muted m-0 small">Bắt đầu tập luyện và đánh dấu hoàn thành tiến độ của bạn</p>
-        </div>
-        
-        {plans.length > 1 && (
-          <div className="d-flex align-items-center gap-2">
-            <span className="text-muted small text-nowrap">Chọn lịch:</span>
-            <Form.Select 
-              size="sm" 
-              value={selectedPlanId} 
-              onChange={handlePlanChange} 
-              style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", borderColor: "var(--border)", minWidth: "160px" }}
-            >
-              {plans.map((p) => (
-                <option key={p.planId} value={p.planId}>
-                  {p.planName}
-                </option>
-              ))}
-            </Form.Select>
-          </div>
-        )}
-      </Card.Header>
-      
-      <Card.Body className="pt-3">
-        {msg && <Alert variant="danger" className="py-2 small">{msg}</Alert>}
-
-        {plans.length === 0 ? (
-          <div className="text-center py-4">
-            <div className="fs-1 mb-2">📋</div>
-            <h5 className="fw-bold text-light">Chưa có kế hoạch tập luyện cá nhân</h5>
-            <p className="text-muted small mb-3">Tạo một kế hoạch 7 ngày tùy chỉnh cho mục tiêu của riêng bạn để bắt đầu.</p>
-            <Button variant="primary" size="sm" href="/plans/new">
-              + Tạo kế hoạch ngay
-            </Button>
-          </div>
-        ) : todayExercises.length === 0 ? (
-          <div className="text-center py-4">
-            <div className="fs-1 mb-2">😴</div>
-            <h5 className="fw-bold text-light">Hôm nay là ngày nghỉ ngơi!</h5>
-            <p className="text-muted small mb-0">Hãy nghỉ ngơi đầy đủ để cơ bắp được phục hồi hoặc tham khảo các bài tập nhẹ nhàng.</p>
-          </div>
-        ) : (
-          <>
-            {/* Progress bar */}
-            <div className="mb-4">
-              <div className="d-flex justify-content-between align-items-center mb-1 text-muted small">
-                <span>Tiến độ hoàn thành: {stats.completed}/{stats.total} bài tập</span>
-                <span className="fw-bold text-light">{stats.percent}%</span>
-              </div>
-              <ProgressBar 
-                now={stats.percent} 
-                style={{ height: "8px", backgroundColor: "var(--border)" }}
-                variant={stats.percent === 100 ? "success" : "info"}
-              />
+    <>
+      <Card className="shadow-sm border-0 mb-4" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px" }} data-aos="fade-up">
+        <Card.Header className="bg-transparent border-0 pt-4 pb-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+          <div>
+            <div className="d-flex align-items-center gap-2">
+              <h4 className="fw-bold m-0 text-light">🏋️ Kế hoạch hôm nay ({todayLabel})</h4>
+              {todayExercises.length > 0 && stats.completed < stats.total && (
+                <Button 
+                  size="sm" 
+                  variant="success" 
+                  onClick={startActiveWorkout}
+                  className="fw-bold border-0 d-flex align-items-center gap-1 ms-2"
+                  style={{ background: "linear-gradient(135deg, #10b981, #059669)", borderRadius: "8px" }}
+                >
+                  ▶ Bắt đầu tập
+                </Button>
+              )}
             </div>
+            <p className="text-muted m-0 small mt-1">Bắt đầu tập luyện và đánh dấu hoàn thành tiến độ của bạn</p>
+          </div>
+          
+          {plans.length > 1 && (
+            <div className="d-flex align-items-center gap-2">
+              <span className="text-muted small text-nowrap">Chọn lịch:</span>
+              <Form.Select 
+                size="sm" 
+                value={selectedPlanId} 
+                onChange={handlePlanChange} 
+                style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", borderColor: "var(--border)", minWidth: "160px" }}
+              >
+                {plans.map((p) => (
+                  <option key={p.planId} value={p.planId}>
+                    {p.planName}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+          )}
+        </Card.Header>
+        
+        <Card.Body className="pt-3">
+          {msg && <Alert variant="danger" className="py-2 small">{msg}</Alert>}
 
-            <Row className="g-3">
-              {todayExercises.map((ex) => {
-                const recorded = historyToday.find((h) => h.exerciseId === ex.exerciseId);
-                const isCompleted = recorded?.status === "COMPLETED";
-                const isSkipped = recorded?.status === "SKIPPED";
-                
-                return (
-                  <Col key={ex.detailId} xs={12} md={6}>
-                    <Card 
-                      className={`h-100 border-0 p-3`} 
-                      style={{ 
-                        background: isCompleted 
-                          ? "rgba(25, 135, 84, 0.08)" 
-                          : isSkipped 
-                          ? "rgba(108, 117, 125, 0.08)"
-                          : "var(--surface-2)",
-                        border: isCompleted 
-                          ? "1px solid rgba(25, 135, 84, 0.2)" 
-                          : "1px solid var(--border)",
-                        borderRadius: "12px"
-                      }}
-                    >
-                      <div className="d-flex justify-content-between align-items-start gap-2">
-                        <div>
-                          <h6 className="fw-bold text-light mb-1">
-                            {ex.exerciseName}
-                          </h6>
-                          <div className="d-flex gap-2 align-items-center flex-wrap mt-1">
-                            <Badge bg="secondary" className="bg-opacity-25 text-light-50">⏱️ {ex.duration} phút</Badge>
-                            {isCompleted && <Badge bg="success">Hoàn thành</Badge>}
-                            {isSkipped && <Badge bg="secondary">Đã bỏ qua</Badge>}
+          {plans.length === 0 ? (
+            <div className="text-center py-4">
+              <div className="fs-1 mb-2">📋</div>
+              <h5 className="fw-bold text-light">Chưa có kế hoạch tập luyện cá nhân</h5>
+              <p className="text-muted small mb-3">Tạo một kế hoạch 7 ngày tùy chỉnh cho mục tiêu của riêng bạn để bắt đầu.</p>
+              <Button variant="primary" size="sm" href="/plans/new">
+                + Tạo kế hoạch ngay
+              </Button>
+            </div>
+          ) : todayExercises.length === 0 ? (
+            <div className="text-center py-4">
+              <div className="fs-1 mb-2">😴</div>
+              <h5 className="fw-bold text-light">Hôm nay là ngày nghỉ ngơi!</h5>
+              <p className="text-muted small mb-0">Hãy nghỉ ngơi đầy đủ để cơ bắp được phục hồi hoặc tham khảo các bài tập nhẹ nhàng.</p>
+            </div>
+          ) : (
+            <>
+              {/* Progress bar */}
+              <div className="mb-4">
+                <div className="d-flex justify-content-between align-items-center mb-1 text-muted small">
+                  <span>Tiến độ hoàn thành: {stats.completed}/{stats.total} bài tập</span>
+                  <span className="fw-bold text-light">{stats.percent}%</span>
+                </div>
+                <ProgressBar 
+                  now={stats.percent} 
+                  style={{ height: "8px", backgroundColor: "var(--border)" }}
+                  variant={stats.percent === 100 ? "success" : "info"}
+                />
+              </div>
+
+              <Row className="g-3">
+                {todayExercises.map((ex) => {
+                  const recorded = historyToday.find((h) => h.exerciseId === ex.exerciseId);
+                  const isCompleted = recorded?.status === "COMPLETED";
+                  const isSkipped = recorded?.status === "SKIPPED";
+                  
+                  return (
+                    <Col key={ex.detailId} xs={12} md={6}>
+                      <Card 
+                        className={`h-100 border-0 p-3`} 
+                        style={{ 
+                          background: isCompleted 
+                            ? "rgba(25, 135, 84, 0.08)" 
+                            : isSkipped 
+                            ? "rgba(108, 117, 125, 0.08)"
+                            : "var(--surface-2)",
+                          border: isCompleted 
+                            ? "1px solid rgba(25, 135, 84, 0.2)" 
+                            : "1px solid var(--border)",
+                          borderRadius: "12px"
+                        }}
+                      >
+                        <div className="d-flex justify-content-between align-items-start gap-2">
+                          <div>
+                            <h6 className="fw-bold text-light mb-1">
+                              {ex.exerciseName}
+                            </h6>
+                            <div className="d-flex gap-2 align-items-center flex-wrap mt-1">
+                              <Badge bg="secondary" className="bg-opacity-25 text-light-50">⏱️ {ex.duration} phút</Badge>
+                              {isCompleted && <Badge bg="success">Hoàn thành</Badge>}
+                              {isSkipped && <Badge bg="secondary">Đã bỏ qua</Badge>}
+                            </div>
+                          </div>
+                          
+                          <div className="d-flex gap-1">
+                            {!isCompleted && !isSkipped ? (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="primary" 
+                                  disabled={submittingId !== null}
+                                  onClick={() => logWorkout(ex.exerciseId, "COMPLETED", ex.duration)}
+                                >
+                                  {submittingId === `${ex.exerciseId}-COMPLETED` ? "..." : "✓"}
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline-secondary" 
+                                  disabled={submittingId !== null}
+                                  onClick={() => logWorkout(ex.exerciseId, "SKIPPED", 0)}
+                                >
+                                  {submittingId === `${ex.exerciseId}-SKIPPED` ? "..." : "Skip"}
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="link"
+                                className="text-muted p-0 text-decoration-none"
+                                style={{ fontSize: "0.85rem" }}
+                                onClick={() => logWorkout(ex.exerciseId, "ONGOING", 0)} // reset
+                                disabled={submittingId !== null}
+                              >
+                                Hoàn tác
+                              </Button>
+                            )}
                           </div>
                         </div>
-                        
-                        <div className="d-flex gap-1">
-                          {!isCompleted && !isSkipped ? (
-                            <>
-                              <Button 
-                                size="sm" 
-                                variant="primary" 
-                                disabled={submittingId !== null}
-                                onClick={() => logWorkout(ex.exerciseId, "COMPLETED", ex.duration)}
-                              >
-                                {submittingId === `${ex.exerciseId}-COMPLETED` ? "..." : "✓"}
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline-secondary" 
-                                disabled={submittingId !== null}
-                                onClick={() => logWorkout(ex.exerciseId, "SKIPPED", 0)}
-                              >
-                                {submittingId === `${ex.exerciseId}-SKIPPED` ? "..." : "Skip"}
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="link"
-                              className="text-muted p-0 text-decoration-none"
-                              style={{ fontSize: "0.85rem" }}
-                              onClick={() => logWorkout(ex.exerciseId, "ONGOING", 0)} // reset
-                              disabled={submittingId !== null}
-                            >
-                              Hoàn tác
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-                  </Col>
-                );
-              })}
-            </Row>
-          </>
+                      </Card>
+                    </Col>
+                  );
+                })}
+              </Row>
+            </>
+          )}
+        </Card.Body>
+      </Card>
+
+      {/* Active Workout Modal */}
+      <Modal
+        show={activeWorkoutOpen}
+        onHide={() => {
+          setActiveWorkoutOpen(false);
+          setTimerRunning(false);
+        }}
+        size="lg"
+        centered
+        backdrop="static"
+        keyboard={false}
+        contentClassName="bg-dark text-light border-secondary"
+      >
+        <Modal.Header closeButton className="border-secondary text-light bg-dark">
+          <Modal.Title className="fw-bold">⏱️ Chế độ tập luyện tương tác</Modal.Title>
+        </Modal.Header>
+
+        {currentExerciseIndex === -1 ? (
+          <Modal.Body className="text-center py-5 bg-dark">
+            <div style={{ fontSize: "4.5rem" }}>🏆🎉</div>
+            <h3 className="fw-bold text-success mt-3">Hoàn thành buổi tập!</h3>
+            <p className="text-muted mt-2 mx-auto" style={{ maxWidth: "480px" }}>
+              Tuyệt vời! Bạn đã hoàn thành tất cả các mục tiêu tập luyện hôm nay. Hãy nghỉ ngơi đầy đủ để phục hồi cơ bắp!
+            </p>
+            <Button variant="primary" className="mt-3 px-5 py-2 fw-bold" onClick={() => setActiveWorkoutOpen(false)}>
+              Hoàn tất
+            </Button>
+          </Modal.Body>
+        ) : isResting ? (
+          <Modal.Body className="text-center py-5 bg-dark" style={{ background: "rgba(37,99,235,0.03)" }}>
+            <div style={{ fontSize: "3.5rem" }}>🍉🥤</div>
+            <h3 className="fw-bold text-info mt-3">Thời gian nghỉ ngơi</h3>
+            <div className="fs-1 fw-bold text-light my-3" style={{ letterSpacing: "2px", fontFamily: "monospace" }}>
+              {formatTime(secondsLeft)}
+            </div>
+            <p className="text-muted mb-2">Hít thở đều và uống một chút nước nhé!</p>
+            <p className="text-muted small">
+              Bài tiếp theo: <strong>{todayExercises[findNextUncompletedIndex(currentExerciseIndex)]?.exerciseName}</strong>
+            </p>
+            <Button 
+              variant="outline-info" 
+              className="mt-3 px-4 fw-bold"
+              onClick={() => handleRestFinished()}
+            >
+              Bỏ qua nghỉ ngơi (Skip Rest)
+            </Button>
+          </Modal.Body>
+        ) : (
+          currentEx && (
+            <Modal.Body className="py-4 bg-dark">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <Badge bg="primary" style={{ fontSize: "0.85rem", padding: "6px 12px" }}>
+                  Bài {currentExerciseIndex + 1} / {todayExercises.length}
+                </Badge>
+                <Badge bg="secondary" style={{ fontSize: "0.85rem", padding: "6px 12px" }}>
+                  ⏱️ {currentEx.duration} phút
+                </Badge>
+              </div>
+              <h3 className="fw-bold text-light mb-3 text-center">{currentEx.exerciseName}</h3>
+              
+              {/* Video Player */}
+              {currentEx.videoUrl ? (
+                <div className="mb-4 rounded-3 overflow-hidden bg-black" style={{ height: "320px", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <ReactPlayer 
+                    url={currentEx.videoUrl} 
+                    width="100%" 
+                    height="100%" 
+                    controls 
+                  />
+                </div>
+              ) : (
+                <div className="text-center py-5 mb-4 bg-secondary bg-opacity-10 rounded-3 border border-secondary border-dashed" style={{ borderColor: "rgba(255,255,255,0.15) !important" }}>
+                  <div style={{ fontSize: "3.5rem" }}>💪⚡</div>
+                  <p className="text-muted small mt-2">Bắt đầu bài tập này ngay trên thảm tập của bạn!</p>
+                </div>
+              )}
+              
+              {/* Timer widget */}
+              <div className="text-center my-4">
+                <div className="fw-bold text-light mb-3" style={{ fontSize: "3rem", fontFamily: "monospace", letterSpacing: "1px" }}>
+                  {formatTime(secondsLeft)}
+                </div>
+                <div className="d-flex justify-content-center gap-2">
+                  <Button 
+                    size="sm" 
+                    variant={timerRunning ? "warning" : "success"}
+                    onClick={() => setTimerRunning(!timerRunning)}
+                    className="px-3 py-2 fw-semibold"
+                  >
+                    {timerRunning ? "⏸ Tạm dừng" : "▶ Tiếp tục"}
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline-secondary"
+                    onClick={() => setSecondsLeft((currentEx.duration || 5) * 60)}
+                    className="px-3 py-2"
+                  >
+                    🔄 Đặt lại
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="d-flex gap-2 justify-content-center mt-4">
+                <Button 
+                  variant="success" 
+                  className="fw-bold px-4 py-2"
+                  style={{ flex: 2, background: "linear-gradient(135deg, #10b981, #059669)", border: "none" }}
+                  onClick={() => handleActiveExerciseComplete(currentEx.exerciseId, currentEx.duration)}
+                >
+                  ✓ Hoàn thành
+                </Button>
+                <Button 
+                  variant="outline-secondary" 
+                  className="px-4 py-2"
+                  style={{ flex: 1 }}
+                  onClick={() => handleActiveExerciseSkip(currentEx.exerciseId)}
+                >
+                  Bỏ qua
+                </Button>
+              </div>
+            </Modal.Body>
+          )
         )}
-      </Card.Body>
-    </Card>
+      </Modal>
+    </>
   );
 }

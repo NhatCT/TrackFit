@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Container, Row, Col, Card, Button, Image, Badge } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
 import cookie from "react-cookies";
@@ -38,6 +38,7 @@ const toClassItem = (ex, fallbackImg) => ({
 const Home = () => {
   const [exercises, setExercises] = useState([]);
   const [stats, setStats] = useState(null);
+  const [latestHealth, setLatestHealth] = useState(null);
 
   const isLoggedIn = !!cookie.load("token");
 
@@ -51,12 +52,40 @@ const Home = () => {
 
         const stRes = await authApis().get(endpoints.statsSummary);
         setStats(stRes?.data || null);
+
+        const healthRes = await authApis().get(endpoints.health);
+        const healthItems = Array.isArray(healthRes.data) ? healthRes.data : (healthRes.data?.items || []);
+        if (healthItems.length > 0) {
+          const sorted = [...healthItems].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+          setLatestHealth(sorted[0]);
+        }
       } catch (e) {
         console.error("Home fetch error:", e);
       }
     };
     load();
   }, [isLoggedIn]);
+
+  const bmiData = useMemo(() => {
+    if (!latestHealth || !latestHealth.height || !latestHealth.weight) return null;
+    const h = Number(latestHealth.height);
+    const w = Number(latestHealth.weight);
+    if (!h || !w) return null;
+    const bmi = +(w / Math.pow(h / 100, 2)).toFixed(1);
+    let label = "Bình thường";
+    let color = "success";
+    if (bmi < 18.5) {
+      label = "Thiếu cân";
+      color = "info";
+    } else if (bmi >= 23 && bmi < 25) {
+      label = "Thừa cân";
+      color = "warning";
+    } else if (bmi >= 25) {
+      label = "Béo phì";
+      color = "danger";
+    }
+    return { bmi, label, color };
+  }, [latestHealth]);
 
   // Fallback khi chưa login
   const fallbackClasses = [
@@ -154,9 +183,28 @@ const Home = () => {
                         <div className="text-muted small">Số buổi</div>
                         <div className="fs-4 fw-bold">{stats?.sessions ?? "--"}</div>
                       </Col>
-                      <Col xs={12}>
+                      <Col xs={12} className="mb-2">
                         <div className="text-muted small">Bài phổ biến</div>
                         <div className="fw-semibold">{stats?.topExerciseName ?? "—"}</div>
+                      </Col>
+                      <Col xs={6} className="mb-2">
+                        <div className="text-muted small">Cân nặng</div>
+                        <div className="fw-semibold">{latestHealth?.weight ? `${latestHealth.weight} kg` : "—"}</div>
+                      </Col>
+                      <Col xs={6} className="mb-2">
+                        <div className="text-muted small">Chỉ số BMI</div>
+                        <div className="fw-semibold d-flex align-items-center gap-1">
+                          {bmiData ? (
+                            <>
+                              {bmiData.bmi}
+                              <Badge bg={bmiData.color} style={{ fontSize: "0.65rem", padding: "3px 6px" }}>
+                                {bmiData.label}
+                              </Badge>
+                            </>
+                          ) : (
+                            "—"
+                          )}
+                        </div>
                       </Col>
                     </Row>
                     <hr style={{ borderColor: "rgba(255,255,255,0.1)" }} />

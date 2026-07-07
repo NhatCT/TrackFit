@@ -256,37 +256,47 @@ const HealthList = () => {
       )}
 
       {/* ===== TREND CHART ===== */}
-      {sortedAsc.length >= 2 && (
+      {sortedAsc.length >= 1 && (
         <Card className="shadow-sm border-0 mb-3" data-aos="fade-up">
           <Card.Body>
             <div className="d-flex justify-content-between align-items-center mb-3">
               <div className="text-muted small text-uppercase fw-semibold">
                 {chartMode === "weight" ? "Xu hướng cân nặng" : "Xu hướng BMI"}
               </div>
-              <div className="d-flex gap-1">
-                <Button
-                  size="sm"
-                  variant={chartMode === "weight" ? "primary" : "outline-secondary"}
-                  onClick={() => setChartMode("weight")}
-                >
-                  Cân nặng
-                </Button>
-                <Button
-                  size="sm"
-                  variant={chartMode === "bmi" ? "primary" : "outline-secondary"}
-                  onClick={() => setChartMode("bmi")}
-                >
-                  BMI
-                </Button>
+              {sortedAsc.length >= 2 && (
+                <div className="d-flex gap-1">
+                  <Button
+                    size="sm"
+                    variant={chartMode === "weight" ? "primary" : "outline-secondary"}
+                    onClick={() => setChartMode("weight")}
+                  >
+                    Cân nặng
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={chartMode === "bmi" ? "primary" : "outline-secondary"}
+                    onClick={() => setChartMode("bmi")}
+                  >
+                    BMI
+                  </Button>
+                </div>
+              )}
+            </div>
+            {sortedAsc.length === 1 ? (
+              <div className="text-center py-4 text-muted" style={{ border: "1px dashed rgba(255,255,255,0.1)", borderRadius: "8px" }}>
+                <p className="m-0" style={{ fontSize: "0.9rem" }}>
+                  💡 Bạn mới có 1 bản ghi sức khỏe. Hãy thêm các bản ghi cân nặng tiếp theo để theo dõi biểu đồ tiến trình xu hướng!
+                </p>
               </div>
-            </div>
-            <div style={{ height: 280, position: "relative" }}>
-              <Line
-                data={chartMode === "weight" ? chartDataWeight : chartDataBmi}
-                options={chartOptions(chartMode)}
-              />
-            </div>
-            {chartMode === "bmi" && (
+            ) : (
+              <div style={{ height: 280, position: "relative" }}>
+                <Line
+                  data={chartMode === "weight" ? chartDataWeight : chartDataBmi}
+                  options={chartOptions(chartMode)}
+                />
+              </div>
+            )}
+            {chartMode === "bmi" && sortedAsc.length >= 2 && (
               <div className="d-flex gap-3 mt-2 flex-wrap" style={{ fontSize: "0.75rem" }}>
                 <span><span style={{ color: "#6c757d" }}>●</span> &lt;18.5 Thiếu cân</span>
                 <span><span style={{ color: "#198754" }}>●</span> 18.5–22.9 Bình thường</span>
