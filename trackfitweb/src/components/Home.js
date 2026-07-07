@@ -4,6 +4,17 @@ import { authApis, endpoints } from "../configs/Apis";
 import cookie from "react-cookies";
 import TodayWorkout from "./TodayWorkout";
 import StreakWidget from "./StreakWidget";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
 
 import heroBg from "../img/hero-bg.jpg";
 import servicePic from "../img/services/service-pic.jpg";
@@ -21,6 +32,9 @@ import c6 from "../img/classes/classes-6.jpg";
 import c7 from "../img/classes/classes-7.jpg";
 import c8 from "../img/classes/classes-8.jpg";
 
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+
+
 /* helper tạo background giống set-bg của template */
 const bg = (url) => ({
   backgroundImage: `url('${url}')`,
@@ -34,11 +48,12 @@ const toClassItem = (ex, fallbackImg) => ({
   coach: ex?.muscleGroup || ex?.targetGoal || "Bài tập",
   img: fallbackImg,
 });
-
 const Home = () => {
   const [exercises, setExercises] = useState([]);
   const [stats, setStats] = useState(null);
   const [latestHealth, setLatestHealth] = useState(null);
+  const [healthHistory, setHealthHistory] = useState([]);
+  const [chartMode, setChartMode] = useState("weight"); // "weight" | "bmi"
 
   const isLoggedIn = !!cookie.load("token");
 
@@ -55,6 +70,7 @@ const Home = () => {
 
         const healthRes = await authApis().get(endpoints.health);
         const healthItems = Array.isArray(healthRes.data) ? healthRes.data : (healthRes.data?.items || []);
+        setHealthHistory(healthItems);
         if (healthItems.length > 0) {
           const sorted = [...healthItems].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
           setLatestHealth(sorted[0]);
@@ -80,6 +96,7 @@ const Home = () => {
     } else if (bmi >= 23 && bmi < 25) {
       label = "Thừa cân";
       color = "warning";
+
     } else if (bmi >= 25) {
       label = "Béo phì";
       color = "danger";
@@ -87,7 +104,96 @@ const Home = () => {
     return { bmi, label, color };
   }, [latestHealth]);
 
+  const sortedAsc = useMemo(() =>
+    [...healthHistory].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)),
+    [healthHistory]
+  );
+
+  const chartLabels = useMemo(() => sortedAsc.map((h) => {
+    if (!h.createdAt) return "";
+    const dt = new Date(h.createdAt);
+    return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`;
+  }), [sortedAsc]);
+
+  const weightData = useMemo(() => sortedAsc.map((h) => Number(h.weight) || null), [sortedAsc]);
+
+  const bmiDataHistory = useMemo(
+    () => sortedAsc.map((h) => {
+      const ht = Number(h.height);
+      const wt = Number(h.weight);
+      if (!ht || !wt) return null;
+      return +(wt / Math.pow(ht / 100, 2)).toFixed(1);
+    }),
+    [sortedAsc]
+  );
+
+  const chartDataWeight = {
+    labels: chartLabels,
+    datasets: [
+      {
+        label: "Cân nặng (kg)",
+        data: weightData,
+        borderColor: "#4cc9f0",
+        backgroundColor: "rgba(76,201,240,0.12)",
+        fill: true,
+        tension: 0.35,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: "#4cc9f0",
+      },
+    ],
+  };
+
+  const chartDataBmi = {
+    labels: chartLabels,
+    datasets: [
+      {
+        label: "BMI",
+        data: bmiDataHistory,
+        borderColor: "#ff6b35",
+        backgroundColor: "rgba(255,107,53,0.12)",
+        fill: true,
+        tension: 0.35,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: "#ff6b35",
+      },
+    ],
+  };
+
+  const chartOptions = (mode) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            if (mode === "bmi") {
+              const v = ctx.raw;
+              const lbl = v < 18.5 ? "Thiếu cân" : v < 23 ? "Bình thường" : v < 25 ? "Thừa cân" : "Béo phì";
+              return `BMI: ${v} (${lbl})`;
+            }
+            return `${ctx.raw} kg`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: "rgba(255,255,255,0.5)", maxRotation: 0, font: { size: 9 } },
+      },
+      y: {
+        beginAtZero: false,
+        grid: { color: "rgba(255,255,255,0.05)" },
+        ticks: { color: "rgba(255,255,255,0.5)", font: { size: 9 } },
+      },
+    },
+  });
+
   // Fallback khi chưa login
+
   const fallbackClasses = [
     { title: "Yoga", coach: "Dẻo dai", img: c1 },
     { title: "Running", coach: "Cardio", img: c2 },
@@ -223,10 +329,95 @@ const Home = () => {
       {isLoggedIn && (
         <section className="py-4">
           <Container>
-            <TodayWorkout />
+            <Row>
+              <Col lg={7} className="mb-4 mb-lg-0">
+                <TodayWorkout />
+              </Col>
+              
+              <Col lg={5}>
+                <Card 
+                  className="shadow-sm border-0 h-100 text-light" 
+                  style={{ 
+                    background: "var(--surface)", 
+                    border: "1px solid var(--border)", 
+                    borderRadius: "16px",
+                    minHeight: "380px"
+                  }} 
+                  data-aos="fade-up"
+                >
+                  <Card.Header className="bg-transparent border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                    <div>
+                      <h5 className="fw-bold m-0 text-light">📈 Biểu đồ xu hướng</h5>
+                      <p className="text-muted m-0 small" style={{ fontSize: "0.8rem" }}>Theo dõi thay đổi chỉ số cơ thể</p>
+                    </div>
+                    {sortedAsc.length >= 2 && (
+                      <div className="d-flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={chartMode === "weight" ? "primary" : "outline-secondary"}
+                          onClick={() => setChartMode("weight")}
+                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                        >
+                          Cân nặng
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={chartMode === "bmi" ? "primary" : "outline-secondary"}
+                          onClick={() => setChartMode("bmi")}
+                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                        >
+                          BMI
+                        </Button>
+                      </div>
+                    )}
+                  </Card.Header>
+
+                  <Card.Body className="pt-3 d-flex flex-column justify-content-center">
+                    {sortedAsc.length === 0 ? (
+                      <div className="text-center py-5 text-muted">
+                        <div className="fs-1 mb-2">📊</div>
+                        <h6 className="fw-bold text-light">Chưa có chỉ số sức khỏe</h6>
+                        <p className="text-muted small mb-3">Vui lòng điền thông số thể trạng để bắt đầu theo dõi sức khỏe.</p>
+                        <Button href="/health" variant="outline-primary" size="sm">
+                          + Nhập chỉ số ngay
+                        </Button>
+                      </div>
+                    ) : sortedAsc.length === 1 ? (
+                      <div className="text-center py-5 text-muted" style={{ border: "1px dashed rgba(255,255,255,0.1)", borderRadius: "12px", margin: "10px" }}>
+                        <div className="fs-2 mb-2">💡</div>
+                        <p className="m-0 px-3" style={{ fontSize: "0.85rem" }}>
+                          Bạn mới có 1 bản ghi sức khỏe. Hãy nhập thêm các chỉ số cân nặng tiếp theo tại trang Sức khỏe để bắt đầu vẽ biểu đồ xu hướng!
+                        </p>
+                        <Button href="/health" variant="link" className="text-decoration-none mt-2 p-0 small">
+                          Đến trang Nhập chỉ số →
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex-grow-1" style={{ height: "230px", position: "relative" }}>
+                          <Line
+                            data={chartMode === "weight" ? chartDataWeight : chartDataBmi}
+                            options={chartOptions(chartMode)}
+                          />
+                        </div>
+                        {chartMode === "bmi" && (
+                          <div className="d-flex gap-2 justify-content-center mt-3 flex-wrap text-muted" style={{ fontSize: "0.65rem" }}>
+                            <span>● &lt;18.5 Thiếu</span>
+                            <span>● 18.5–22.9 Thường</span>
+                            <span>● 23–24.9 Thừa</span>
+                            <span>● ≥25 Béo phì</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
           </Container>
         </section>
       )}
+
 
       {/* ===== SERVICES (tính năng nổi bật) ===== */}
       <section data-aos="fade-up">
