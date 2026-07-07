@@ -54,7 +54,7 @@ const Login = () => {
       });
       window.google.accounts.id.renderButton(
         document.getElementById("google-login-btn"),
-        { theme: "outline", size: "large", width: "100%" }
+        { theme: "outline", size: "large", width: 320 }
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
