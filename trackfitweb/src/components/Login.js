@@ -21,7 +21,7 @@ const Login = () => {
       nav("/");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  }, []);
 
   const handleGoogleLoginSuccess = async (googleRes) => {
     setLoading(true);
