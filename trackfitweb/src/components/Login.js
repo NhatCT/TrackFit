@@ -46,7 +46,6 @@ const Login = () => {
     }
   };
 
-  /* global google */
   useEffect(() => {
     if (window.google) {
       window.google.accounts.id.initialize({
