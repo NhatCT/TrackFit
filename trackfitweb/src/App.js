@@ -130,7 +130,7 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/complete-profile" element={user ? <CompleteProfile /> : <Navigate to="/login" />} />
               <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
               <Route path="/profile/password" element={user ? <ChangePassword /> : <Navigate to="/login" />} />

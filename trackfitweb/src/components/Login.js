@@ -8,13 +8,20 @@ import cookie from "react-cookies";
 import { MyUserContext } from "../configs/Context";
 
 const Login = () => {
-  const [, dispatch] = useContext(MyUserContext);
+  const [currentUser, dispatch] = useContext(MyUserContext);
   const [user, setUser] = useState({ username: "", password: "" });
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
 
   const onRegisterClick = () => nav("/register");
+
+  useEffect(() => {
+    if (currentUser && !window.location.hash.includes("id_token")) {
+      nav("/");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
 
   const handleGoogleLoginSuccess = async (googleRes) => {
     setLoading(true);
