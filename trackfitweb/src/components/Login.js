@@ -1,5 +1,5 @@
 // src/components/Login.js
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { Alert, Button, Form } from "react-bootstrap";
 import MySpinner from "./layout/MySpinner";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +15,51 @@ const Login = () => {
   const nav = useNavigate();
 
   const onRegisterClick = () => nav("/register");
+
+  const handleGoogleLoginSuccess = async (googleRes) => {
+    setLoading(true);
+    setMsg("");
+    try {
+      const res = await Apis.post(endpoints.googleLogin, {
+        credential: googleRes.credential,
+      });
+
+      if (res.status === 200) {
+        cookie.save("token", res.data.token, { path: "/" });
+
+        const profileRes = await authApis().get(endpoints.profile());
+        const profileData = profileRes.data || {};
+
+        cookie.save("user", JSON.stringify(profileData), { path: "/" });
+        dispatch({ type: "login", payload: profileData });
+
+        if (res.data.isNewUser) {
+          nav("/complete-profile");
+        } else {
+          nav("/");
+        }
+      }
+    } catch (ex) {
+      setMsg(ex.response?.data?.message || "Đăng nhập bằng Google thất bại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* global google */
+  useEffect(() => {
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID || "335759714856-lsc5f03oik3v423b0u69p2h817rmr596.apps.googleusercontent.com",
+        callback: handleGoogleLoginSuccess,
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-login-btn"),
+        { theme: "outline", size: "large", width: "100%" }
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const login = async (e) => {
     e.preventDefault();
@@ -68,7 +113,7 @@ const Login = () => {
             />
           </Form.Group>
         ))}
-        <div className="d-flex justify-content-end gap-2">
+        <div className="d-flex justify-content-end gap-2 mb-3">
           {loading ? (
             <MySpinner />
           ) : (
@@ -82,9 +127,15 @@ const Login = () => {
             </>
           )}
         </div>
+        <div className="d-flex align-items-center my-3">
+          <hr className="flex-grow-1" style={{ borderColor: "rgba(255,255,255,0.15)" }} />
+          <span className="mx-2 text-muted" style={{ fontSize: "0.85rem" }}>Hoặc đăng nhập với</span>
+          <hr className="flex-grow-1" style={{ borderColor: "rgba(255,255,255,0.15)" }} />
+        </div>
+        <div id="google-login-btn" className="mt-2 text-center d-flex justify-content-center"></div>
       </Form>
     </div>
   );
 };
 
-export default Login;
+export default Login;

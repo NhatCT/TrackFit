@@ -31,6 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.ntn.dto.CompleteProfileDTO;
+import com.ntn.pojo.Goal;
+import com.ntn.repositories.GoalRepository;
+import java.util.UUID;
+
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -48,6 +53,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private HealthDataRepository healthRepo;
+
+    @Autowired
+    private GoalRepository goalRepo;
 
     @Override
     public UserResponseDTO getUserByUsername(String username) {
@@ -334,5 +342,85 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Không tìm thấy người dùng");
         }
         userRepo.delete(u);
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDTO registerOrGetGoogleUser(String email, String name, String avatarUrl) {
+        User user = this.userRepo.getUserByEmail(email);
+        if (user == null) {
+            user = new User();
+            String baseUsername = email.split("@")[0];
+            String username = baseUsername;
+            int count = 1;
+            while (this.userRepo.getUserByUsername(username) != null) {
+                username = baseUsername + count;
+                count++;
+            }
+            user.setUsername(username);
+            user.setEmail(email);
+            user.setPassword(this.passwordEncoder.encode(UUID.randomUUID().toString()));
+            
+            String[] parts = name.split(" ", 2);
+            if (parts.length > 1) {
+                user.setFirstName(parts[0]);
+                user.setLastName(parts[1]);
+            } else {
+                user.setFirstName(name);
+                user.setLastName("");
+            }
+            user.setAvatarUrl(avatarUrl != null ? avatarUrl : "");
+            user.setGender("Male"); // default/placeholder gender
+            user.setBirthDate(java.time.LocalDate.now().minusYears(20)); // default/placeholder birthdate
+            user.setRole("ROLE_USER");
+            user.setCreatedAt(LocalDateTime.now());
+            user.setUpdatedAt(LocalDateTime.now());
+            user.setIsPremium(false);
+            
+            user = this.userRepo.addUser(user);
+        }
+        return mapToUserResponseDTO(user);
+    }
+
+    @Override
+    @Transactional
+    public void completeGoogleUserProfile(String username, CompleteProfileDTO dto) {
+        User user = this.userRepo.getUserByUsername(username);
+        if (user == null) {
+            throw new UsernameNotFoundException("Không tìm thấy người dùng");
+        }
+
+        user.setGender(dto.getGender());
+        user.setBirthDate(dto.getBirthDate());
+        user.setUpdatedAt(LocalDateTime.now());
+        this.userRepo.updateUser(user);
+
+        HealthData hd = new HealthData();
+        hd.setUserId(user);
+        hd.setHeight(dto.getHeight() != null ? new java.math.BigDecimal(dto.getHeight()) : null);
+        hd.setWeight(dto.getWeight() != null ? new java.math.BigDecimal(dto.getWeight()) : null);
+        hd.setUpdatedAt(new Date());
+        this.healthRepo.saveHealthData(hd);
+
+        Goal g = new Goal();
+        g.setUserId(user);
+        g.setGoalType(dto.getGoalType() != null && !dto.getGoalType().isBlank() ? dto.getGoalType().trim() : "general_fitness");
+        
+        String intensity = dto.getIntensity();
+        if (intensity != null && !intensity.isBlank()) {
+            intensity = intensity.trim().toLowerCase();
+            if (intensity.contains("light") || intensity.contains("nhẹ")) {
+                intensity = "Light";
+            } else if (intensity.contains("hard") || intensity.contains("nặng")) {
+                intensity = "Hard";
+            } else {
+                intensity = "Medium";
+            }
+        } else {
+            intensity = "Medium";
+        }
+        g.setIntensity(intensity);
+        g.setCreatedAt(new Date());
+        this.goalRepo.saveGoal(g);
     }
 }

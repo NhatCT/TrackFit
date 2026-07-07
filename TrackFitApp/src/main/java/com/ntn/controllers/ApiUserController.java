@@ -23,6 +23,11 @@ import org.springframework.web.multipart.MultipartFile;
 import java.security.Principal;
 import java.util.Date;
 import java.util.List;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 
 @RestController
@@ -35,6 +40,9 @@ public class ApiUserController {
     @Autowired private UserRepository userRepo;
     @Autowired private HealthDataRepository healthRepo;
     @Autowired private GoalRepository goalRepo;
+
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @PostMapping(
         path = "/register",
@@ -167,5 +175,59 @@ public class ApiUserController {
         }
         UserResponseDTO user = this.userDetailsService.updateAvatar(principal.getName(), avatar);
         return new ResponseEntity<>(user, HttpStatus.OK);
+    }
+
+    @PostMapping(
+        path = "/login/google",
+        consumes = MediaType.APPLICATION_JSON_VALUE,
+        produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<?> loginGoogle(@Valid @RequestBody GoogleLoginDTO googleLoginDTO) {
+        try {
+            String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + googleLoginDTO.getCredential();
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).GET().build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            
+            if (response.statusCode() != 200) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Token Google không hợp lệ hoặc đã hết hạn"));
+            }
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> payload = mapper.readValue(response.body(), Map.class);
+            String email = (String) payload.get("email");
+            String name = (String) payload.get("name");
+            String picture = (String) payload.get("picture");
+            
+            if (email == null || email.isBlank()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("message", "Không thể lấy email từ tài khoản Google này"));
+            }
+            
+            UserResponseDTO userDto = this.userDetailsService.registerOrGetGoogleUser(email, name, picture);
+            
+            boolean isNewUser = this.healthRepo.findByUserId(userDto.getUserId()).isEmpty();
+            
+            String rawRole = userDto.getRole();
+            String role = (rawRole != null && rawRole.startsWith("ROLE_")) ? rawRole.substring(5) : rawRole;
+            String token = JwtUtils.generateToken(userDto.getUsername(), List.of(role));
+            
+            return ResponseEntity.ok(Map.of(
+                "token", token,
+                "userId", userDto.getUserId(),
+                "username", userDto.getUsername(),
+                "roles", List.of(role),
+                "isNewUser", isNewUser
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Lỗi trong quá trình xác thực Google: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping(path = "/secure/profile/complete", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> completeProfile(@Valid @RequestBody CompleteProfileDTO data, Principal principal) {
+        this.userDetailsService.completeGoogleUserProfile(principal.getName(), data);
+        return ResponseEntity.ok(Map.of("message", "Hoàn tất hồ sơ sức khỏe thành công"));
     }
 }

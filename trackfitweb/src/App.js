@@ -32,6 +32,7 @@ import Upgrade from "./components/Upgrade";
 import ChatWidget from "./components/ChatWidget";
 import WebSocketListener from "./components/layout/WebSocketListener";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import CompleteProfile from "./components/CompleteProfile";
 
 const App = () => {
   const [user, dispatch] = useReducer(MyUserReducer, cookie.load("user") || null);
@@ -130,6 +131,7 @@ const App = () => {
               <Route path="/" element={<Home />} />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
+              <Route path="/complete-profile" element={user ? <CompleteProfile /> : <Navigate to="/login" />} />
               <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
               <Route path="/profile/password" element={user ? <ChangePassword /> : <Navigate to="/login" />} />
               <Route path="/exercises" element={user ? <ExercisesBrowse /> : <Navigate to="/login" />} />

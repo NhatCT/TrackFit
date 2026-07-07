@@ -81,7 +81,7 @@ public class SpringSecurityConfigs {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/login", "/api/register").permitAll()
+                .requestMatchers("/api/login", "/api/register", "/api/login/google").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // admin API
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

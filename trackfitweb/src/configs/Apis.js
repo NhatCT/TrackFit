@@ -15,6 +15,8 @@ const buildAuthHeaders = () => {
 export const endpoints = {
   // ==== Auth / Users (secure) ====
   login: "login",
+  googleLogin: "login/google",
+  completeProfile: "secure/profile/complete",
   register: "register",
   profile: (username) => (username ? `secure/profile/${username}` : "secure/profile"),
   changePassword: "secure/password",

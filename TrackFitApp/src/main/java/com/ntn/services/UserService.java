@@ -32,4 +32,8 @@ public interface UserService extends UserDetailsService {
     UserResponseDTO updateUserByAdmin(Integer id, AdminUserFormDTO form);
 
     void deleteById(Integer id);
+
+    UserResponseDTO registerOrGetGoogleUser(String email, String name, String avatarUrl);
+
+    void completeGoogleUserProfile(String username, CompleteProfileDTO dto);
 }
