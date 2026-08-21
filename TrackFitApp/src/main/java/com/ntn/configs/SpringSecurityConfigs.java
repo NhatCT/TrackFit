@@ -48,13 +48,22 @@ public class SpringSecurityConfigs {
     @Value("${allowed.origins:http://localhost:3000,http://127.0.0.1:3000}")
     private String allowedOriginsProp;
 
-    @Value("${cloudinary.cloud-name:dywix6n0z}")
+    @Value("${rate-limit.trust-proxy:false}")
+    private boolean rateLimitTrustProxy;
+
+    @Value("${rate-limit.limit:60}")
+    private int rateLimitGeneral;
+
+    @Value("${rate-limit.auth-limit:10}")
+    private int rateLimitAuth;
+
+    @Value("${cloudinary.cloud-name:}")
     private String cloudinaryCloudName;
 
-    @Value("${cloudinary.api-key:198396299352167}")
+    @Value("${cloudinary.api-key:}")
     private String cloudinaryApiKey;
 
-    @Value("${cloudinary.api-secret:Hlh12SuOkmrk7ZRQTX8f-nkDwTY}")
+    @Value("${cloudinary.api-secret:}")
     private String cloudinaryApiSecret;
 
     @Bean
@@ -69,7 +78,8 @@ public class SpringSecurityConfigs {
 
     @Bean
     public RateLimitFilter rateLimitFilter() {
-        return new RateLimitFilter(redisConnectionFactory);
+        return new RateLimitFilter(redisConnectionFactory, rateLimitTrustProxy,
+                rateLimitGeneral, rateLimitAuth);
     }
 
     @Bean
@@ -100,7 +110,8 @@ public class SpringSecurityConfigs {
     public SecurityFilterChain mvc(HttpSecurity http) throws Exception {
         http
                 .securityMatcher("/**")
-                .csrf(csrf -> csrf.disable())
+                // CSRF stays ENABLED (Spring default) on this session/form-login MVC chain.
+                // Thymeleaf auto-injects the CsrfToken into forms rendered with th:action.
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/login",
@@ -123,7 +134,10 @@ public class SpringSecurityConfigs {
                 .map(s -> s.endsWith("/") ? s.substring(0, s.length() - 1) : s)
                 .filter(s -> !s.isEmpty())
                 .toList();
-        cfg.setAllowedOriginPatterns(origins);
+        // Use EXACT origins (not patterns): credentials are allowed, so broad
+        // *.vercel.app / *.onrender.com wildcards would be an open door. Operators
+        // must set ALLOWED_ORIGINS to their real frontend URL(s).
+        cfg.setAllowedOrigins(origins);
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         cfg.setExposedHeaders(List.of("Authorization"));

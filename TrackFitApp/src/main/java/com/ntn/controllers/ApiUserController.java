@@ -198,12 +198,35 @@ public class ApiUserController {
             String email = (String) payload.get("email");
             String name = (String) payload.get("name");
             String picture = (String) payload.get("picture");
-            
+
+            // email_verified may come back as a boolean or the string "true"
+            Object emailVerifiedRaw = payload.get("email_verified");
+            boolean emailVerified = (emailVerifiedRaw instanceof Boolean b)
+                    ? b
+                    : "true".equalsIgnoreCase(String.valueOf(emailVerifiedRaw));
+            if (!emailVerified) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Email Google chưa được xác minh"));
+            }
+
+            // Verify the token was issued for THIS app (audience check)
+            String expectedAud = System.getenv("GOOGLE_CLIENT_ID");
+            if (expectedAud != null && !expectedAud.isBlank()) {
+                String aud = (String) payload.get("aud");
+                if (aud == null || !expectedAud.equals(aud)) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("message", "Token Google không dành cho ứng dụng này"));
+                }
+            } else {
+                System.err.println("[loginGoogle][WARN] GOOGLE_CLIENT_ID env var not set; "
+                        + "skipping audience (aud) validation. Set it in production.");
+            }
+
             if (email == null || email.isBlank()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("message", "Không thể lấy email từ tài khoản Google này"));
             }
-            
+
             UserResponseDTO userDto = this.userDetailsService.registerOrGetGoogleUser(email, name, picture);
             
             boolean isNewUser = this.healthRepo.findByUserId(userDto.getUserId()).isEmpty();

@@ -5,7 +5,11 @@ import java.io.Serializable;
 import java.util.Date;
 
 @Entity
-@Table(name = "notification")
+@Table(name = "notification", indexes = {
+    @Index(name = "idx_notification_user_id", columnList = "user_id"),
+    @Index(name = "idx_notification_is_read", columnList = "is_read"),
+    @Index(name = "idx_notification_created_at", columnList = "created_at")
+})
 @NamedQueries({
     @NamedQuery(name = "Notification.findAll", query = "SELECT n FROM Notification n")
 })
@@ -41,7 +45,7 @@ public class Notification implements Serializable {
     private Date createdAt;
 
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private User userId;
 
     public Notification() {

@@ -19,65 +19,65 @@ const STYLE = `
 .gutim-fab { position:fixed; right:24px; bottom:24px; z-index:9999;
   width:64px; height:64px; border-radius:50%; border:none; cursor:pointer;
   color:#fff; font-size:24px; display:flex; align-items:center; justify-content:center;
-  background:conic-gradient(from 180deg, #2563eb, #7c3aed, #2563eb);
-  box-shadow:0 14px 36px rgba(0,0,0,.34);
-  animation:gutim-rotate 6s linear infinite;
+  background:conic-gradient(from 180deg, var(--brand), var(--brand-2), var(--brand));
+  box-shadow:0 14px 36px rgba(0,0,0,.28);
+  animation:gutim-rotate 8s linear infinite;
 }
 @keyframes gutim-rotate { to { transform: rotate(360deg) } }
 .gutim-fab-inner {
-  width:58px; height:58px; border-radius:50%; background:#111827;
+  width:58px; height:58px; border-radius:50%; background:var(--surface);
   display:flex; align-items:center; justify-content:center;
 }
 
 /* Panel */
 .gutim-panel { position:fixed; right:24px; bottom:100px; z-index:9999;
   width:380px; max-width:calc(100vw - 32px); height:520px; display:flex; flex-direction:column;
-  background: #0b1020; border:1px solid rgba(255,255,255,.06); border-radius:18px;
-  overflow:hidden; box-shadow:0 16px 48px rgba(0,0,0,.45);
+  background: var(--surface); border:1px solid var(--hair); border-radius:18px;
+  overflow:hidden; box-shadow:var(--shadow); color:var(--ink);
 }
 
 /* Header */
 .gutim-hd { height:64px; display:flex; align-items:center; gap:10px; padding:10px 12px;
-  background:linear-gradient(135deg, rgba(37,99,235,.12), rgba(124,58,237,.12));
-  border-bottom:1px solid rgba(255,255,255,.06);
+  background:var(--brand-soft);
+  border-bottom:1px solid var(--hair);
 }
-.gutim-avatar { width:42px; height:42px; border-radius:50%; overflow:hidden; position:relative; background:#0b1020; border:1px solid rgba(255,255,255,.08) }
+.gutim-avatar { width:42px; height:42px; border-radius:50%; overflow:hidden; position:relative; background:var(--surface-2); border:1px solid var(--hair) }
 .gutim-avatar img { width:100%; height:100%; object-fit:cover }
 .gutim-dot { position:absolute; right:-2px; bottom:-2px; width:12px; height:12px; border-radius:50%;
-  background:#22c55e; box-shadow:0 0 0 2px #0b1020 inset; }
+  background:var(--green); box-shadow:0 0 0 2px var(--surface) inset; }
 .gutim-title { display:flex; flex-direction:column; }
-.gutim-name { font-weight:800; color:#fff; font-size:14px; letter-spacing:.3px }
-.gutim-sub { font-size:12px; color:#a3a3a3 }
+.gutim-name { font-weight:800; color:var(--ink); font-size:14px; letter-spacing:.3px }
+.gutim-sub { font-size:12px; color:var(--muted) }
 
-.gutim-clear-history { margin-left:auto; border:none; background:transparent; color:#9ca3af; cursor:pointer; font-size:18px; display:flex; align-items:center; transition:color 0.2s }
-.gutim-clear-history:hover { color:#ef4444 }
-.gutim-close { border:none; background:transparent; color:#9ca3af; cursor:pointer; font-size:18px; transition:color 0.2s }
-.gutim-close:hover { color:#fff }
+.gutim-clear-history { margin-left:auto; border:none; background:transparent; color:var(--muted); cursor:pointer; font-size:18px; display:flex; align-items:center; transition:color 0.2s }
+.gutim-clear-history:hover { color:var(--danger) }
+.gutim-close { border:none; background:transparent; color:var(--muted); cursor:pointer; font-size:18px; transition:color 0.2s }
+.gutim-close:hover { color:var(--ink) }
 
 /* Body */
 .gutim-body { flex:1; padding:12px; overflow-y:auto; background:
-  radial-gradient(1200px 600px at 120% -20%, rgba(124,58,237,.20), transparent 60%),
-  radial-gradient(800px 500px at -20% 120%, rgba(37,99,235,.20), transparent 60%),
-  linear-gradient(#0b1020, #0b1020); }
-.gutim-msg { max-width:78%; padding:10px 12px; border-radius:14px; margin:8px 0; line-height:1.45; font-size:14px; color:#e5e7eb }
-.gutim-msg.user { margin-left:auto; background:linear-gradient(135deg, #2563eb, #7c3aed); color:#fff; border-bottom-right-radius:6px; }
-.gutim-msg.bot  { margin-right:auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); border-bottom-left-radius:6px; backdrop-filter: blur(4px); }
+  radial-gradient(1200px 600px at 120% -20%, var(--brand-soft), transparent 60%),
+  var(--bg); }
+.gutim-msg { max-width:78%; padding:10px 12px; border-radius:14px; margin:8px 0; line-height:1.45; font-size:14px; color:var(--ink) }
+.gutim-msg.user { margin-left:auto; background:linear-gradient(135deg, var(--brand), var(--brand-2)); color:var(--brand-ink); border-bottom-right-radius:6px; }
+.gutim-msg.bot  { margin-right:auto; background:var(--surface-2); border:1px solid var(--hair); border-bottom-left-radius:6px; }
 .gutim-msg ul, .gutim-msg ol { padding-left: 18px; margin: 6px 0 0 0; }
 .gutim-msg li { margin-bottom: 4px; }
 
 /* Suggestions */
 .gutim-suggestions { display:flex; flex-direction:column; gap:6px; margin:10px 0; padding:4px }
-.gutim-suggestion-btn { border:1px solid rgba(255,107,53,0.3); background:rgba(255,107,53,0.06); color:#ff6b35; border-radius:20px; padding:6px 12px; font-size:0.8rem; cursor:pointer; text-align:left; transition:all 0.2s; font-weight:500 }
-.gutim-suggestion-btn:hover { background:rgba(255,107,53,0.15); border-color:#ff6b35 }
+.gutim-suggestion-btn { border:1px solid var(--brand); background:var(--brand-soft); color:var(--brand); border-radius:20px; padding:6px 12px; font-size:0.8rem; cursor:pointer; text-align:left; transition:all 0.2s; font-weight:500 }
+.gutim-suggestion-btn:hover { background:var(--brand); color:var(--brand-ink) }
 
 /* Footer */
-.gutim-ft { padding:10px; border-top:1px solid rgba(255,255,255,.06); background:rgba(255,255,255,.02); display:flex; gap:8px }
+.gutim-ft { padding:10px; border-top:1px solid var(--hair); background:var(--surface-2); display:flex; gap:8px }
 .gutim-input { flex:1; min-height:44px; max-height:140px; resize:none; border-radius:12px; padding:10px 12px; outline:none; font-size:14px;
-  border:1px solid rgba(255,255,255,.08); background:#0f172a; color:#e5e7eb }
-.gutim-send { min-width:92px; border:none; border-radius:12px; background:linear-gradient(135deg, #2563eb, #7c3aed); color:#fff; font-weight:800; cursor:pointer; padding:0 12px }
+  border:1px solid var(--hair); background:var(--surface); color:var(--ink) }
+.gutim-input:focus { border-color:var(--brand) }
+.gutim-send { min-width:92px; border:none; border-radius:12px; background:var(--brand); color:var(--brand-ink); font-weight:800; cursor:pointer; padding:0 12px }
 .gutim-send:disabled { opacity:.55; cursor:not-allowed }
 
-.gutim-tip { font-size:12px; color:#9ca3af; padding: 6px 12px }
+.gutim-tip { font-size:12px; color:var(--muted); padding: 6px 12px }
 `;
 
 function FallbackChibi() {
@@ -268,8 +268,6 @@ export default function ChatWidget({ requireAuth = false }) {
     }
   };
 
-  const chatBlocked = false;
-
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: STYLE }} />
@@ -297,7 +295,7 @@ export default function ChatWidget({ requireAuth = false }) {
           <div className="gutim-body" ref={bodyRef}>
             {!authed && (
               <div className="gutim-msg bot">
-                Vui lòng <a href="/login" style={{ color:"#93c5fd", fontWeight:800 }}>đăng nhập</a> để trò chuyện với Gutim Coach.
+                Vui lòng <a href="/login" style={{ color:"var(--brand)", fontWeight:800 }}>đăng nhập</a> để trò chuyện với Gutim Coach.
               </div>
             )}
             
@@ -323,28 +321,17 @@ export default function ChatWidget({ requireAuth = false }) {
           </div>
 
           <div className="gutim-ft">
-            {chatBlocked ? (
-              <div className="w-100 p-2 text-center" style={{ background: "rgba(255,107,53,0.1)", border: "1px solid rgba(255,107,53,0.3)", borderRadius: "12px" }}>
-                <div className="small text-warning mb-1.5 fw-bold">👑 Mở khoá lượt chat không giới hạn</div>
-                <a href="/upgrade" className="btn btn-sm btn-warning fw-bold text-dark px-3 py-1" style={{ fontSize: "0.8rem", textDecoration: "none" }}>
-                  Nâng cấp GUTIM PRO ↗
-                </a>
-              </div>
-            ) : (
-              <>
-                <textarea
-                  className="gutim-input"
-                  disabled={!authed}
-                  placeholder={authed ? "Nhập tin nhắn... (Enter gửi, Shift+Enter xuống dòng)" : "Hãy đăng nhập để chat"}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={onKeyDown}
-                />
-                <button className="gutim-send" disabled={!authed || sending || !input.trim()} onClick={() => send()}>
-                  Gửi
-                </button>
-              </>
-            )}
+            <textarea
+              className="gutim-input"
+              disabled={!authed}
+              placeholder={authed ? "Nhập tin nhắn... (Enter gửi, Shift+Enter xuống dòng)" : "Hãy đăng nhập để chat"}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+            />
+            <button className="gutim-send" disabled={!authed || sending || !input.trim()} onClick={() => send()}>
+              Gửi
+            </button>
           </div>
 
           {!!model && (

@@ -8,6 +8,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import "../styles/Header.css";
 import { authApis, endpoints } from "../../configs/Apis";
+import ThemeToggle from "./ThemeToggle";
 
 const AVATAR_FALLBACK = "https://via.placeholder.com/64x64.png?text=👤";
 
@@ -152,7 +153,7 @@ const Header = (props) => {
   );
 
   return (
-    <Navbar expand="lg" variant="dark" className="p-3 navbar-elevated app-header-dark">
+    <Navbar expand="lg" variant="dark" data-bs-theme="dark" className="p-3 navbar-elevated app-header-dark g-header">
       <Container>
         <Navbar.Brand
           as={Link}
@@ -202,7 +203,8 @@ const Header = (props) => {
             </Nav>
           )}
 
-          <Nav data-aos="fade-left">
+          <Nav data-aos="fade-left" className="align-items-lg-center gap-2">
+            <ThemeToggle />
             {!user ? (
               <>
                 <Nav.Link as={Link} to="/login" className="text-white">Đăng nhập</Nav.Link>

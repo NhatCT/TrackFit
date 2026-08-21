@@ -11,10 +11,36 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class JwtUtils {
-    private static final String SECRET = "12345678901234567890123456789012";
-    private static final long EXPIRATION_MS = 24 * 60 * 60 * 1000L; 
+    // Dev fallback secret; used only when JWT_SECRET env var is missing/too short.
+    private static final String DEV_SECRET = "12345678901234567890123456789012";
+    private static final String SECRET = resolveSecret();
+    private static final long EXPIRATION_MS = resolveExpirationMs();
 
     private static final String CLAIM_ROLES = "roles";
+
+    private static String resolveSecret() {
+        String env = System.getenv("JWT_SECRET");
+        if (env != null && env.length() >= 32) {
+            return env;
+        }
+        System.err.println("[JwtUtils][WARN] JWT_SECRET env var not set or shorter than 32 chars; "
+                + "falling back to the built-in DEV secret. Do NOT use this in production.");
+        return DEV_SECRET;
+    }
+
+    private static long resolveExpirationMs() {
+        String env = System.getenv("JWT_EXPIRATION_MS");
+        if (env != null && !env.isBlank()) {
+            try {
+                long ms = Long.parseLong(env.trim());
+                if (ms > 0) return ms;
+            } catch (NumberFormatException ignore) {
+                System.err.println("[JwtUtils][WARN] Invalid JWT_EXPIRATION_MS='" + env
+                        + "'; using default 24h.");
+            }
+        }
+        return 24 * 60 * 60 * 1000L;
+    }
 
     public static String generateToken(String username, List<String> roles) throws JOSEException {
         JWSSigner signer = new MACSigner(SECRET);

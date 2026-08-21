@@ -222,17 +222,17 @@ const GoalsList = () => {
                       <td>{g.workoutDuration ? `${g.workoutDuration} ngày` : "-"}</td>
                       <td>
                         {!progress.hasPlan ? (
-                          <Badge bg="secondary" className="bg-opacity-25 text-light-50">Chưa gắn lịch tập</Badge>
+                          <Badge bg="secondary" className="bg-opacity-25 text-muted">Chưa gắn lịch tập</Badge>
                         ) : (
                           <div style={{ minWidth: "160px" }}>
                             <div className="d-flex justify-content-between align-items-center mb-1 text-muted" style={{ fontSize: "0.75rem" }}>
                               <span>{progress.count}/{g.workoutDuration} buổi</span>
-                              <span className="fw-bold text-light">{progress.percent}%</span>
+                              <span className="fw-bold">{progress.percent}%</span>
                             </div>
                             <ProgressBar
                               now={progress.percent}
                               variant={progress.percent === 100 ? "success" : progress.percent > 75 ? "info" : "warning"}
-                              style={{ height: "6px", backgroundColor: "var(--border)" }}
+                              style={{ height: "6px", backgroundColor: "var(--hair)" }}
                             />
                             {progress.percent === 100 && (
                               <span className="badge bg-success mt-1" style={{ fontSize: "0.65rem" }}>🎉 Hoàn thành!</span>

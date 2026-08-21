@@ -23,7 +23,7 @@ Dự án được xây dựng theo kiến trúc hệ thống phân tầng (Clien
 - **Framework**: FastAPI (Python 3.11)
 - **Mô hình nhúng**: Sentence Transformer (`all-MiniLM-L6-v2` / `BAAI/bge-m3`)
 - **Tìm kiếm tương đồng**: FAISS (Facebook AI Similarity Search)
-- **LLM Chatbot**: OpenAI API (`gpt-4o-mini`)
+- **LLM Chatbot**: LLM qua giao thức tương thích OpenAI. Mặc định trong code trỏ tới một **vLLM server** chạy `Qwen/Qwen2.5-7B-Instruct` (`VLLM_OPENAI_BASE`); cấu hình triển khai thực tế (`ai-reco/.env.ai`) có thể trỏ tới **Google Gemini** (`generativelanguage.googleapis.com`). Đổi qua biến môi trường `VLLM_OPENAI_BASE` / `VLLM_MODEL_NAME`.
 
 ### 4. DevOps & Triển khai
 - Đóng gói và ảo hóa: **Docker** & **Docker Compose**
@@ -54,7 +54,7 @@ Dự án được xây dựng theo kiến trúc hệ thống phân tầng (Clien
 Hệ thống sử dụng mô hình Client - Server tách biệt hoàn toàn:
 1. **React SPA** gửi yêu cầu đến **Spring Backend** thông qua RESTful API.
 2. **Spring Backend** xử lý nghiệp vụ, giao tiếp với **MySQL** và hoạt động như một Proxy chuyển tiếp yêu cầu đến **AI Microservice**.
-3. **AI Microservice** thực hiện các tính toán nặng (embedding, tìm kiếm vector) và gọi API OpenAI để phản hồi Chatbot.
+3. **AI Microservice** thực hiện các tính toán nặng (embedding, tìm kiếm vector) và gọi LLM (qua API tương thích OpenAI — vLLM/Qwen mặc định, hoặc Gemini tùy cấu hình) để phản hồi Chatbot.
 
 ### Thuật toán gợi ý bài tập (AI-Reco)
 1. Dùng mô hình **Sentence Transformer** để tạo vector embedding từ thông tin sức khỏe/mục tiêu của người dùng và các bài tập.
@@ -65,6 +65,8 @@ Hệ thống sử dụng mô hình Client - Server tách biệt hoàn toàn:
      - $Similarity$: Độ tương đồng cosine giữa vector yêu cầu và bài tập.
      - $Novelty$: Điểm mới mẻ tránh lặp lại bài tập cũ quá nhiều.
      - $TimeFit$: Độ khớp giữa thời lượng bài tập và quỹ thời gian mong muốn của người dùng.
+
+   > **Lưu ý triển khai:** công thức xếp hạng đầy đủ ở trên nằm trong module `app/ranker.py` (kèm `schemas.py`, `models.py`) và hiện **chưa được nối vào FastAPI đang chạy** (`main.py` không import). Endpoint `/rank` thực tế đang dùng **xếp hạng theo cosine similarity** trong `app/embed_index.py`. Muốn dùng công thức α/β/γ thì cần wire lại module `ranker` vào `main.py`.
 
 ---
 

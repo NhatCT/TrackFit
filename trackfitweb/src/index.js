@@ -1,8 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './styles/tokens.css';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { initTheme } from './utils/theme';
+
+// Áp theme trước khi render để tránh nháy màu (FOUC).
+initTheme();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

@@ -7,9 +7,11 @@ package com.ntn.pojo;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQueries;
@@ -25,7 +27,10 @@ import java.util.Date;
  * @author Thanh Nhat
  */
 @Entity
-@Table(name = "user_workout_history")
+@Table(name = "user_workout_history", indexes = {
+    @Index(name = "idx_uwh_completed_at", columnList = "completed_at"),
+    @Index(name = "idx_uwh_status", columnList = "status")
+})
 @NamedQueries({
     @NamedQuery(name = "UserWorkoutHistory.findAll", query = "SELECT u FROM UserWorkoutHistory u"),
     @NamedQuery(name = "UserWorkoutHistory.findByHistoryId", query = "SELECT u FROM UserWorkoutHistory u WHERE u.historyId = :historyId"),
@@ -46,13 +51,13 @@ public class UserWorkoutHistory implements Serializable {
     @Column(name = "status")
     private String status;
     @JoinColumn(name = "exercises_id", referencedColumnName = "exercises_id")
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Exercises exercisesId;
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private User userId;
     @JoinColumn(name = "plan_id", referencedColumnName = "plan_id")
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private WorkoutPlan planId;
     @Column(name = "duration")
     private Integer duration;
@@ -122,22 +127,24 @@ public class UserWorkoutHistory implements Serializable {
 
     @Override
     public int hashCode() {
-        int hash = 0;
-        hash += (historyId != null ? historyId.hashCode() : 0);
-        return hash;
+        // Stable, non-zero hash for transient (null-id) instances so HashSet does not drop distinct new entities.
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object object) {
-        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (this == object) {
+            return true;
+        }
         if (!(object instanceof UserWorkoutHistory)) {
             return false;
         }
         UserWorkoutHistory other = (UserWorkoutHistory) object;
-        if ((this.historyId == null && other.historyId != null) || (this.historyId != null && !this.historyId.equals(other.historyId))) {
+        // Two transient instances (null id) are only equal by reference, handled above.
+        if (this.historyId == null || other.historyId == null) {
             return false;
         }
-        return true;
+        return this.historyId.equals(other.historyId);
     }
 
     @Override

@@ -100,13 +100,7 @@ public class UserServiceImpl implements UserService {
         user.setCreatedAt(LocalDateTime.now());
 
         if (avatar != null && !avatar.isEmpty()) {
-            try {
-                Map<String, Object> res = cloudinary.uploader().upload(avatar.getBytes(),
-                        ObjectUtils.asMap("resource_type", "auto"));
-                user.setAvatarUrl(res.get("secure_url").toString());
-            } catch (IOException ex) {
-                throw new RuntimeException("Không thể tải ảnh đại diện");
-            }
+            user.setAvatarUrl(uploadAvatar(avatar));
         }
 
         user = this.userRepo.addUser(user);
@@ -173,16 +167,10 @@ public class UserServiceImpl implements UserService {
         if (avatar == null || avatar.isEmpty()) {
             throw new IllegalArgumentException("Ảnh đại diện không được để trống");
         }
-        try {
-            Map<String, Object> res = cloudinary.uploader().upload(avatar.getBytes(),
-                    ObjectUtils.asMap("resource_type", "auto"));
-            user.setAvatarUrl(res.get("secure_url").toString());
-            user.setUpdatedAt(LocalDateTime.now());
-            this.userRepo.updateUser(user);
-            return mapToUserResponseDTO(user);
-        } catch (IOException ex) {
-            throw new RuntimeException("Không thể tải ảnh đại diện");
-        }
+        user.setAvatarUrl(uploadAvatar(avatar));
+        user.setUpdatedAt(LocalDateTime.now());
+        this.userRepo.updateUser(user);
+        return mapToUserResponseDTO(user);
     }
 
     @Override
@@ -204,6 +192,70 @@ public class UserServiceImpl implements UserService {
         authorities.add(new SimpleGrantedAuthority(user.getRole()));
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(), user.getPassword(), authorities);
+    }
+
+    // Max avatar size enforced server-side (independent of any servlet multipart limit).
+    private static final long MAX_AVATAR_BYTES = 5L * 1024 * 1024; // 5MB
+
+    /**
+     * Validates the uploaded avatar (size + real image magic number) and uploads it to
+     * Cloudinary with an explicit image resource type. Never trusts the client Content-Type.
+     *
+     * @return the secure URL of the uploaded image
+     */
+    private String uploadAvatar(MultipartFile file) {
+        if (file.getSize() > MAX_AVATAR_BYTES) {
+            throw new IllegalArgumentException("Ảnh đại diện vượt quá dung lượng cho phép (tối đa 5MB)");
+        }
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (IOException ex) {
+            throw new RuntimeException("Không thể tải ảnh đại diện");
+        }
+        if (bytes.length > MAX_AVATAR_BYTES) {
+            throw new IllegalArgumentException("Ảnh đại diện vượt quá dung lượng cho phép (tối đa 5MB)");
+        }
+        if (!isSupportedImage(bytes)) {
+            throw new IllegalArgumentException("Tệp tải lên không phải ảnh hợp lệ (chỉ chấp nhận JPEG, PNG, GIF, WebP)");
+        }
+        try {
+            Map<String, Object> res = cloudinary.uploader().upload(bytes,
+                    ObjectUtils.asMap("resource_type", "image"));
+            return res.get("secure_url").toString();
+        } catch (IOException ex) {
+            throw new RuntimeException("Không thể tải ảnh đại diện");
+        }
+    }
+
+    /**
+     * Server-side magic-number check for the image formats we accept. Prevents a malicious
+     * client from smuggling arbitrary content through a spoofed Content-Type.
+     */
+    private boolean isSupportedImage(byte[] b) {
+        if (b == null || b.length < 12) {
+            return false;
+        }
+        // JPEG: FF D8 FF
+        if ((b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) {
+            return true;
+        }
+        // PNG: 89 50 4E 47 0D 0A 1A 0A
+        if ((b[0] & 0xFF) == 0x89 && (b[1] & 0xFF) == 0x50 && (b[2] & 0xFF) == 0x4E && (b[3] & 0xFF) == 0x47
+                && (b[4] & 0xFF) == 0x0D && (b[5] & 0xFF) == 0x0A && (b[6] & 0xFF) == 0x1A && (b[7] & 0xFF) == 0x0A) {
+            return true;
+        }
+        // GIF: "GIF87a" or "GIF89a"
+        if ((b[0] & 0xFF) == 0x47 && (b[1] & 0xFF) == 0x49 && (b[2] & 0xFF) == 0x46 && (b[3] & 0xFF) == 0x38
+                && ((b[4] & 0xFF) == 0x37 || (b[4] & 0xFF) == 0x39) && (b[5] & 0xFF) == 0x61) {
+            return true;
+        }
+        // WebP: "RIFF" .... "WEBP"
+        if ((b[0] & 0xFF) == 0x52 && (b[1] & 0xFF) == 0x49 && (b[2] & 0xFF) == 0x46 && (b[3] & 0xFF) == 0x46
+                && (b[8] & 0xFF) == 0x57 && (b[9] & 0xFF) == 0x45 && (b[10] & 0xFF) == 0x42 && (b[11] & 0xFF) == 0x50) {
+            return true;
+        }
+        return false;
     }
 
     private UserResponseDTO mapToUserResponseDTO(User user) {
@@ -275,15 +327,7 @@ public class UserServiceImpl implements UserService {
         u.setCreatedAt(java.time.LocalDateTime.now());
 
         if (form.getAvatarFile() != null && !form.getAvatarFile().isEmpty()) {
-            try {
-                var res = cloudinary.uploader().upload(
-                        form.getAvatarFile().getBytes(),
-                        ObjectUtils.asMap("resource_type", "auto")
-                );
-                u.setAvatarUrl(res.get("secure_url").toString());
-            } catch (IOException e) {
-                throw new RuntimeException("Không thể tải ảnh đại diện");
-            }
+            u.setAvatarUrl(uploadAvatar(form.getAvatarFile()));
         }
 
         u = userRepo.addUser(u);
@@ -320,15 +364,7 @@ public class UserServiceImpl implements UserService {
         }
 
         if (form.getAvatarFile() != null && !form.getAvatarFile().isEmpty()) {
-            try {
-                var res = cloudinary.uploader().upload(
-                        form.getAvatarFile().getBytes(),
-                        ObjectUtils.asMap("resource_type", "auto")
-                );
-                u.setAvatarUrl(res.get("secure_url").toString());
-            } catch (IOException e) {
-                throw new RuntimeException("Không thể tải ảnh đại diện");
-            }
+            u.setAvatarUrl(uploadAvatar(form.getAvatarFile()));
         }
 
         u.setUpdatedAt(java.time.LocalDateTime.now());
