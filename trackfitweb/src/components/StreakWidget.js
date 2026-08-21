@@ -122,10 +122,10 @@ export default function StreakWidget() {
       </div>
 
       {/* 7 day dots */}
-      <div className="d-flex gap-2 justify-content-between w-100 mt-2 p-2 rounded" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--border)" }}>
+      <div className="d-flex gap-2 justify-content-between w-100 mt-2 p-2 rounded" style={{ backgroundColor: "var(--surface-2)", border: "1px solid var(--hair)" }}>
         {recentCompletion.map((day, idx) => (
           <div key={idx} className="d-flex flex-column align-items-center gap-1 flex-fill">
-            <span style={{ fontSize: "0.7rem", color: day.isToday ? "var(--accent)" : "var(--muted)", fontWeight: day.isToday ? "bold" : "normal" }}>
+            <span style={{ fontSize: "0.7rem", color: day.isToday ? "var(--brand)" : "var(--muted)", fontWeight: day.isToday ? "bold" : "normal" }}>
               {day.dayName}
             </span>
             <div
@@ -139,16 +139,16 @@ export default function StreakWidget() {
                 fontSize: "0.75rem",
                 fontWeight: "bold",
                 backgroundColor: day.completed
-                  ? "rgba(40, 167, 69, 0.25)"
+                  ? "color-mix(in srgb, var(--green) 22%, transparent)"
                   : day.isToday
-                  ? "rgba(255, 107, 53, 0.1)"
+                  ? "var(--brand-soft)"
                   : "transparent",
                 border: day.completed
-                  ? "1px solid #28a745"
+                  ? "1px solid var(--green)"
                   : day.isToday
-                  ? "1px dashed var(--accent)"
-                  : "1px solid var(--border)",
-                color: day.completed ? "#28a745" : day.isToday ? "var(--accent)" : "var(--muted)",
+                  ? "1px dashed var(--brand)"
+                  : "1px solid var(--hair)",
+                color: day.completed ? "var(--green)" : day.isToday ? "var(--brand)" : "var(--muted)",
               }}
               title={day.completed ? "Hoàn thành" : "Chưa hoàn thành"}
             >

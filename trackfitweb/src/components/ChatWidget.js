@@ -259,6 +259,24 @@ export default function ChatWidget({ requireAuth = false }) {
     }
   };
 
+  // Cho phép các nơi khác (vd. card Gutim Coach trên dashboard) mở panel và
+  // tùy chọn gửi sẵn một câu hỏi qua sự kiện window "gutim-open-chat".
+  const sendRef = React.useRef(send);
+  sendRef.current = send;
+  React.useEffect(() => {
+    const onOpen = (e) => {
+      setOpen(true);
+      const q = e?.detail?.question;
+      if (q && authed) {
+        if (typeof cookie.load("token") !== "undefined" || !requireAuth) {
+          setTimeout(() => sendRef.current(q), 350);
+        }
+      }
+    };
+    window.addEventListener("gutim-open-chat", onOpen);
+    return () => window.removeEventListener("gutim-open-chat", onOpen);
+  }, [authed, requireAuth]);
+
   const clearHistory = () => {
     if (window.confirm("Bạn có chắc chắn muốn xoá lịch sử trò chuyện này?")) {
       const defaultMsg = [{ role: "bot", text: "Xin chào! Mình là Gutim Coach 💪 — hỏi mình về bài tập, dinh dưỡng hay lịch tập nhé!" }];

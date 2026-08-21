@@ -12,6 +12,7 @@ import {
   Legend,
 } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
+import { readTokens, withAlpha, useThemeVersion } from "../utils/chartTheme";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -27,11 +28,16 @@ const daysAgoStr = (n) => {
 
 // ===== cấu hình hiển thị =====
 const MAX_X_TICKS = 15; // số nhãn tối đa trên trục X
-const axisColor = "rgba(255,255,255,0.75)";
-const gridColor = "rgba(255,255,255,0.08)";
-const legendColor = "rgba(255,255,255,0.85)";
 
 const StatsSummary = () => {
+  // Màu chart theo token → tự đổi sáng/tối (thay cho rgba trắng cứng cũ)
+  const themeV = useThemeVersion();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const t = useMemo(() => readTokens(), [themeV]);
+  const axisColor = withAlpha(t.muted, 0.95);
+  const gridColor = withAlpha(t.muted, 0.18);
+  const legendColor = t.ink;
+  const doughnutPalette = [t.cyan, t.amber, t.purple, t.blue, t.pink, t.green].map((c) => withAlpha(c, 0.7));
   const [from, setFrom] = useState(daysAgoStr(29)); // 30 ngày gần nhất
   const [to, setTo] = useState(todayStr());
   const [data, setData] = useState(null);
@@ -176,8 +182,8 @@ const StatsSummary = () => {
                               label: "Phút",
                               data: barValues,
                               borderWidth: 1,
-                              backgroundColor: "rgba(54, 162, 235, 0.5)",
-                              borderColor: "rgba(54, 162, 235, 1)",
+                              backgroundColor: withAlpha(t.blue, 0.5),
+                              borderColor: t.blue,
                               maxBarThickness: 28,
                               categoryPercentage: 0.8,
                               barPercentage: 0.9,
@@ -254,14 +260,7 @@ const StatsSummary = () => {
                       datasets: [
                         {
                           data: doughnutValues,
-                          backgroundColor: [
-                            "rgba(75, 192, 192, 0.6)",
-                            "rgba(255, 159, 64, 0.6)",
-                            "rgba(153, 102, 255, 0.6)",
-                            "rgba(255, 205, 86, 0.6)",
-                            "rgba(201, 203, 207, 0.6)",
-                            "rgba(54, 162, 235, 0.6)",
-                          ],
+                          backgroundColor: doughnutPalette,
                           borderWidth: 1,
                         },
                       ],

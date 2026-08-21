@@ -1,20 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
-import { Container, Row, Col, Card, Button, Image, Badge } from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Image } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
 import cookie from "react-cookies";
 import TodayWorkout from "./TodayWorkout";
-import StreakWidget from "./StreakWidget";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
+import ActivityRings from "./ActivityRings";
+import MetricCard from "./MetricCard";
+import HealthTrendChart from "./HealthTrendChart";
+import { useTodaySummary, badgeFor } from "../utils/useTodaySummary";
 
 import heroBg from "../img/hero-bg.jpg";
 import servicePic from "../img/services/service-pic.jpg";
@@ -32,9 +24,6 @@ import c6 from "../img/classes/classes-6.jpg";
 import c7 from "../img/classes/classes-7.jpg";
 import c8 from "../img/classes/classes-8.jpg";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
-
-
 /* helper tạo background giống set-bg của template */
 const bg = (url) => ({
   backgroundImage: `url('${url}')`,
@@ -48,14 +37,26 @@ const toClassItem = (ex, fallbackImg) => ({
   coach: ex?.muscleGroup || ex?.targetGoal || "Bài tập",
   img: fallbackImg,
 });
+
+/* nhãn ngày kiểu "Thứ Tư, 20 tháng 8" */
+const DOW_FULL = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+const todayLabel = () => {
+  const d = new Date();
+  return `${DOW_FULL[d.getDay()]}, ${d.getDate()} tháng ${d.getMonth() + 1}`;
+};
+
+/* mở Gutim Coach (ChatWidget lắng nghe sự kiện này) */
+const openCoach = (question) =>
+  window.dispatchEvent(new CustomEvent("gutim-open-chat", { detail: { question } }));
+
 const Home = () => {
   const [exercises, setExercises] = useState([]);
-  const [stats, setStats] = useState(null);
   const [latestHealth, setLatestHealth] = useState(null);
   const [healthHistory, setHealthHistory] = useState([]);
-  const [chartMode, setChartMode] = useState("weight"); // "weight" | "bmi"
+  const [recos, setRecos] = useState([]);
 
   const isLoggedIn = !!cookie.load("token");
+  const summary = useTodaySummary(isLoggedIn);
 
   useEffect(() => {
     const load = async () => {
@@ -65,15 +66,20 @@ const Home = () => {
         const items = exRes?.data?.items || exRes?.data || [];
         setExercises(items);
 
-        const stRes = await authApis().get(endpoints.statsSummary);
-        setStats(stRes?.data || null);
-
         const healthRes = await authApis().get(endpoints.health);
         const healthItems = Array.isArray(healthRes.data) ? healthRes.data : (healthRes.data?.items || []);
         setHealthHistory(healthItems);
         if (healthItems.length > 0) {
           const sorted = [...healthItems].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
           setLatestHealth(sorted[0]);
+        }
+
+        try {
+          const recoRes = await authApis().get(endpoints.recommendations, { params: { size: 4 } });
+          const recoItems = Array.isArray(recoRes.data) ? recoRes.data : (recoRes.data?.items || []);
+          setRecos(recoItems.slice(0, 4));
+        } catch {
+          setRecos([]);
         }
       } catch (e) {
         console.error("Home fetch error:", e);
@@ -96,7 +102,6 @@ const Home = () => {
     } else if (bmi >= 23 && bmi < 25) {
       label = "Thừa cân";
       color = "warning";
-
     } else if (bmi >= 25) {
       label = "Béo phì";
       color = "danger";
@@ -104,96 +109,48 @@ const Home = () => {
     return { bmi, label, color };
   }, [latestHealth]);
 
-  const sortedAsc = useMemo(() =>
-    [...healthHistory].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)),
-    [healthHistory]
-  );
+  // Xu hướng cân nặng: so bản ghi mới nhất với bản ghi cũ nhất
+  const weightTrend = useMemo(() => {
+    const withWeight = [...healthHistory]
+      .filter((h) => Number(h.weight))
+      .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+    if (withWeight.length < 2) return null;
+    const first = Number(withWeight[0].weight);
+    const last = Number(withWeight[withWeight.length - 1].weight);
+    const diff = +(last - first).toFixed(1);
+    return { diff, down: diff <= 0 };
+  }, [healthHistory]);
 
-  const chartLabels = useMemo(() => sortedAsc.map((h) => {
-    if (!h.createdAt) return "";
-    const dt = new Date(h.createdAt);
-    return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`;
-  }), [sortedAsc]);
-
-  const weightData = useMemo(() => sortedAsc.map((h) => Number(h.weight) || null), [sortedAsc]);
-
-  const bmiDataHistory = useMemo(
-    () => sortedAsc.map((h) => {
-      const ht = Number(h.height);
-      const wt = Number(h.weight);
-      if (!ht || !wt) return null;
-      return +(wt / Math.pow(ht / 100, 2)).toFixed(1);
-    }),
-    [sortedAsc]
-  );
-
-  const chartDataWeight = {
-    labels: chartLabels,
-    datasets: [
-      {
-        label: "Cân nặng (kg)",
-        data: weightData,
-        borderColor: "#34C759",
-        backgroundColor: "rgba(52,199,89,0.14)",
-        fill: true,
-        tension: 0.35,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBackgroundColor: "#34C759",
-      },
-    ],
-  };
-
-  const chartDataBmi = {
-    labels: chartLabels,
-    datasets: [
-      {
-        label: "BMI",
-        data: bmiDataHistory,
-        borderColor: "#F2612C",
-        backgroundColor: "rgba(242,97,44,0.12)",
-        fill: true,
-        tension: 0.35,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBackgroundColor: "#F2612C",
-      },
-    ],
-  };
-
-  const chartOptions = (mode) => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => {
-            if (mode === "bmi") {
-              const v = ctx.raw;
-              const lbl = v < 18.5 ? "Thiếu cân" : v < 23 ? "Bình thường" : v < 25 ? "Thừa cân" : "Béo phì";
-              return `BMI: ${v} (${lbl})`;
-            }
-            return `${ctx.raw} kg`;
-          },
-        },
-      },
+  // ==== Vòng Activity (từ dữ liệu sẵn có) ====
+  const nextMilestone = badgeFor(summary.streak).next || Math.max(summary.streak, 90);
+  const rings = [
+    {
+      label: "Buổi tập / tuần",
+      value: summary.weekSessions,
+      max: summary.weekTarget,
+      color: "var(--pink)",
+      display: `${summary.weekSessions}/${summary.weekTarget}`,
     },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { color: "rgba(142,142,147,0.9)", maxRotation: 0, font: { size: 9 } },
-      },
-      y: {
-        beginAtZero: false,
-        grid: { color: "rgba(142,142,147,0.18)" },
-        ticks: { color: "rgba(142,142,147,0.9)", font: { size: 9 } },
-      },
+    {
+      label: "Phút vận động hôm nay",
+      value: summary.todayMinutes,
+      max: summary.minutesTarget,
+      color: "var(--green)",
+      display: summary.todayMinutes,
+      unit: "phút",
     },
-  });
+    {
+      label: "Chuỗi ngày",
+      value: summary.streak,
+      max: nextMilestone,
+      color: "var(--cyan)",
+      display: summary.streak,
+      unit: "ngày",
+    },
+  ];
+  const streakBadge = badgeFor(summary.streak);
 
   // Fallback khi chưa login
-
   const fallbackClasses = [
     { title: "Yoga", coach: "Dẻo dai", img: c1 },
     { title: "Running", coach: "Cardio", img: c2 },
@@ -232,221 +189,223 @@ const Home = () => {
 
   return (
     <>
-      {/* ===== HERO ===== */}
-      <section style={{ ...bg(heroBg), position: "relative", color: "#fff", padding: "100px 0" }}>
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)" }} />
-        <Container style={{ position: "relative", zIndex: 1 }}>
-          <Row className="align-items-center">
-            <Col lg={isLoggedIn ? 8 : 12}>
-              <div className="mb-2 text-uppercase fw-semibold" style={{ letterSpacing: "2px", opacity: .9 }}>
-                GUTIM — SỨC KHỎE & TẬP LUYỆN
-              </div>
-              <h1 className="fw-bold" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
-                Theo dõi sức khỏe,<br />tập luyện thông minh mỗi ngày
-              </h1>
-              <p className="lead mb-4" style={{ opacity: .9, maxWidth: 560 }}>
-                Gutim giúp bạn xây dựng kế hoạch tập luyện cá nhân hóa, nhận gợi ý bài tập phù hợp
-                và theo dõi hành trình sức khỏe mỗi ngày.
-              </p>
-              <div className="d-flex flex-wrap gap-2">
-                {isLoggedIn ? (
-                  <>
-                    <Button href="/plans" variant="light" className="fw-semibold px-4">
-                      📋 Kế hoạch của tôi
-                    </Button>
-                    <Button href="/recommendations" variant="outline-light" className="fw-semibold px-4">
-                      ✨ Gợi ý cho bạn
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button href="/register" variant="light" className="fw-semibold px-4">
-                      Đăng ký miễn phí
-                    </Button>
-                    <Button href="/exercises" variant="outline-light" className="fw-semibold px-4">
-                      Khám phá bài tập
-                    </Button>
-                  </>
-                )}
-              </div>
-            </Col>
-
-            {/* Quick Stats khi đã đăng nhập */}
-            {isLoggedIn && (
-              <Col lg={4} className="mt-4 mt-lg-0">
-                <Card className="border-0 shadow-sm" style={{ backdropFilter: "blur(12px)", background: "rgba(17,26,43,0.85)" }}>
-                  <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center mb-3">
-                      <h6 className="m-0">Tổng quan tập luyện</h6>
-                      <Badge bg="primary">Live</Badge>
-                    </div>
-                    <Row>
-                      <Col xs={6} className="mb-3">
-                        <div className="text-muted small">Tổng phút</div>
-                        <div className="fs-4 fw-bold g-round g-num">{stats?.totalMinutes ?? "--"}</div>
-                      </Col>
-                      <Col xs={6} className="mb-3">
-                        <div className="text-muted small">Số buổi</div>
-                        <div className="fs-4 fw-bold g-round g-num">{stats?.sessions ?? "--"}</div>
-                      </Col>
-                      <Col xs={12} className="mb-2">
-                        <div className="text-muted small">Bài phổ biến</div>
-                        <div className="fw-semibold">{stats?.topExerciseName ?? "—"}</div>
-                      </Col>
-                      <Col xs={6} className="mb-2">
-                        <div className="text-muted small">Cân nặng</div>
-                        <div className="fw-semibold">{latestHealth?.weight ? `${latestHealth.weight} kg` : "—"}</div>
-                      </Col>
-                      <Col xs={6} className="mb-2">
-                        <div className="text-muted small">Chỉ số BMI</div>
-                        <div className="fw-semibold d-flex align-items-center gap-1">
-                          {bmiData ? (
-                            <>
-                              {bmiData.bmi}
-                              <Badge bg={bmiData.color} style={{ fontSize: "0.65rem", padding: "3px 6px" }}>
-                                {bmiData.label}
-                              </Badge>
-                            </>
-                          ) : (
-                            "—"
-                          )}
-                        </div>
-                      </Col>
-                    </Row>
-                    <hr style={{ borderColor: "rgba(255,255,255,0.1)" }} />
-                    <StreakWidget />
-                    <div className="text-end mt-3">
-                      <Button size="sm" variant="outline-primary" href="/stats/summary">Xem thống kê</Button>
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            )}
-          </Row>
-        </Container>
-      </section>
-
-      {isLoggedIn && (
+      {isLoggedIn ? (
+        /* ===== DASHBOARD "TÓM TẮT" (Apple Health) ===== */
         <section className="py-4">
           <Container>
-            <Row>
-              <Col lg={7} className="mb-4 mb-lg-0">
+            <h1 className="fw-bold g-round mb-1" style={{ letterSpacing: "-.02em", fontSize: "clamp(1.9rem,5vw,2.6rem)" }}>
+              Tóm tắt
+            </h1>
+            <p className="mb-4" style={{ color: "var(--muted)", fontWeight: 500 }}>
+              {todayLabel()}
+              {summary.streak > 0 && <> · chuỗi {summary.streak} ngày liên tục 🔥</>}
+            </p>
+
+            {/* Hàng 1: Vòng Activity + BMI + Chuỗi */}
+            <Row className="g-3">
+              <Col lg={5}>
+                <div className="g-card h-100 d-flex align-items-center">
+                  <ActivityRings rings={rings} />
+                </div>
+              </Col>
+              <Col lg={4} xs={6}>
+                <MetricCard
+                  color="purple"
+                  name="BMI"
+                  icon={<span style={{ fontWeight: 900 }}>⚖</span>}
+                  value={bmiData ? bmiData.bmi : "—"}
+                  sub={
+                    bmiData ? (
+                      <>
+                        <b style={{ color: "var(--ink)" }}>{bmiData.label}</b> · khỏe mạnh 18.5–24.9
+                      </>
+                    ) : (
+                      <>Chưa có chỉ số cơ thể</>
+                    )
+                  }
+                />
+              </Col>
+              <Col lg={3} xs={6}>
+                <MetricCard
+                  color="pink"
+                  name="Chuỗi"
+                  icon={<span>{streakBadge.emoji}</span>}
+                  value={summary.streak}
+                  unit="ngày"
+                  sub={<>Danh hiệu: {streakBadge.label}</>}
+                />
+              </Col>
+            </Row>
+
+            {/* Hàng 2 "Cơ thể": Cân nặng + biểu đồ & Kế hoạch hôm nay */}
+            <div className="mt-4 mb-2 fw-bold" style={{ color: "var(--muted)", fontSize: 13 }}>Cơ thể</div>
+            <Row className="g-3">
+              <Col lg={7}>
+                <div className="g-card h-100">
+                  <div className="d-flex align-items-center gap-2 mb-2">
+                    <span className="g-ic g-ic--green">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <path d="M3 17l6-6 4 4 8-8" />
+                      </svg>
+                    </span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "var(--green)" }}>Cân nặng</span>
+                    {weightTrend && (
+                      <span className={`g-trend ${weightTrend.down ? "g-trend--down" : "g-trend--up"} ms-auto`}>
+                        {weightTrend.down ? "▼" : "▲"} {Math.abs(weightTrend.diff)} kg
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="g-value g-num">
+                      {latestHealth?.weight ?? "—"}
+                      {latestHealth?.weight ? <span className="g-unit">kg</span> : null}
+                    </span>
+                  </div>
+                  <div className="mt-3">
+                    <HealthTrendChart records={healthHistory} height={200} />
+                  </div>
+                </div>
+              </Col>
+              <Col lg={5}>
                 <TodayWorkout />
               </Col>
-              
-              <Col lg={5}>
-                <Card
-                  className="shadow-sm h-100"
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--hair)",
-                    borderRadius: "16px",
-                    minHeight: "380px"
-                  }}
-                  data-aos="fade-up"
-                >
-                  <Card.Header className="bg-transparent border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
-                    <div>
-                      <h5 className="fw-bold m-0 g-round">📈 Biểu đồ xu hướng</h5>
-                      <p className="text-muted m-0 small" style={{ fontSize: "0.8rem" }}>Theo dõi thay đổi chỉ số cơ thể</p>
-                    </div>
-                    {sortedAsc.length >= 2 && (
-                      <div className="d-flex gap-1">
-                        <Button
-                          size="sm"
-                          variant={chartMode === "weight" ? "primary" : "outline-secondary"}
-                          onClick={() => setChartMode("weight")}
-                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
-                        >
-                          Cân nặng
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={chartMode === "bmi" ? "primary" : "outline-secondary"}
-                          onClick={() => setChartMode("bmi")}
-                          style={{ fontSize: "0.75rem", padding: "4px 8px" }}
-                        >
-                          BMI
-                        </Button>
-                      </div>
-                    )}
-                  </Card.Header>
+            </Row>
 
-                  <Card.Body className="pt-3 d-flex flex-column justify-content-center">
-                    {sortedAsc.length === 0 ? (
-                      <div className="text-center py-5 text-muted">
-                        <div className="fs-1 mb-2">📊</div>
-                        <h6 className="fw-bold">Chưa có chỉ số sức khỏe</h6>
-                        <p className="text-muted small mb-3">Vui lòng điền thông số thể trạng để bắt đầu theo dõi sức khỏe.</p>
-                        <Button href="/health" variant="outline-primary" size="sm">
-                          + Nhập chỉ số ngay
-                        </Button>
-                      </div>
-                    ) : sortedAsc.length === 1 ? (
-                      <div className="text-center py-5 text-muted" style={{ border: "1px dashed var(--hair)", borderRadius: "12px", margin: "10px" }}>
-                        <div className="fs-2 mb-2">💡</div>
-                        <p className="m-0 px-3" style={{ fontSize: "0.85rem" }}>
-                          Bạn mới có 1 bản ghi sức khỏe. Hãy nhập thêm các chỉ số cân nặng tiếp theo tại trang Sức khỏe để bắt đầu vẽ biểu đồ xu hướng!
-                        </p>
-                        <Button href="/health" variant="link" className="text-decoration-none mt-2 p-0 small">
-                          Đến trang Nhập chỉ số →
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex-grow-1" style={{ height: "230px", position: "relative" }}>
-                          <Line
-                            data={chartMode === "weight" ? chartDataWeight : chartDataBmi}
-                            options={chartOptions(chartMode)}
-                          />
+            {/* Hàng 3: Gutim Coach */}
+            <div className="mt-4 mb-2 fw-bold" style={{ color: "var(--muted)", fontSize: 13 }}>Trợ lý & gợi ý</div>
+            <div
+              className="p-4"
+              style={{
+                borderRadius: "var(--radius)",
+                background: "linear-gradient(135deg, var(--purple), var(--blue))",
+                color: "#fff",
+                boxShadow: "var(--shadow)",
+              }}
+            >
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".04em", opacity: 0.9, textTransform: "uppercase" }}>
+                ✦ Gutim Coach
+              </div>
+              <p style={{ fontSize: "1.02rem", lineHeight: 1.5, margin: "13px 0 18px", fontWeight: 500 }}>
+                Hỏi mình về dinh dưỡng, kỹ thuật bài tập hay điều chỉnh mục tiêu — mình sẽ tư vấn dựa trên
+                hồ sơ sức khỏe của bạn.
+              </p>
+              <div className="d-flex gap-2 flex-wrap">
+                {["Ăn gì sau tập?", "Kiểm tra tư thế", "Điều chỉnh mục tiêu"].map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => openCoach(q)}
+                    style={{
+                      background: "rgba(255,255,255,.18)",
+                      border: "1px solid rgba(255,255,255,.28)",
+                      color: "#fff",
+                      fontSize: 12.5,
+                      fontWeight: 600,
+                      borderRadius: "var(--radius-pill)",
+                      padding: "7px 13px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Hàng 4: Gợi ý cho bạn */}
+            {recos.length > 0 && (
+              <>
+                <div className="mt-4 mb-2 d-flex align-items-center justify-content-between">
+                  <span className="fw-bold" style={{ color: "var(--muted)", fontSize: 13 }}>Gợi ý cho bạn</span>
+                  <Button size="sm" variant="outline-primary" href="/recommendations">Xem tất cả</Button>
+                </div>
+                <Row className="g-3">
+                  {recos.map((r, idx) => (
+                    <Col key={idx} md={3} xs={6}>
+                      <div className="g-card g-card--tap h-100" onClick={() => (window.location.href = "/recommendations")}>
+                        <div className="d-flex justify-content-between align-items-start mb-2">
+                          <span className="g-ic g-ic--brand">▶</span>
+                          {typeof r.score === "number" && (
+                            <span className="g-round" style={{ fontWeight: 800, fontSize: 12, color: "var(--green)" }}>
+                              {Math.round(r.score * 100)}%
+                            </span>
+                          )}
                         </div>
-                        {chartMode === "bmi" && (
-                          <div className="d-flex gap-2 justify-content-center mt-3 flex-wrap text-muted" style={{ fontSize: "0.65rem" }}>
-                            <span>● &lt;18.5 Thiếu</span>
-                            <span>● 18.5–22.9 Thường</span>
-                            <span>● 23–24.9 Thừa</span>
-                            <span>● ≥25 Béo phì</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </Card.Body>
-                </Card>
+                        <h4 className="g-round" style={{ fontWeight: 800, fontSize: ".95rem", margin: "0 0 6px" }}>
+                          {r.name}
+                        </h4>
+                        <div className="d-flex gap-1 flex-wrap">
+                          {r.muscleGroup && <span className="g-pill">{r.muscleGroup}</span>}
+                          {r.estimatedMinutes && <span className="g-pill">{r.estimatedMinutes} phút</span>}
+                        </div>
+                      </div>
+                    </Col>
+                  ))}
+                </Row>
+              </>
+            )}
+          </Container>
+        </section>
+      ) : (
+        /* ===== HERO (chưa đăng nhập) ===== */
+        <section style={{ ...bg(heroBg), position: "relative", color: "#fff", padding: "100px 0" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.45)" }} />
+          <Container style={{ position: "relative", zIndex: 1 }}>
+            <Row className="align-items-center">
+              <Col lg={12}>
+                <div className="mb-2 text-uppercase fw-semibold" style={{ letterSpacing: "2px", opacity: .9 }}>
+                  GUTIM — SỨC KHỎE & TẬP LUYỆN
+                </div>
+                <h1 className="fw-bold" style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)" }}>
+                  Theo dõi sức khỏe,<br />tập luyện thông minh mỗi ngày
+                </h1>
+                <p className="lead mb-4" style={{ opacity: .9, maxWidth: 560 }}>
+                  Gutim giúp bạn xây dựng kế hoạch tập luyện cá nhân hóa, nhận gợi ý bài tập phù hợp
+                  và theo dõi hành trình sức khỏe mỗi ngày.
+                </p>
+                <div className="d-flex flex-wrap gap-2">
+                  <Button href="/register" variant="light" className="fw-semibold px-4">
+                    Đăng ký miễn phí
+                  </Button>
+                  <Button href="/exercises" variant="outline-light" className="fw-semibold px-4">
+                    Khám phá bài tập
+                  </Button>
+                </div>
               </Col>
             </Row>
           </Container>
         </section>
       )}
 
-
-      {/* ===== SERVICES (tính năng nổi bật) ===== */}
-      <section data-aos="fade-up">
-        <Container fluid>
-          <Row className="g-0">
-            <Col lg={6}>
-              <div style={{ ...bg(servicePic), minHeight: 520 }} />
-            </Col>
-            <Col lg={6}>
-              <div className="p-4 p-lg-5">
-                <h2 className="fw-bold mb-4">Tính năng nổi bật</h2>
-                <Row className="g-4">
-                  {services.map((s, i) => (
-                    <Col md={6} key={i}>
-                      <Card className="h-100 shadow-sm border-0">
-                        <Card.Body>
-                          <Image src={s.icon} alt="" height={48} className="mb-3" />
-                          <h5 className="fw-bold">{s.title}</h5>
-                          <p className="text-muted m-0 small">{s.desc}</p>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                  ))}
-                </Row>
-              </div>
-            </Col>
-          </Row>
-        </Container>
-      </section>
+      {/* ===== SERVICES (chỉ hiển thị khi chưa đăng nhập) ===== */}
+      {!isLoggedIn && (
+        <section data-aos="fade-up">
+          <Container fluid>
+            <Row className="g-0">
+              <Col lg={6}>
+                <div style={{ ...bg(servicePic), minHeight: 520 }} />
+              </Col>
+              <Col lg={6}>
+                <div className="p-4 p-lg-5">
+                  <h2 className="fw-bold mb-4">Tính năng nổi bật</h2>
+                  <Row className="g-4">
+                    {services.map((s, i) => (
+                      <Col md={6} key={i}>
+                        <Card className="h-100 shadow-sm border-0">
+                          <Card.Body>
+                            <Image src={s.icon} alt="" height={48} className="mb-3" />
+                            <h5 className="fw-bold">{s.title}</h5>
+                            <p className="text-muted m-0 small">{s.desc}</p>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                    ))}
+                  </Row>
+                </div>
+              </Col>
+            </Row>
+          </Container>
+        </section>
+      )}
 
       {/* ===== EXERCISES (map từ BE hoặc fallback) ===== */}
       <section className="py-5" data-aos="fade-up">
@@ -487,14 +446,14 @@ const Home = () => {
         </Container>
       </section>
 
-      {/* ===== CTA Section ===== */}
+      {/* ===== CTA Section (chỉ khi chưa đăng nhập) ===== */}
       {!isLoggedIn && (
         <section className="py-5" data-aos="fade-up">
           <Container>
             <Card
               className="border-0 text-center p-5"
               style={{
-                background: "linear-gradient(135deg, rgba(255,107,53,0.12), rgba(76,201,240,0.12))",
+                background: "linear-gradient(135deg, var(--brand-soft), color-mix(in srgb, var(--blue) 12%, transparent))",
                 borderRadius: "1.5rem",
               }}
             >
@@ -514,46 +473,6 @@ const Home = () => {
                 </div>
               </Card.Body>
             </Card>
-          </Container>
-        </section>
-      )}
-
-      {/* ===== Quick Links cho logged-in users ===== */}
-      {isLoggedIn && (
-        <section className="py-5" data-aos="fade-up">
-          <Container>
-            <Row className="g-4">
-              <Col md={4}>
-                <Card className="border-0 shadow-sm h-100 text-center p-4">
-                  <Card.Body>
-                    <div style={{ fontSize: "2.5rem" }} className="mb-3">📊</div>
-                    <h5 className="fw-bold">Thống kê chi tiết</h5>
-                    <p className="text-muted small">Biểu đồ phút tập, số buổi và tỷ lệ bài tập trong 30 ngày</p>
-                    <Button variant="outline-primary" size="sm" href="/stats/summary">Xem thống kê</Button>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4}>
-                <Card className="border-0 shadow-sm h-100 text-center p-4">
-                  <Card.Body>
-                    <div style={{ fontSize: "2.5rem" }} className="mb-3">💚</div>
-                    <h5 className="fw-bold">Sức khỏe</h5>
-                    <p className="text-muted small">Theo dõi cân nặng, BMI, huyết áp và xu hướng biến đổi</p>
-                    <Button variant="outline-primary" size="sm" href="/health">Cập nhật sức khỏe</Button>
-                  </Card.Body>
-                </Card>
-              </Col>
-              <Col md={4}>
-                <Card className="border-0 shadow-sm h-100 text-center p-4">
-                  <Card.Body>
-                    <div style={{ fontSize: "2.5rem" }} className="mb-3">🎯</div>
-                    <h5 className="fw-bold">Mục tiêu</h5>
-                    <p className="text-muted small">Thiết lập mục tiêu giảm cân, tăng cơ hoặc tăng sức bền</p>
-                    <Button variant="outline-primary" size="sm" href="/goals">Quản lý mục tiêu</Button>
-                  </Card.Body>
-                </Card>
-              </Col>
-            </Row>
           </Container>
         </section>
       )}

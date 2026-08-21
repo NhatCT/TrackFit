@@ -3,21 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, Badge, Button, Card, Form, InputGroup, Table } from "react-bootstrap";
 import { authApis, endpoints } from "../configs/Apis";
 import MySpinner from "./layout/MySpinner";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-} from "chart.js";
-import { Line } from "react-chartjs-2";
-
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
+import HealthTrendChart from "./HealthTrendChart";
+import BloodPressureChart from "./BloodPressureChart";
 
 const EMPTY = { height: "", weight: "", bloodPressure: "", notes: "" };
+const hasBp = (s) => /^\d{2,3}\/\d{2,3}$/.test((s || "").trim());
 
 const bpOk = (s) => !s || /^\d{2,3}\/\d{2,3}$/.test(s.trim()); // 120/80
 const toNum = (v) => (v === "" || v === null ? null : Number(v));
@@ -33,12 +23,6 @@ const bmiCalc = (heightCm, weightKg) => {
   return { bmi, label };
 };
 
-const fmtDate = (d) => {
-  if (!d) return "";
-  const dt = new Date(d);
-  return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}`;
-};
-
 const HealthList = () => {
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(EMPTY);
@@ -46,7 +30,6 @@ const HealthList = () => {
   const [msg, setMsg] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [chartMode, setChartMode] = useState("weight"); // "weight" | "bmi"
 
   const load = async () => {
     setLoading(true);
@@ -73,95 +56,15 @@ const HealthList = () => {
     );
   }, [items, kw]);
 
-  // ===== CHART DATA =====
-  // Sort ascending by date for chart
-  const sortedAsc = useMemo(() =>
-    [...items].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)),
+  // ===== BMI cảnh báo (từ bản ghi mới nhất) =====
+  const latestRec = useMemo(
+    () => [...items].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))[0],
     [items]
   );
-
-  const chartLabels = useMemo(() => sortedAsc.map((h) => fmtDate(h.createdAt)), [sortedAsc]);
-
-  const weightData = useMemo(() => sortedAsc.map((h) => Number(h.weight) || null), [sortedAsc]);
-
-  const bmiData = useMemo(
-    () => sortedAsc.map((h) => bmiCalc(h.height, h.weight).bmi),
-    [sortedAsc]
-  );
-
-  const latestBmi = bmiData.length ? bmiData[bmiData.length - 1] : null;
+  const latestBmi = latestRec ? bmiCalc(latestRec.height, latestRec.weight).bmi : null;
   const bmiAlert = latestBmi != null && (latestBmi < 18.5 || latestBmi >= 25);
 
-  const chartDataWeight = {
-    labels: chartLabels,
-    datasets: [
-      {
-        label: "Cân nặng (kg)",
-        data: weightData,
-        borderColor: "#4cc9f0",
-        backgroundColor: "rgba(76,201,240,0.12)",
-        fill: true,
-        tension: 0.35,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBackgroundColor: "#4cc9f0",
-      },
-    ],
-  };
-
-  const chartDataBmi = {
-    labels: chartLabels,
-    datasets: [
-      {
-        label: "BMI",
-        data: bmiData,
-        borderColor: "#ff6b35",
-        backgroundColor: "rgba(255,107,53,0.12)",
-        fill: true,
-        tension: 0.35,
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        pointBackgroundColor: "#ff6b35",
-      },
-    ],
-  };
-
-  const chartOptions = (mode) => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: (ctx) => {
-            if (mode === "bmi") {
-              const v = ctx.raw;
-              const lbl = v < 18.5 ? "Thiếu cân" : v < 23 ? "Bình thường" : v < 25 ? "Thừa cân" : "Béo phì";
-              return `BMI: ${v} (${lbl})`;
-            }
-            return `${ctx.raw} kg`;
-          },
-        },
-      },
-    },
-    scales: {
-      x: {
-        grid: { color: "rgba(255,255,255,0.06)" },
-        ticks: { color: "rgba(255,255,255,0.65)", maxRotation: 0 },
-      },
-      y: {
-        beginAtZero: false,
-        grid: { color: "rgba(255,255,255,0.06)" },
-        ticks: { color: "rgba(255,255,255,0.65)" },
-        ...(mode === "bmi"
-          ? {
-              suggestedMin: 14,
-              suggestedMax: 35,
-            }
-          : {}),
-      },
-    },
-  });
+  const bpCount = useMemo(() => items.filter((h) => hasBp(h.bloodPressure)).length, [items]);
 
   // ===== FORM HANDLERS =====
   const submit = async (e) => {
@@ -256,54 +159,21 @@ const HealthList = () => {
       )}
 
       {/* ===== TREND CHART ===== */}
-      {sortedAsc.length >= 1 && (
+      {items.length >= 1 && (
         <Card className="shadow-sm border-0 mb-3" data-aos="fade-up">
           <Card.Body>
-            <div className="d-flex justify-content-between align-items-center mb-3">
-              <div className="text-muted small text-uppercase fw-semibold">
-                {chartMode === "weight" ? "Xu hướng cân nặng" : "Xu hướng BMI"}
-              </div>
-              {sortedAsc.length >= 2 && (
-                <div className="d-flex gap-1">
-                  <Button
-                    size="sm"
-                    variant={chartMode === "weight" ? "primary" : "outline-secondary"}
-                    onClick={() => setChartMode("weight")}
-                  >
-                    Cân nặng
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={chartMode === "bmi" ? "primary" : "outline-secondary"}
-                    onClick={() => setChartMode("bmi")}
-                  >
-                    BMI
-                  </Button>
-                </div>
-              )}
-            </div>
-            {sortedAsc.length === 1 ? (
-              <div className="text-center py-4 text-muted" style={{ border: "1px dashed rgba(255,255,255,0.1)", borderRadius: "8px" }}>
-                <p className="m-0" style={{ fontSize: "0.9rem" }}>
-                  💡 Bạn mới có 1 bản ghi sức khỏe. Hãy thêm các bản ghi cân nặng tiếp theo để theo dõi biểu đồ tiến trình xu hướng!
-                </p>
-              </div>
-            ) : (
-              <div style={{ height: 280, position: "relative" }}>
-                <Line
-                  data={chartMode === "weight" ? chartDataWeight : chartDataBmi}
-                  options={chartOptions(chartMode)}
-                />
-              </div>
-            )}
-            {chartMode === "bmi" && sortedAsc.length >= 2 && (
-              <div className="d-flex gap-3 mt-2 flex-wrap" style={{ fontSize: "0.75rem" }}>
-                <span><span style={{ color: "#6c757d" }}>●</span> &lt;18.5 Thiếu cân</span>
-                <span><span style={{ color: "#198754" }}>●</span> 18.5–22.9 Bình thường</span>
-                <span><span style={{ color: "#ffc107" }}>●</span> 23–24.9 Thừa cân</span>
-                <span><span style={{ color: "#dc3545" }}>●</span> ≥25 Béo phì</span>
-              </div>
-            )}
+            <div className="text-muted small text-uppercase fw-semibold mb-2">Xu hướng cơ thể</div>
+            <HealthTrendChart records={items} height={280} />
+          </Card.Body>
+        </Card>
+      )}
+
+      {/* ===== BLOOD PRESSURE TREND ===== */}
+      {bpCount >= 2 && (
+        <Card className="shadow-sm border-0 mb-3" data-aos="fade-up">
+          <Card.Body>
+            <div className="text-muted small text-uppercase fw-semibold mb-2">Xu hướng huyết áp (mmHg)</div>
+            <BloodPressureChart records={items} height={240} />
           </Card.Body>
         </Card>
       )}

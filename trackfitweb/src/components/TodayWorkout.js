@@ -265,7 +265,7 @@ export default function TodayWorkout() {
 
   if (loading && plans.length > 0) {
     return (
-      <Card className="shadow-sm border-0 mb-4 bg-surface text-light">
+      <Card className="shadow-sm border-0 mb-4" style={{ background: "var(--surface)", color: "var(--ink)" }}>
         <Card.Body className="text-center py-4">
           <MySpinner />
         </Card.Body>
@@ -283,18 +283,18 @@ export default function TodayWorkout() {
 
   return (
     <>
-      <Card className="shadow-sm border-0 mb-4" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "16px" }} data-aos="fade-up">
+      <Card className="shadow-sm border-0 mb-4" style={{ background: "var(--surface)", border: "1px solid var(--hair)", borderRadius: "16px" }} data-aos="fade-up">
         <Card.Header className="bg-transparent border-0 pt-4 pb-0 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
           <div>
             <div className="d-flex align-items-center gap-2">
-              <h4 className="fw-bold m-0 text-light">🏋️ Kế hoạch hôm nay ({todayLabel})</h4>
+              <h4 className="fw-bold m-0" style={{ color: "var(--ink)" }}>🏋️ Kế hoạch hôm nay ({todayLabel})</h4>
               {todayExercises.length > 0 && stats.completed < stats.total && (
-                <Button 
-                  size="sm" 
-                  variant="success" 
+                <Button
+                  size="sm"
+                  variant="success"
                   onClick={startActiveWorkout}
                   className="fw-bold border-0 d-flex align-items-center gap-1 ms-2"
-                  style={{ background: "linear-gradient(135deg, #10b981, #059669)", borderRadius: "8px" }}
+                  style={{ background: "var(--green)", borderRadius: "8px" }}
                 >
                   ▶ Bắt đầu tập
                 </Button>
@@ -302,15 +302,15 @@ export default function TodayWorkout() {
             </div>
             <p className="text-muted m-0 small mt-1">Bắt đầu tập luyện và đánh dấu hoàn thành tiến độ của bạn</p>
           </div>
-          
+
           {plans.length > 1 && (
             <div className="d-flex align-items-center gap-2">
               <span className="text-muted small text-nowrap">Chọn lịch:</span>
-              <Form.Select 
-                size="sm" 
-                value={selectedPlanId} 
-                onChange={handlePlanChange} 
-                style={{ backgroundColor: "var(--surface-2)", color: "var(--text)", borderColor: "var(--border)", minWidth: "160px" }}
+              <Form.Select
+                size="sm"
+                value={selectedPlanId}
+                onChange={handlePlanChange}
+                style={{ backgroundColor: "var(--surface-2)", color: "var(--ink)", borderColor: "var(--hair)", minWidth: "160px" }}
               >
                 {plans.map((p) => (
                   <option key={p.planId} value={p.planId}>
@@ -328,7 +328,7 @@ export default function TodayWorkout() {
           {plans.length === 0 ? (
             <div className="text-center py-4">
               <div className="fs-1 mb-2">📋</div>
-              <h5 className="fw-bold text-light">Chưa có kế hoạch tập luyện cá nhân</h5>
+              <h5 className="fw-bold" style={{ color: "var(--ink)" }}>Chưa có kế hoạch tập luyện cá nhân</h5>
               <p className="text-muted small mb-3">Tạo một kế hoạch 7 ngày tùy chỉnh cho mục tiêu của riêng bạn để bắt đầu.</p>
               <Button variant="primary" size="sm" href="/plans/new">
                 + Tạo kế hoạch ngay
@@ -337,7 +337,7 @@ export default function TodayWorkout() {
           ) : todayExercises.length === 0 ? (
             <div className="text-center py-4">
               <div className="fs-1 mb-2">😴</div>
-              <h5 className="fw-bold text-light">Hôm nay là ngày nghỉ ngơi!</h5>
+              <h5 className="fw-bold" style={{ color: "var(--ink)" }}>Hôm nay là ngày nghỉ ngơi!</h5>
               <p className="text-muted small mb-0">Hãy nghỉ ngơi đầy đủ để cơ bắp được phục hồi hoặc tham khảo các bài tập nhẹ nhàng.</p>
             </div>
           ) : (
@@ -346,11 +346,11 @@ export default function TodayWorkout() {
               <div className="mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-1 text-muted small">
                   <span>Tiến độ hoàn thành: {stats.completed}/{stats.total} bài tập</span>
-                  <span className="fw-bold text-light">{stats.percent}%</span>
+                  <span className="fw-bold" style={{ color: "var(--ink)" }}>{stats.percent}%</span>
                 </div>
-                <ProgressBar 
-                  now={stats.percent} 
-                  style={{ height: "8px", backgroundColor: "var(--border)" }}
+                <ProgressBar
+                  now={stats.percent}
+                  style={{ height: "8px", backgroundColor: "var(--hair)" }}
                   variant={stats.percent === 100 ? "success" : "info"}
                 />
               </div>
@@ -371,15 +371,15 @@ export default function TodayWorkout() {
                             : isSkipped 
                             ? "rgba(108, 117, 125, 0.08)"
                             : "var(--surface-2)",
-                          border: isCompleted 
-                            ? "1px solid rgba(25, 135, 84, 0.2)" 
-                            : "1px solid var(--border)",
+                          border: isCompleted
+                            ? "1px solid color-mix(in srgb, var(--green) 30%, transparent)"
+                            : "1px solid var(--hair)",
                           borderRadius: "12px"
                         }}
                       >
                         <div className="d-flex justify-content-between align-items-start gap-2">
                           <div>
-                            <h6 className="fw-bold text-light mb-1">
+                            <h6 className="fw-bold mb-1" style={{ color: "var(--ink)" }}>
                               {ex.exerciseName}
                             </h6>
                             <div className="d-flex gap-2 align-items-center flex-wrap mt-1">
