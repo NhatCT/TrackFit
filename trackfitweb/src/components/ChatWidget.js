@@ -299,7 +299,7 @@ export default function ChatWidget({ requireAuth = false }) {
           <div className="gutim-hd">
             <div className="gutim-avatar">
               {gutimAvatar ? <img src={gutimAvatar} alt="Gutim Coach" /> : <FallbackChibi />}
-              <span className="gutim-dot" style={{ background: statusOk ? "#22c55e" : "#ef4444" }} />
+              <span className="gutim-dot" style={{ background: statusOk ? "var(--green)" : "var(--danger)" }} />
             </div>
             <div className="gutim-title">
               <div className="gutim-name">Gutim Coach</div>

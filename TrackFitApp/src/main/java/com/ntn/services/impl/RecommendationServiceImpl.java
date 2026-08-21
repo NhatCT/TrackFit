@@ -7,6 +7,7 @@ import com.ntn.pojo.HealthData;
 import com.ntn.pojo.User;
 import com.ntn.repositories.*;
 import com.ntn.services.RecommendationService;
+import com.ntn.utils.HealthUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -67,6 +68,9 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .filter(h -> h.getUpdatedAt() != null)
                 .max(Comparator.comparing(HealthData::getUpdatedAt))
                 .orElse(null);
+
+        // BMI hiện tại (nếu có) để cá nhân hóa thứ hạng gợi ý. effectively-final để dùng trong lambda.
+        final Double bmi = HealthUtils.bmiOf(latestHealth);
 
         String goalType = pick(params.getGoalType(),
                 latestGoal != null ? latestGoal.getGoalType() : null,
@@ -170,9 +174,17 @@ public class RecommendationServiceImpl implements RecommendationService {
             System.out.println("[AI_RECO] Bypass – chỉ dùng DB baseline");
         }
 
+        // --------- Điểm hiệu dụng: điểm nền (AI hoặc 0) + boost theo BMI ---------
+        // Hoạt động cả khi AI tắt (scoreMap rỗng) → gợi ý vẫn ưu tiên theo thể trạng.
+        Map<Integer, Double> effectiveScore = new HashMap<>();
+        for (Exercises e : candidates) {
+            double base = scoreMap.getOrDefault(e.getExercisesId(), 0.0);
+            effectiveScore.put(e.getExercisesId(), base + healthBoost(e, bmi));
+        }
+
         // --------- Sắp xếp & đa dạng hoá ---------
         candidates.sort(
-            Comparator.comparing((Exercises e) -> scoreMap.getOrDefault(e.getExercisesId(), 0.0)).reversed()
+            Comparator.comparing((Exercises e) -> effectiveScore.getOrDefault(e.getExercisesId(), 0.0)).reversed()
                 .thenComparing(e -> e.getTargetGoal() != null
                         && e.getTargetGoal().equalsIgnoreCase(goalType) ? 0 : 1)
                 .thenComparing(e -> e.getCreatedAt() != null ? -e.getCreatedAt().getTime() : 0L)
@@ -230,6 +242,12 @@ public class RecommendationServiceImpl implements RecommendationService {
                             : "Fallback (DB) – Sắp xếp theo mục tiêu & thời gian tạo";
                 }
             }
+            // Nêu lý do sức khỏe khi bài này được ưu tiên theo BMI
+            if (bmi != null && healthBoost(e, bmi) > 0) {
+                String bl = HealthUtils.bmiLabel(bmi);
+                String tail = (bmi >= 23) ? "ưu tiên đốt mỡ" : "ưu tiên tăng cơ";
+                reason += String.format(Locale.US, " · BMI %.1f (%s) → %s", bmi, bl, tail);
+            }
             dto.setReason(reason);
 
             Integer estMinutes = parseMinutesFromTargetGoal(e.getTargetGoal());
@@ -264,6 +282,30 @@ public class RecommendationServiceImpl implements RecommendationService {
         if (completionRate < 0.5 && idx > 0) idx--;
         if (completionRate > 0.85 && idx < 2) idx++;
         return scale.get(idx);
+    }
+
+    /**
+     * Điểm cộng theo BMI: thừa cân/béo (BMI≥23) ưu tiên bài đốt mỡ/cardio;
+     * thiếu cân (BMI&lt;18.5) ưu tiên bài tăng cơ. Bình thường hoặc thiếu dữ liệu → 0.
+     */
+    private double healthBoost(Exercises e, Double bmi) {
+        if (bmi == null) return 0.0;
+        String tg = e.getTargetGoal() != null ? e.getTargetGoal().toLowerCase() : "";
+        String mg = e.getMuscleGroup() != null ? e.getMuscleGroup().toLowerCase() : "";
+        String hay = tg + " " + mg;
+        if (bmi >= 23) {
+            if (hay.contains("fat_loss") || hay.contains("fat loss") || hay.contains("cardio")
+                    || hay.contains("weight") || hay.contains("hiit") || hay.contains("endurance")
+                    || hay.contains("giảm") || hay.contains("mỡ")) {
+                return 0.3;
+            }
+        } else if (bmi < 18.5) {
+            if (hay.contains("muscle") || hay.contains("gain") || hay.contains("strength")
+                    || hay.contains("hypertrophy") || hay.contains("tăng cơ") || hay.contains("cơ bắp")) {
+                return 0.3;
+            }
+        }
+        return 0.0;
     }
 
     private double recentCompletionRate(Integer userId, int days) {

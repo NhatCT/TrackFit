@@ -366,10 +366,10 @@ export default function TodayWorkout() {
                       <Card 
                         className={`h-100 border-0 p-3`} 
                         style={{ 
-                          background: isCompleted 
-                            ? "rgba(25, 135, 84, 0.08)" 
-                            : isSkipped 
-                            ? "rgba(108, 117, 125, 0.08)"
+                          background: isCompleted
+                            ? "color-mix(in srgb, var(--green) 8%, transparent)"
+                            : isSkipped
+                            ? "color-mix(in srgb, var(--muted) 10%, transparent)"
                             : "var(--surface-2)",
                           border: isCompleted
                             ? "1px solid color-mix(in srgb, var(--green) 30%, transparent)"

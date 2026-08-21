@@ -96,9 +96,9 @@ const App = () => {
                 backdropFilter: "blur(10px)",
                 color: "#fff",
                 borderRadius: "12px",
-                borderLeft: t.type === "ADVICE" ? "4px solid #198754" 
-                           : t.type === "REMINDER" ? "4px solid #ffc107" 
-                           : "4px solid #0d6efd",
+                borderLeft: t.type === "ADVICE" ? "4px solid var(--green)"
+                           : t.type === "REMINDER" ? "4px solid var(--amber)"
+                           : "4px solid var(--blue)",
               }}
             >
               <Toast.Header closeButton={true} className="border-0 text-white bg-transparent">

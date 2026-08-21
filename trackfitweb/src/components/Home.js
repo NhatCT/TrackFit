@@ -203,12 +203,12 @@ const Home = () => {
 
             {/* Hàng 1: Vòng Activity + BMI + Chuỗi */}
             <Row className="g-3">
-              <Col lg={5}>
-                <div className="g-card h-100 d-flex align-items-center">
+              <Col lg={5} md={12}>
+                <div className="g-card h-100 d-flex align-items-center justify-content-center">
                   <ActivityRings rings={rings} />
                 </div>
               </Col>
-              <Col lg={4} xs={6}>
+              <Col lg={4} md={6} xs={12} sm={6}>
                 <MetricCard
                   color="purple"
                   name="BMI"
@@ -225,7 +225,7 @@ const Home = () => {
                   }
                 />
               </Col>
-              <Col lg={3} xs={6}>
+              <Col lg={3} md={6} xs={12} sm={6}>
                 <MetricCard
                   color="pink"
                   name="Chuỗi"

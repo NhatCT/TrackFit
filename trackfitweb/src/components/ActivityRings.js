@@ -10,7 +10,7 @@ export default function ActivityRings({ rings = [], size = 132 }) {
   const radii = rings.map((_, i) => size / 2 - 8 - i * (sw + gap));
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flex: "none" }}>
         <g fill="none" strokeLinecap="round" strokeWidth={sw}>
           {rings.map((r, i) => {
