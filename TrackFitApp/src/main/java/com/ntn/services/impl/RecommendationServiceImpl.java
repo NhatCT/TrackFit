@@ -48,7 +48,7 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Override
     @Cacheable(
         value = "reco_exercises",
-        key = "#p0 + '_' + (#p1.size==null?8:#p1.size) + '_' + "
+        key = "(#p0==null?'':#p0) + '|' + (#p1.size==null?8:#p1.size) + '_' + "
              + "(#p1.kw==null?'':#p1.kw) + '_' + "
              + "(#p1.availableMinutes==null?25:#p1.availableMinutes) + '_' + "
              + "(#p1.intensity==null?'':#p1.intensity) + '_' + "

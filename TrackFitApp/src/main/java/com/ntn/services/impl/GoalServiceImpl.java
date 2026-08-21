@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ public class GoalServiceImpl implements GoalService {
     private GoalRepository goalRepo;
 
     @Override
+    @CacheEvict(value = "reco_exercises", allEntries = true)
     public void create(String username, GoalDTO dto) {
         User user = mustGetUser(username);
         Goal g = new Goal();
@@ -35,6 +37,7 @@ public class GoalServiceImpl implements GoalService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<GoalDTO> listByUsername(String username) {
         User user = mustGetUser(username);
         return goalRepo.findByUserId(user.getUserId()).stream().map(g -> {
@@ -55,6 +58,7 @@ public class GoalServiceImpl implements GoalService {
     }
 
     @Override
+    @CacheEvict(value = "reco_exercises", allEntries = true)
     public void update(String username, Integer goalId, GoalDTO dto) {
         User user = mustGetUser(username);
         Goal g = mustGetOwnedGoal(user, goalId);

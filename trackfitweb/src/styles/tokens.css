@@ -1,0 +1,249 @@
+/* =====================================================================
+   Gutim Design Tokens  —  nền "Apple Health" (sáng/tối tối giản)
+   + cá tính "Performance" (accent thương hiệu, số liệu lớn, gauge).
+   Nguồn chân lý DUY NHẤT cho màu/spacing/typography của toàn app.
+   Thay thế cho 2 file theme.css cũ đối chọi nhau.
+   ===================================================================== */
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap");
+
+/* ---------- LIGHT (mặc định) — iOS grouped ---------- */
+:root{
+  /* nền & bề mặt */
+  --bg:#F2F2F7;
+  --surface:#FFFFFF;
+  --surface-2:#F7F7FB;
+  --surface-3:#EDEDF2;
+
+  /* chữ */
+  --ink:#1C1C1E;
+  --ink-2:#3A3A3C;
+  --muted:#8E8E93;
+  --faint:#AEAEB2;
+
+  /* biến RGB triplet để cầu nối các util *-rgb của Bootstrap 5.3 */
+  --ink-rgb:28,28,30;
+  --muted-rgb:142,142,147;
+
+  /* đường kẻ */
+  --hair:#E5E5EA;
+  --sep:#ECECF1;
+
+  /* accent thương hiệu Gutim (giữ tinh thần cam, tinh chỉnh lại) */
+  --brand:#F2612C;
+  --brand-2:#FF8A4C;
+  --brand-ink:#FFFFFF;
+  --brand-soft:rgba(242,97,44,.12);
+
+  /* màu danh mục (dữ liệu) — hệ iOS */
+  --pink:#FF2D55;
+  --green:#34C759;
+  --cyan:#00C7BE;
+  --blue:#0A84FF;
+  --purple:#AF52DE;
+  --amber:#FF9500;
+
+  /* semantic */
+  --ok:var(--green);
+  --warn:var(--amber);
+  --danger:#FF3B30;
+
+  /* hình khối */
+  --radius:20px;
+  --radius-sm:14px;
+  --radius-pill:999px;
+  --shadow:0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.05);
+
+  /* thanh header luôn tối (branded bar) ở cả 2 theme */
+  --header-bg:linear-gradient(180deg,#141B29,#0E1420);
+  --header-line:rgba(255,255,255,.08);
+
+  /* chữ số & nhãn */
+  --font-round:"Nunito", system-ui, sans-serif;
+  --font-ui:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+}
+
+/* ----- Cầu nối sang Bootstrap 5.3 -----
+   Khóa theo [data-bs-theme] để specificity (0,1,1) THẮNG các biến mặc định
+   của Bootstrap (0,1,0), bất kể thứ tự nạp CSS. Giá trị trỏ về token nên
+   tự đổi theo sáng/tối. */
+:root[data-bs-theme]{
+  --bs-body-bg:var(--bg);
+  --bs-body-color:var(--ink);
+  --bs-border-color:var(--hair);
+  --bs-secondary-bg:var(--surface-2);
+  --bs-tertiary-bg:var(--surface-3);
+  --bs-secondary-color:var(--muted);
+  --bs-secondary-color-rgb:var(--muted-rgb);
+  --bs-tertiary-color:var(--faint);
+  --bs-emphasis-color:var(--ink);
+  --bs-body-color-rgb:var(--ink-rgb);
+  --bs-emphasis-color-rgb:var(--ink-rgb);
+  --bs-heading-color:var(--ink);
+  --bs-primary:var(--brand);
+  --bs-link-color:var(--brand);
+  --bs-link-hover-color:var(--brand-2);
+}
+
+/* ---------- DARK ---------- */
+:root[data-theme="dark"]{
+  --bg:#000000;
+  --surface:#1C1C1E;
+  --surface-2:#2C2C2E;
+  --surface-3:#3A3A3C;
+
+  --ink:#FFFFFF;
+  --ink-2:#EBEBF0;
+  --muted:#98989F;
+  --faint:#6C6C70;
+
+  --ink-rgb:255,255,255;
+  --muted-rgb:152,152,159;
+
+  --hair:#38383A;
+  --sep:#2C2C2E;
+
+  --brand:#FF6A38;
+  --brand-2:#FF9A63;
+  --brand-soft:rgba(255,106,56,.16);
+
+  --pink:#FF375F;
+  --green:#30D158;
+  --cyan:#66D4CF;
+  --blue:#0A84FF;
+  --purple:#BF5AF2;
+  --amber:#FF9F0A;
+  --danger:#FF453A;
+
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.5);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.4);
+}
+
+/* theo hệ điều hành khi người dùng chưa chọn thủ công */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000;
+    --surface:#1C1C1E;
+    --surface-2:#2C2C2E;
+    --surface-3:#3A3A3C;
+    --ink:#FFFFFF;
+    --ink-2:#EBEBF0;
+    --muted:#98989F;
+    --faint:#6C6C70;
+    --ink-rgb:255,255,255;
+    --muted-rgb:152,152,159;
+    --hair:#38383A;
+    --sep:#2C2C2E;
+    --brand:#FF6A38;
+    --brand-2:#FF9A63;
+    --brand-soft:rgba(255,106,56,.16);
+    --pink:#FF375F; --green:#30D158; --cyan:#66D4CF; --blue:#0A84FF;
+    --purple:#BF5AF2; --amber:#FF9F0A; --danger:#FF453A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.5);
+    --shadow-sm:0 1px 3px rgba(0,0,0,.4);
+  }
+}
+
+/* ---------- Nền trang & yếu tố cơ bản ---------- */
+html, body, #root{ min-height:100%; }
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-ui);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  transition:background-color .25s ease, color .25s ease;
+}
+
+/* Card Bootstrap dùng bề mặt token (nổi trên nền grouped). Dùng :root để
+   specificity (0,2,0) thắng biến mặc định .card của Bootstrap (0,1,0). */
+:root .card{
+  --bs-card-bg:var(--surface);
+  --bs-card-color:var(--ink);
+  --bs-card-border-color:var(--hair);
+  border-radius:var(--radius);
+}
+
+/* Selection & scrollbar */
+::selection{ background:var(--brand-soft); color:var(--ink); }
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:var(--hair); border-radius:6px; border:2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover{ background:var(--muted); }
+
+/* Font tròn cho số liệu & tiêu đề "sản phẩm" */
+.g-round{ font-family:var(--font-round); }
+.g-num{ font-variant-numeric:tabular-nums; }
+
+/* =====================================================================
+   Component helpers — để các trang chuyển dần sang token (không ép buộc)
+   ===================================================================== */
+
+/* Thẻ nền tảng */
+.g-card{
+  background:var(--surface);
+  border:1px solid var(--hair);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+}
+.g-card--tap{ transition:transform .18s ease, box-shadow .18s ease; cursor:pointer; }
+.g-card--tap:hover{ transform:translateY(-3px); box-shadow:var(--shadow); }
+
+/* Nhãn nhỏ kiểu mono/caps */
+.g-label{
+  font-family:var(--font-ui);
+  font-size:12px; font-weight:700; letter-spacing:.02em;
+  color:var(--muted);
+}
+
+/* Số liệu lớn (Performance) */
+.g-value{
+  font-family:var(--font-round);
+  font-weight:900; letter-spacing:-.02em; line-height:1;
+  font-size:2.6rem;
+  font-variant-numeric:tabular-nums;
+}
+.g-value .g-unit{ font-family:var(--font-ui); font-size:1rem; font-weight:700; color:var(--muted); margin-left:5px; }
+
+/* Chỉ báo xu hướng */
+.g-trend{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font-round);
+  font-weight:800; font-size:.82rem; padding:3px 9px; border-radius:var(--radius-pill); }
+.g-trend--down{ color:var(--green); background:color-mix(in srgb, var(--green) 15%, transparent); }
+.g-trend--up{ color:var(--amber); background:color-mix(in srgb, var(--amber) 15%, transparent); }
+
+/* Icon-tile màu danh mục */
+.g-ic{ width:30px; height:30px; border-radius:9px; display:grid; place-items:center; flex:none; }
+.g-ic--brand{ background:var(--brand-soft); color:var(--brand); }
+.g-ic--purple{ background:color-mix(in srgb,var(--purple) 15%,transparent); color:var(--purple); }
+.g-ic--green{ background:color-mix(in srgb,var(--green) 15%,transparent); color:var(--green); }
+.g-ic--pink{ background:color-mix(in srgb,var(--pink) 15%,transparent); color:var(--pink); }
+.g-ic--blue{ background:color-mix(in srgb,var(--blue) 15%,transparent); color:var(--blue); }
+
+/* Nút thương hiệu */
+.g-btn{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:var(--font-round); font-weight:800; font-size:15px;
+  border:none; border-radius:var(--radius-sm); padding:12px 20px; cursor:pointer;
+  background:var(--brand); color:var(--brand-ink);
+  box-shadow:0 6px 18px var(--brand-soft); transition:.18s;
+}
+.g-btn:hover{ transform:translateY(-2px); filter:brightness(1.03); }
+.g-btn--ghost{ background:var(--surface-2); color:var(--ink); box-shadow:none; border:1px solid var(--hair); }
+
+/* Pill/tag */
+.g-pill{ font-family:var(--font-ui); font-size:11.5px; font-weight:600; color:var(--muted);
+  background:var(--surface-2); border:1px solid var(--hair); border-radius:var(--radius-pill); padding:3px 10px; }
+
+/* Vòng gauge — track dùng chung */
+.g-ring-track{ stroke:var(--hair); }
+
+/* Thanh header luôn tối (branded) ở cả 2 theme */
+.g-header{ background:var(--header-bg); border-bottom:1px solid var(--header-line); }
+
+/* Tôn trọng người dùng giảm chuyển động */
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; animation:none !important; }
+}

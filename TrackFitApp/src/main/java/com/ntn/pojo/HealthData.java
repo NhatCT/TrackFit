@@ -43,7 +43,7 @@ public class HealthData implements Serializable {
     private Date updatedAt;
 
     @JoinColumn(name = "user_id", referencedColumnName = "user_id")
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private User userId;
 
     public HealthData() {

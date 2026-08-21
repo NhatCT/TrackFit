@@ -9,6 +9,8 @@ import com.ntn.pojo.WorkoutPlan;
 import com.ntn.repositories.*;
 import com.ntn.services.WorkoutPlanService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,6 +80,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         if (p == null) {
             throw new IllegalArgumentException("Không tìm thấy kế hoạch");
         }
+        assertPlanOwnership(p);
         return toPlanDTO(p);
     }
 
@@ -128,6 +131,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         if (p == null) {
             throw new IllegalArgumentException("Không tìm thấy kế hoạch");
         }
+        assertPlanOwnership(p);
         PlanDetail saved = addDetailEntity(p, dto);
         return toDetailDTO(saved);
     }
@@ -138,6 +142,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         if (d == null) {
             throw new IllegalArgumentException("Không tìm thấy dòng chi tiết");
         }
+        assertPlanOwnership(d.getPlanId());
 
         if (dto.getExerciseId() != null) {
             Exercises ex = exercisesRepo.findById(dto.getExerciseId());
@@ -163,6 +168,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         if (d == null) {
             throw new IllegalArgumentException("Không tìm thấy dòng chi tiết");
         }
+        assertPlanOwnership(d.getPlanId());
         detailRepo.delete(d);
     }
 
@@ -172,6 +178,26 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
             throw new IllegalArgumentException("Không tìm thấy người dùng");
         }
         return u;
+    }
+
+    /**
+     * Enforce that the currently-authenticated caller owns the given plan.
+     * ADMIN callers bypass the ownership check (legitimate admin path).
+     * Throws the same message pattern used by deletePlan on violation.
+     */
+    private void assertPlanOwnership(WorkoutPlan plan) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean admin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equalsIgnoreCase(a.getAuthority()));
+        if (admin) {
+            return;
+        }
+        String username = auth != null ? auth.getName() : null;
+        User current = username != null ? userRepo.getUserByUsername(username) : null;
+        if (current == null || plan == null || plan.getUserId() == null
+                || !plan.getUserId().getUserId().equals(current.getUserId())) {
+            throw new IllegalArgumentException("Kế hoạch không tồn tại hoặc không thuộc về bạn");
+        }
     }
 
     private String displayUserName(User u) {
@@ -335,6 +361,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
         if (p == null) {
             throw new IllegalArgumentException("Không tìm thấy kế hoạch");
         }
+        assertPlanOwnership(p);
 
         if (req.getPlanName() != null && !req.getPlanName().isBlank()) {
             p.setPlanName(req.getPlanName().trim());

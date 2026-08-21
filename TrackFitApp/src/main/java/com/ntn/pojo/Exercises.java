@@ -11,6 +11,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Lob;
 import jakarta.persistence.NamedQueries;
 import jakarta.persistence.NamedQuery;
@@ -27,7 +28,9 @@ import java.util.Set;
  * @author Thanh Nhat
  */
 @Entity
-@Table(name = "exercises")
+@Table(name = "exercises", indexes = {
+    @Index(name = "idx_exercises_name", columnList = "name")
+})
 @NamedQueries({
     @NamedQuery(name = "Exercises.findAll", query = "SELECT e FROM Exercises e"),
     @NamedQuery(name = "Exercises.findByExercisesId", query = "SELECT e FROM Exercises e WHERE e.exercisesId = :exercisesId"),
@@ -158,22 +161,24 @@ public class Exercises implements Serializable {
 
     @Override
     public int hashCode() {
-        int hash = 0;
-        hash += (exercisesId != null ? exercisesId.hashCode() : 0);
-        return hash;
+        // Stable, non-zero hash for transient (null-id) instances so HashSet does not drop distinct new entities.
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object object) {
-        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (this == object) {
+            return true;
+        }
         if (!(object instanceof Exercises)) {
             return false;
         }
         Exercises other = (Exercises) object;
-        if ((this.exercisesId == null && other.exercisesId != null) || (this.exercisesId != null && !this.exercisesId.equals(other.exercisesId))) {
+        // Two transient instances (null id) are only equal by reference, handled above.
+        if (this.exercisesId == null || other.exercisesId == null) {
             return false;
         }
-        return true;
+        return this.exercisesId.equals(other.exercisesId);
     }
 
     @Override

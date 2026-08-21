@@ -36,7 +36,7 @@ public class User implements Serializable {
 
     @NotBlank(message = "Tên người dùng không được để trống")
     @Size(min = 4, max = 50, message = "Tên người dùng phải từ 4-50 ký tự")
-    @Column(name = "username", nullable = false)
+    @Column(name = "username", nullable = false, unique = true)
     private String username;
 
     @NotBlank(message = "Mật khẩu không được để trống")
@@ -47,7 +47,7 @@ public class User implements Serializable {
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")
     @Size(max = 100)
-    @Column(name = "email", nullable = false)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
     @NotBlank(message = "Họ không được để trống")

@@ -133,13 +133,13 @@ const Home = () => {
       {
         label: "Cân nặng (kg)",
         data: weightData,
-        borderColor: "#4cc9f0",
-        backgroundColor: "rgba(76,201,240,0.12)",
+        borderColor: "#34C759",
+        backgroundColor: "rgba(52,199,89,0.14)",
         fill: true,
         tension: 0.35,
         pointRadius: 4,
         pointHoverRadius: 6,
-        pointBackgroundColor: "#4cc9f0",
+        pointBackgroundColor: "#34C759",
       },
     ],
   };
@@ -150,13 +150,13 @@ const Home = () => {
       {
         label: "BMI",
         data: bmiDataHistory,
-        borderColor: "#ff6b35",
-        backgroundColor: "rgba(255,107,53,0.12)",
+        borderColor: "#F2612C",
+        backgroundColor: "rgba(242,97,44,0.12)",
         fill: true,
         tension: 0.35,
         pointRadius: 4,
         pointHoverRadius: 6,
-        pointBackgroundColor: "#ff6b35",
+        pointBackgroundColor: "#F2612C",
       },
     ],
   };
@@ -182,12 +182,12 @@ const Home = () => {
     scales: {
       x: {
         grid: { display: false },
-        ticks: { color: "rgba(255,255,255,0.5)", maxRotation: 0, font: { size: 9 } },
+        ticks: { color: "rgba(142,142,147,0.9)", maxRotation: 0, font: { size: 9 } },
       },
       y: {
         beginAtZero: false,
-        grid: { color: "rgba(255,255,255,0.05)" },
-        ticks: { color: "rgba(255,255,255,0.5)", font: { size: 9 } },
+        grid: { color: "rgba(142,142,147,0.18)" },
+        ticks: { color: "rgba(142,142,147,0.9)", font: { size: 9 } },
       },
     },
   });
@@ -283,11 +283,11 @@ const Home = () => {
                     <Row>
                       <Col xs={6} className="mb-3">
                         <div className="text-muted small">Tổng phút</div>
-                        <div className="fs-4 fw-bold">{stats?.totalMinutes ?? "--"}</div>
+                        <div className="fs-4 fw-bold g-round g-num">{stats?.totalMinutes ?? "--"}</div>
                       </Col>
                       <Col xs={6} className="mb-3">
                         <div className="text-muted small">Số buổi</div>
-                        <div className="fs-4 fw-bold">{stats?.sessions ?? "--"}</div>
+                        <div className="fs-4 fw-bold g-round g-num">{stats?.sessions ?? "--"}</div>
                       </Col>
                       <Col xs={12} className="mb-2">
                         <div className="text-muted small">Bài phổ biến</div>
@@ -335,19 +335,19 @@ const Home = () => {
               </Col>
               
               <Col lg={5}>
-                <Card 
-                  className="shadow-sm border-0 h-100 text-light" 
-                  style={{ 
-                    background: "var(--surface)", 
-                    border: "1px solid var(--border)", 
+                <Card
+                  className="shadow-sm h-100"
+                  style={{
+                    background: "var(--surface)",
+                    border: "1px solid var(--hair)",
                     borderRadius: "16px",
                     minHeight: "380px"
-                  }} 
+                  }}
                   data-aos="fade-up"
                 >
                   <Card.Header className="bg-transparent border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
                     <div>
-                      <h5 className="fw-bold m-0 text-light">📈 Biểu đồ xu hướng</h5>
+                      <h5 className="fw-bold m-0 g-round">📈 Biểu đồ xu hướng</h5>
                       <p className="text-muted m-0 small" style={{ fontSize: "0.8rem" }}>Theo dõi thay đổi chỉ số cơ thể</p>
                     </div>
                     {sortedAsc.length >= 2 && (
@@ -376,14 +376,14 @@ const Home = () => {
                     {sortedAsc.length === 0 ? (
                       <div className="text-center py-5 text-muted">
                         <div className="fs-1 mb-2">📊</div>
-                        <h6 className="fw-bold text-light">Chưa có chỉ số sức khỏe</h6>
+                        <h6 className="fw-bold">Chưa có chỉ số sức khỏe</h6>
                         <p className="text-muted small mb-3">Vui lòng điền thông số thể trạng để bắt đầu theo dõi sức khỏe.</p>
                         <Button href="/health" variant="outline-primary" size="sm">
                           + Nhập chỉ số ngay
                         </Button>
                       </div>
                     ) : sortedAsc.length === 1 ? (
-                      <div className="text-center py-5 text-muted" style={{ border: "1px dashed rgba(255,255,255,0.1)", borderRadius: "12px", margin: "10px" }}>
+                      <div className="text-center py-5 text-muted" style={{ border: "1px dashed var(--hair)", borderRadius: "12px", margin: "10px" }}>
                         <div className="fs-2 mb-2">💡</div>
                         <p className="m-0 px-3" style={{ fontSize: "0.85rem" }}>
                           Bạn mới có 1 bản ghi sức khỏe. Hãy nhập thêm các chỉ số cân nặng tiếp theo tại trang Sức khỏe để bắt đầu vẽ biểu đồ xu hướng!

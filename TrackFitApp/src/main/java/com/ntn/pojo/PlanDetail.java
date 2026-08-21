@@ -7,6 +7,7 @@ package com.ntn.pojo;
 import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -46,10 +47,10 @@ public class PlanDetail implements Serializable {
     @Column(name = "duration")
     private Integer duration;
     @JoinColumn(name = "exercises_id", referencedColumnName = "exercises_id")
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private Exercises exercisesId;
     @JoinColumn(name = "plan_id", referencedColumnName = "plan_id")
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     private WorkoutPlan planId;
 
     public PlanDetail() {
@@ -101,22 +102,24 @@ public class PlanDetail implements Serializable {
 
     @Override
     public int hashCode() {
-        int hash = 0;
-        hash += (detailId != null ? detailId.hashCode() : 0);
-        return hash;
+        // Stable, non-zero hash for transient (null-id) instances so HashSet does not drop distinct new entities.
+        return getClass().hashCode();
     }
 
     @Override
     public boolean equals(Object object) {
-        // TODO: Warning - this method won't work in the case the id fields are not set
+        if (this == object) {
+            return true;
+        }
         if (!(object instanceof PlanDetail)) {
             return false;
         }
         PlanDetail other = (PlanDetail) object;
-        if ((this.detailId == null && other.detailId != null) || (this.detailId != null && !this.detailId.equals(other.detailId))) {
+        // Two transient instances (null id) are only equal by reference, handled above.
+        if (this.detailId == null || other.detailId == null) {
             return false;
         }
-        return true;
+        return this.detailId.equals(other.detailId);
     }
 
     @Override
