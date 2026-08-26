@@ -2,7 +2,9 @@
 FROM maven:3.9.6-eclipse-temurin-17 AS builder
 WORKDIR /build
 COPY pom.xml .
-RUN mvn -q -U -DskipTests dependency:go-offline
+# go-offline pre-warms the dependency cache; || true makes transient Maven Central
+# 520 errors non-fatal — the subsequent package step re-downloads anything missing.
+RUN mvn -q -U -DskipTests dependency:go-offline || true
 
 COPY src ./src
 RUN mvn -q -DskipTests package

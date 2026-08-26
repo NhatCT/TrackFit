@@ -1,0 +1,52 @@
+# render.yaml — Render Blueprint cho TrackFit backend
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Cách dùng: push file này lên main → vào Render Dashboard → New → Blueprint → chọn repo.
+# Các envVar đánh dấu sync:false cần nhập tay 1 lần trong Render Dashboard (Secrets).
+
+services:
+  - type: web
+    name: trackfit-backend
+    runtime: docker
+    dockerfilePath: TrackFitApp/Dockerfile
+    dockerContext: TrackFitApp
+    plan: free
+    healthCheckPath: /TrackFit/
+    envVars:
+      # ── Database (Aiven MySQL) ──────────────────────────────────────────────
+      - key: DB_URL
+        sync: false   # jdbc:mysql://<host>:<port>/defaultdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+      - key: DB_USERNAME
+        sync: false   # avnadmin
+      - key: DB_PASSWORD
+        sync: false
+
+      # ── Cache (Upstash Redis) ───────────────────────────────────────────────
+      - key: REDIS_HOST
+        sync: false   # redis-xxx.upstash.io
+      - key: REDIS_PORT
+        value: "6379"
+      - key: REDIS_PASSWORD
+        sync: false
+
+      # ── AI Microservice (Hugging Face Spaces) ──────────────────────────────
+      - key: AI_RECO_URL
+        value: https://nhatdaily-trackfit-ai.hf.space
+
+      # ── CORS ───────────────────────────────────────────────────────────────
+      - key: ALLOWED_ORIGINS
+        value: https://track-fit-web-nine.vercel.app,https://trackfit-backend-5yyi.onrender.com
+
+      # ── Media (Cloudinary) ─────────────────────────────────────────────────
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false   # dywix6n0z
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      # ── Feature flags ──────────────────────────────────────────────────────
+      - key: KAFKA_ENABLED
+        value: "false"
+      - key: FLYWAY_ENABLED
+        value: "true"
