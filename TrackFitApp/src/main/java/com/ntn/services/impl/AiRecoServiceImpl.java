@@ -188,7 +188,7 @@ public class AiRecoServiceImpl implements AiRecoService {
 
             HttpResponse<String> resp = sendWithRetry(req);
 
-            System.out.println("[AI CHAT] status=" + resp.statusCode() + " body=" + resp.body());
+            System.out.println("[AI CHAT] status=" + resp.statusCode());
 
             if (resp.statusCode() != 200 || resp.body() == null || resp.body().isBlank()) {
                 fallback.setAnswer("AI hiện không phản hồi. Thử lại sau.");

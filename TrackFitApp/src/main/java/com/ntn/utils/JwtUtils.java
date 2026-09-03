@@ -11,8 +11,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class JwtUtils {
-    // Dev fallback secret; used only when JWT_SECRET env var is missing/too short.
-    private static final String DEV_SECRET = "12345678901234567890123456789012";
     private static final String SECRET = resolveSecret();
     private static final long EXPIRATION_MS = resolveExpirationMs();
 
@@ -23,9 +21,15 @@ public class JwtUtils {
         if (env != null && env.length() >= 32) {
             return env;
         }
-        System.err.println("[JwtUtils][WARN] JWT_SECRET env var not set or shorter than 32 chars; "
-                + "falling back to the built-in DEV secret. Do NOT use this in production.");
-        return DEV_SECRET;
+        throw new IllegalStateException("JWT_SECRET must be configured with at least 32 characters.");
+    }
+
+    /** Forces validation during application startup instead of on the first authenticated request. */
+    public static void validateConfiguration() {
+        // Accessing SECRET triggers the class initialization above.
+        if (SECRET.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET must not be blank.");
+        }
     }
 
     private static long resolveExpirationMs() {

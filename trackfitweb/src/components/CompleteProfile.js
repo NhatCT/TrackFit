@@ -1,6 +1,6 @@
 import { useContext, useState } from "react";
 import { Alert, Button, Form } from "react-bootstrap";
-import { authApis, endpoints } from "../configs/Apis";
+import { authApis, authCookieOptions, endpoints } from "../configs/Apis";
 import { useNavigate } from "react-router-dom";
 import MySpinner from "./layout/MySpinner";
 import cookie from "react-cookies";
@@ -64,7 +64,7 @@ const CompleteProfile = () => {
         const profileRes = await authApis().get(endpoints.profile());
         const profileData = profileRes.data || {};
 
-        cookie.save("user", JSON.stringify(profileData), { path: "/" });
+        cookie.save("user", JSON.stringify(profileData), authCookieOptions);
         dispatch({ type: "login", payload: profileData });
 
         nav("/");

@@ -2,7 +2,7 @@
 // Vòng Activity kiểu Apple Health — nhiều lớp đồng tâm, mỗi vòng một chỉ số.
 // Màu lấy từ token (truyền qua prop). Tôn trọng prefers-reduced-motion nhờ rule
 // global trong tokens.css.
-export default function ActivityRings({ rings = [], size = 132 }) {
+export default function ActivityRings({ rings = [], size = 120 }) {
   const cx = size / 2;
   const cy = size / 2;
   const sw = 11; // độ dày vòng
@@ -11,7 +11,14 @@ export default function ActivityRings({ rings = [], size = 132 }) {
 
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flex: "none" }}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        role="img"
+        aria-label={rings.map(r => `${r.label}: ${r.display ?? r.value}${r.unit ? ' ' + r.unit : ''}`).join(', ')}
+        style={{ flex: "none", maxWidth: "100%" }}
+      >
         <g fill="none" strokeLinecap="round" strokeWidth={sw}>
           {rings.map((r, i) => {
             const radius = radii[i];

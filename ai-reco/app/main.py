@@ -7,7 +7,9 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 
-from .embed_index import reindex as _reindex, search as _search, rank as _rank, as_langchain_retriever
+from .embed_index import reindex as _reindex, search as _search, rank as _rank
+from .ranker import rank as _personalized_rank
+from .schemas import AiRankRequest, Candidate, UserInfo
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
 
@@ -85,6 +87,8 @@ class RankIn(BaseModel):
     query: str
     candidates: List[Item] = Field(default_factory=list)
     topK: int = Field(10, gt=0, le=200)
+    user: Optional[dict] = None
+    context: Optional[dict] = None
 
 class ChatIn(BaseModel):
     sessionId: str
@@ -112,20 +116,42 @@ def reindex(body: ReindexIn):
 def rank(body: RankIn):
     if not body.query or not body.candidates:
         raise HTTPException(status_code=400, detail="Missing query or candidates.")
-    ranked = _rank(body.query, [c.model_dump() for c in body.candidates], k=body.topK)
-    return {"items": ranked}
+    if body.context is None and body.user is None:
+        ranked = _rank(body.query, [c.model_dump() for c in body.candidates], k=body.topK)
+        return {"items": ranked}
+
+    personalized = AiRankRequest(
+        user=UserInfo.model_validate(body.user) if body.user else None,
+        context={**(body.context or {}), "kw": body.query},
+        candidates=[
+            Candidate(
+                exerciseId=int(item.id),
+                name=item.title,
+                muscleGroup=item.group,
+                minutes=item.model_extra.get("minutes") if item.model_extra else None,
+                difficulty=item.model_extra.get("difficulty") if item.model_extra else None,
+            )
+            for item in body.candidates
+        ],
+    )
+    originals = {str(item.id): item.model_dump() for item in body.candidates}
+    ranked = _personalized_rank(personalized)[:body.topK]
+    return {
+        "items": [
+            {
+                **originals[str(item.exerciseId)],
+                "score": item.score,
+                "reason": item.reason,
+            }
+            for item in ranked
+        ]
+    }
 
 @app.post("/chat")
 def chat(body: ChatIn):
-    retriever = as_langchain_retriever(k=body.topK or 4)
-    if retriever:
-        docs = retriever.invoke(body.question)
-        context = "\n".join([f"[{i+1}] {d.page_content}" for i, d in enumerate(docs)])
-        sources = [{"id": d.metadata.get("id"), "title": d.metadata.get("title"), "group": d.metadata.get("group")} for d in docs]
-    else:
-        pairs = _search(body.question, k=body.topK or 4)
-        context = _format_ctx_pairs(pairs)
-        sources = [{"id": it.get("id"), "title": it.get("title"), "group": it.get("group")} for _, it in pairs]
+    pairs = _search(body.question, k=body.topK or 4)
+    context = _format_ctx_pairs(pairs)
+    sources = [{"id": it.get("id"), "title": it.get("title"), "group": it.get("group")} for _, it in pairs]
 
     messages = PROMPT.format_messages(sys=SYS_CONCISE, question=body.question, context=context)
 

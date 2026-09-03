@@ -75,6 +75,8 @@ Hệ thống sử dụng mô hình Client - Server tách biệt hoàn toàn:
 ### Cách 1: Chạy bằng Docker Compose (Khuyên dùng)
 Yêu cầu đã cài đặt **Docker Desktop** trên máy.
 
+Trước khi khởi chạy, sao chép `.env.example` thành `.env`, rồi thay `MYSQL_ROOT_PASSWORD`, `DB_PASSWORD` và `JWT_SECRET` bằng các secret riêng. `JWT_SECRET` phải có ít nhất 32 ký tự.
+
 1. Khởi chạy toàn bộ hệ thống (MySQL, FastAPI, Tomcat Backend, Nginx Frontend):
    ```bash
    docker compose up --build -d
@@ -87,6 +89,8 @@ Yêu cầu đã cài đặt **Docker Desktop** trên máy.
    ```bash
    docker compose down
    ```
+
+> **Lưu ý khi nâng cấp:** nếu volume MySQL đã được tạo bằng mật khẩu cũ, biến môi trường mới không tự đổi mật khẩu của database hiện có. Hãy đổi mật khẩu người dùng trong MySQL trước, hoặc chỉ xóa volume khi dữ liệu local không còn cần giữ.
 
 ### Cách 2: Chạy độc lập dưới Local (Development)
 

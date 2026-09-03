@@ -3,7 +3,7 @@ import { useContext, useState, useEffect } from "react";
 import { Alert, Button, Form } from "react-bootstrap";
 import MySpinner from "./layout/MySpinner";
 import { useNavigate } from "react-router-dom";
-import Apis, { authApis, endpoints } from "../configs/Apis";
+import Apis, { authApis, authCookieOptions, endpoints } from "../configs/Apis";
 import cookie from "react-cookies";
 import { MyUserContext } from "../configs/Context";
 
@@ -32,12 +32,12 @@ const Login = () => {
       });
 
       if (res.status === 200) {
-        cookie.save("token", res.data.token, { path: "/" });
+        cookie.save("token", res.data.token, authCookieOptions);
 
         const profileRes = await authApis().get(endpoints.profile());
         const profileData = profileRes.data || {};
 
-        cookie.save("user", JSON.stringify(profileData), { path: "/" });
+        cookie.save("user", JSON.stringify(profileData), authCookieOptions);
         dispatch({ type: "login", payload: profileData });
 
         if (res.data.isNewUser) {
@@ -87,12 +87,12 @@ const Login = () => {
       });
 
       if (res.status === 200) {
-        cookie.save("token", res.data.token, { path: "/" });
+        cookie.save("token", res.data.token, authCookieOptions);
 
         const profileRes = await authApis().get(endpoints.profile());
         const profileData = profileRes.data || {};
 
-        cookie.save("user", JSON.stringify(profileData), { path: "/" });
+        cookie.save("user", JSON.stringify(profileData), authCookieOptions);
         dispatch({ type: "login", payload: profileData });
 
         nav("/");
@@ -192,4 +192,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login;

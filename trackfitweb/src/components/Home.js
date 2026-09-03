@@ -49,18 +49,44 @@ const todayLabel = () => {
 const openCoach = (question) =>
   window.dispatchEvent(new CustomEvent("gutim-open-chat", { detail: { question } }));
 
+/* Shimmer skeleton block */
+const Skeleton = ({ height = 20, width = "100%", radius = 8, style: sx = {} }) => (
+  <div
+    style={{
+      height,
+      width,
+      borderRadius: radius,
+      background: "linear-gradient(90deg,var(--surface-3) 25%,var(--surface-2) 50%,var(--surface-3) 75%)",
+      backgroundSize: "200% 100%",
+      animation: "gutim-shimmer 1.4s ease-in-out infinite",
+      ...sx,
+    }}
+  />
+);
+
+/* Skeleton version of MetricCard */
+const MetricCardSkeleton = () => (
+  <div className="g-card h-100" style={{ padding: "var(--spacing-md)" }}>
+    <Skeleton height={14} width={60} style={{ marginBottom: 14 }} />
+    <Skeleton height={42} width={80} style={{ marginBottom: 10 }} />
+    <Skeleton height={12} width="70%" />
+  </div>
+);
+
 const Home = () => {
   const [exercises, setExercises] = useState([]);
   const [latestHealth, setLatestHealth] = useState(null);
   const [healthHistory, setHealthHistory] = useState([]);
   const [recos, setRecos] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const isLoggedIn = !!cookie.load("token");
   const summary = useTodaySummary(isLoggedIn);
 
   useEffect(() => {
+    if (!isLoggedIn) { setIsLoading(false); return; }
     const load = async () => {
-      if (!isLoggedIn) return;
+      setIsLoading(true);
       try {
         const exRes = await authApis().get(endpoints.exercises, { params: { page: 1, pageSize: 8 } });
         const items = exRes?.data?.items || exRes?.data || [];
@@ -83,6 +109,8 @@ const Home = () => {
         }
       } catch (e) {
         console.error("Home fetch error:", e);
+      } finally {
+        setIsLoading(false);
       }
     };
     load();
@@ -150,6 +178,20 @@ const Home = () => {
   ];
   const streakBadge = badgeFor(summary.streak);
 
+  // Người dùng mới chưa có bất kỳ dữ liệu sức khỏe nào
+  const isFirstVisit = !isLoading && !bmiData && healthHistory.length === 0;
+
+  // BMI sub-text theo ngưỡng thực tế của người dùng
+  const bmiSubText = bmiData
+    ? (() => {
+        const { bmi } = bmiData;
+        if (bmi < 18.5) return "Bổ sung dinh dưỡng để tăng cơ";
+        if (bmi < 23)   return "Bạn đang trong ngưỡng lý tưởng ✓";
+        if (bmi < 25)   return "Mục tiêu: về dưới 23 BMI";
+        return "Bắt đầu kế hoạch giảm mỡ";
+      })()
+    : null;
+
   // Fallback khi chưa login
   const fallbackClasses = [
     { title: "Yoga", coach: "Dẻo dai", img: c1 },
@@ -201,41 +243,77 @@ const Home = () => {
               {summary.streak > 0 && <> · chuỗi {summary.streak} ngày liên tục 🔥</>}
             </p>
 
-            {/* Hàng 1: Vòng Activity + BMI + Chuỗi */}
-            <Row className="g-3">
-              <Col lg={5} md={12}>
-                <div className="g-card h-100 d-flex align-items-center justify-content-center">
-                  <ActivityRings rings={rings} />
-                </div>
-              </Col>
-              <Col lg={4} md={6} xs={12} sm={6}>
-                <MetricCard
-                  color="purple"
-                  name="BMI"
-                  icon={<span style={{ fontWeight: 900 }}>⚖</span>}
-                  value={bmiData ? bmiData.bmi : "—"}
-                  sub={
-                    bmiData ? (
-                      <>
-                        <b style={{ color: "var(--ink)" }}>{bmiData.label}</b> · khỏe mạnh 18.5–24.9
-                      </>
-                    ) : (
-                      <>Chưa có chỉ số cơ thể</>
-                    )
-                  }
-                />
-              </Col>
-              <Col lg={3} md={6} xs={12} sm={6}>
-                <MetricCard
-                  color="pink"
-                  name="Chuỗi"
-                  icon={<span>{streakBadge.emoji}</span>}
-                  value={summary.streak}
-                  unit="ngày"
-                  sub={<>Danh hiệu: {streakBadge.label}</>}
-                />
-              </Col>
-            </Row>
+            {/* Keyframe shimmer — injected once per mount */}
+            <style>{`@keyframes gutim-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+
+            {/* Hàng 1: Vòng Activity + BMI + Chuỗi — skeleton khi đang tải */}
+            {isLoading ? (
+              <Row className="g-3">
+                <Col lg={5} md={12}>
+                  <div className="g-card h-100 d-flex align-items-center justify-content-center" style={{ minHeight: 160 }}>
+                    <Skeleton height={132} width={132} radius={999} />
+                  </div>
+                </Col>
+                <Col lg={4} md={6} xs={12} sm={6}><MetricCardSkeleton /></Col>
+                <Col lg={3} md={6} xs={12} sm={6}><MetricCardSkeleton /></Col>
+              </Row>
+            ) : isFirstVisit ? (
+              /* Onboarding nudge — user has no health data yet */
+              <div
+                className="g-card p-4 mb-1 text-center"
+                style={{ border: "2px dashed color-mix(in srgb,var(--brand) 35%,transparent)" }}
+              >
+                <div style={{ fontSize: 42, marginBottom: 10 }} aria-hidden="true">📊</div>
+                <h4 className="g-round fw-bold mb-2">Chào mừng đến với Gutim!</h4>
+                <p style={{ color: "var(--muted)", maxWidth: 360, margin: "0 auto 20px", lineHeight: 1.6 }}>
+                  Nhập chỉ số cơ thể đầu tiên để xem BMI, biểu đồ sức khỏe và nhận gợi ý bài
+                  tập cá nhân hóa theo thể trạng của bạn.
+                </p>
+                <a
+                  href="/health"
+                  className="btn btn-primary fw-semibold px-4"
+                  style={{ borderRadius: "var(--radius-sm)" }}
+                >
+                  Nhập chỉ số ngay →
+                </a>
+                <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--muted)" }}>Chỉ mất 30 giây</div>
+              </div>
+            ) : (
+              <Row className="g-3">
+                <Col lg={5} md={12}>
+                  <div className="g-card h-100 d-flex align-items-center justify-content-center">
+                    <ActivityRings rings={rings} />
+                  </div>
+                </Col>
+                <Col lg={4} md={6} xs={12} sm={6}>
+                  <MetricCard
+                    color="purple"
+                    name="BMI"
+                    icon={<span style={{ fontWeight: 900 }}>⚖</span>}
+                    value={bmiData ? bmiData.bmi : "—"}
+                    sub={
+                      bmiData ? (
+                        <>
+                          <b style={{ color: "var(--ink)" }}>{bmiData.label}</b> · {bmiSubText}
+                        </>
+                      ) : (
+                        <a href="/health" style={{ color: "var(--brand)" }}>Nhập chỉ số cơ thể →</a>
+                      )
+                    }
+                  />
+                </Col>
+                <Col lg={3} md={6} xs={12} sm={6}>
+                  <MetricCard
+                    color="pink"
+                    name="Chuỗi"
+                    icon={<span>{streakBadge.emoji}</span>}
+                    value={summary.streak}
+                    unit="ngày"
+                    sub={<>Danh hiệu: {streakBadge.label}</>}
+                  />
+                </Col>
+              </Row>
+            )}
 
             {/* Hàng 2 "Cơ thể": Cân nặng + biểu đồ & Kế hoạch hôm nay */}
             <div className="mt-4 mb-2 fw-bold" style={{ color: "var(--muted)", fontSize: 13 }}>Cơ thể</div>
@@ -407,8 +485,8 @@ const Home = () => {
         </section>
       )}
 
-      {/* ===== EXERCISES (map từ BE hoặc fallback) ===== */}
-      <section className="py-5" data-aos="fade-up">
+      {/* ===== EXERCISES (chỉ hiển thị khi chưa đăng nhập — tránh marketing noise trong dashboard) ===== */}
+      {!isLoggedIn && <section className="py-5" data-aos="fade-up">
         <Container>
           <div className="d-flex align-items-center justify-content-between mb-3">
             <div>
@@ -417,7 +495,6 @@ const Home = () => {
             </div>
             <div className="d-flex gap-2">
               <Button size="sm" variant="outline-primary" href="/exercises">Tất cả bài tập</Button>
-              {isLoggedIn && <Button size="sm" variant="primary" href="/plans">Lập kế hoạch</Button>}
             </div>
           </div>
 
@@ -444,7 +521,7 @@ const Home = () => {
             )}
           </Row>
         </Container>
-      </section>
+      </section>}
 
       {/* ===== CTA Section (chỉ khi chưa đăng nhập) ===== */}
       {!isLoggedIn && (

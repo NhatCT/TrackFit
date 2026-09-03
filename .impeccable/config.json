@@ -1,0 +1,12 @@
+{
+  "buildPath": "code",
+  "detector": {
+    "ignoreFiles": [
+      "trackfitweb/src/css/",
+      "trackfitweb/src/js/",
+      "trackfitweb/public/",
+      "**/*.min.css",
+      "**/*.min.js"
+    ]
+  }
+}

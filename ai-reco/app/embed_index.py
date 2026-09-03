@@ -65,22 +65,3 @@ def rank(query: str, candidates: List[Dict[str, Any]], k: int = 10) -> List[Dict
     )
     return ranked[:k]
 
-# ---- LangChain retriever (tùy chọn) ----
-from langchain.embeddings.base import Embeddings
-from langchain_community.vectorstores import FAISS as LCFAISS
-
-class _STEmbeddings(Embeddings):
-    def __init__(self): self.model = _get_model()
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        arr = self.model.encode(texts, normalize_embeddings=True, convert_to_numpy=True)
-        return arr.astype("float32").tolist()
-    def embed_query(self, text: str) -> List[float]:
-        return self.embed_documents([text])[0]
-
-def as_langchain_retriever(k: int = 4):
-    docs = [ (it.get("title","")+" "+it.get("text","")).strip() for it in _corpus ]
-    metas = [ {"id": it.get("id"), "title": it.get("title"), "group": it.get("group")} for it in _corpus ]
-    if not docs:
-        return None
-    vs = LCFAISS.from_texts(docs, _STEmbeddings(), metadatas=metas)
-    return vs.as_retriever(search_kwargs={"k": k})

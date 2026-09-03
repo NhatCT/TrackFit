@@ -1,11 +1,12 @@
 // src/components/reducers/MyUserReducer.js
 import cookie from "react-cookies";
+import { authCookieOptions } from "../../configs/Apis";
 
 /** Đồng bộ cookie "user" để giữ trạng thái sau reload */
 function saveUserToCookie(user) {
   try {
     if (!user) cookie.remove("user", { path: "/" });
-    else cookie.save("user", user, { path: "/" });
+    else cookie.save("user", user, authCookieOptions);
   } catch {
     // ignore
   }

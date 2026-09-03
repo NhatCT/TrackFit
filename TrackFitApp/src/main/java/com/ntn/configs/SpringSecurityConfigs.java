@@ -4,6 +4,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.ntn.filters.JwtFilter;
 import com.ntn.filters.RateLimitFilter;
+import com.ntn.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -73,6 +74,7 @@ public class SpringSecurityConfigs {
 
     @Bean
     public JwtFilter jwtFilter() {
+        JwtUtils.validateConfiguration();
         return new JwtFilter();
     }
 

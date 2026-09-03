@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "source": "DESIGN.md",
+  "generated": "2026-09-03",
+  "target": "trackfitweb",
+  "colorMeta": {
+    "brand": {
+      "light": "#F2612C",
+      "dark": "#FF6A38",
+      "hover": "#FF8A4C",
+      "soft": "rgba(242,97,44,.12)",
+      "tonal": ["#FEF0EB", "#FDD5C3", "#FBB59A", "#F89472", "#F2612C", "#D04A1B", "#A83913", "#80280C"]
+    },
+    "categorical": {
+      "pink":   { "light": "#FF2D55", "dark": "#FF375F" },
+      "green":  { "light": "#34C759", "dark": "#30D158" },
+      "cyan":   { "light": "#00C7BE", "dark": "#66D4CF" },
+      "blue":   { "light": "#0A84FF", "dark": "#0A84FF" },
+      "purple": { "light": "#AF52DE", "dark": "#BF5AF2" },
+      "amber":  { "light": "#FF9500", "dark": "#FF9F0A" }
+    },
+    "semantic": {
+      "danger": { "light": "#FF3B30", "dark": "#FF453A" }
+    },
+    "neutral": {
+      "bg":        { "light": "#F2F2F7", "dark": "#000000" },
+      "surface":   { "light": "#FFFFFF",  "dark": "#1C1C1E" },
+      "surface-2": { "light": "#F7F7FB",  "dark": "#2C2C2E" },
+      "surface-3": { "light": "#EDEDF2",  "dark": "#3A3A3C" },
+      "ink":       { "light": "#1C1C1E",  "dark": "#FFFFFF" },
+      "ink-2":     { "light": "#3A3A3C",  "dark": "#EBEBF0" },
+      "muted":     { "light": "#8E8E93",  "dark": "#98989F" },
+      "faint":     { "light": "#AEAEB2",  "dark": "#6C6C70" },
+      "hair":      { "light": "#E5E5EA",  "dark": "#38383A" }
+    }
+  },
+  "shadows": {
+    "card":    "0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06)",
+    "card-dark": "0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.5)",
+    "sm":      "0 1px 3px rgba(0,0,0,.05)"
+  },
+  "motion": {
+    "default": "0.2s ease",
+    "reveal":  "0.8s ease",
+    "reducedMotion": "prefers-reduced-motion: no-preference"
+  },
+  "components": {
+    "button-primary": {
+      "html": "<button class=\"g-btn g-btn--primary\">Label</button>",
+      "css": ".g-btn--primary { background: var(--brand); color: #fff; border-radius: var(--radius-sm); padding: 12px 20px; font-family: Nunito, sans-serif; font-weight: 800; font-size: 15px; box-shadow: 0 6px 18px var(--brand-soft); transition: transform 0.2s ease, filter 0.2s ease; } .g-btn--primary:hover { transform: translateY(-2px); filter: brightness(1.03); }"
+    },
+    "button-ghost": {
+      "html": "<button class=\"g-btn g-btn--ghost\">Label</button>",
+      "css": ".g-btn--ghost { background: var(--surface-2); color: var(--ink); border: 1px solid var(--hair); border-radius: var(--radius-sm); padding: 12px 20px; }"
+    },
+    "card": {
+      "html": "<div class=\"g-card\">...</div>",
+      "css": ".g-card { background: var(--surface); border: 1px solid var(--hair); border-radius: var(--radius); padding: var(--spacing-md); box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06); }"
+    },
+    "pill-tag": {
+      "html": "<span class=\"g-pill\">Tag</span>",
+      "css": ".g-pill { background: var(--surface-2); color: var(--muted); border: 1px solid var(--hair); border-radius: var(--radius-pill); padding: 3px 10px; font-size: 11.5px; font-weight: 600; }"
+    },
+    "icon-tile": {
+      "html": "<span class=\"g-ic g-ic--green\"><svg>...</svg></span>",
+      "css": ".g-ic { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:9px; } .g-ic--green { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); }"
+    }
+  }
+}

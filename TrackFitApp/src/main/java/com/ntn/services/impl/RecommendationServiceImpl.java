@@ -112,6 +112,8 @@ public class RecommendationServiceImpl implements RecommendationService {
                     : (e.getTargetGoal() != null ? e.getTargetGoal() : "");
             m.put("text",  desc);
             m.put("group", e.getMuscleGroup());
+            m.put("minutes", minutesPref > 0 ? minutesPref : null);
+            m.put("difficulty", intensity);
             return m;
         }).collect(Collectors.toList());
 
@@ -125,6 +127,11 @@ public class RecommendationServiceImpl implements RecommendationService {
                 body.put("query", query);
                 body.put("candidates", candJson);
                 body.put("topK", size);
+                body.put("context", Map.of(
+                        "goalType", goalType != null ? goalType : "general",
+                        "intensity", intensity != null ? intensity : "Medium",
+                        "availableMinutes", minutesPref > 0 ? minutesPref : 25
+                ));
 
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);

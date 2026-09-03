@@ -4,6 +4,13 @@ import cookie from "react-cookies";
 
 const BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:8080/TrackFit/api/";
 
+export const authCookieOptions = {
+  path: "/",
+  sameSite: "lax",
+  secure: window.location.protocol === "https:",
+  maxAge: 24 * 60 * 60,
+};
+
 /** Lấy headers xác thực hiện tại (nếu có token trong cookie) */
 const buildAuthHeaders = () => {
   const token = cookie.load("token");

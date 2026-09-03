@@ -33,6 +33,7 @@ export default function TodayWorkout() {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [timerRunning, setTimerRunning] = useState(false);
   const [isResting, setIsResting] = useState(false);
+  const [showDetail, setShowDetail] = useState(false);
 
   // Active Workout Timer Effect
   useEffect(() => {
@@ -228,6 +229,11 @@ export default function TodayWorkout() {
     return { total, completed, skipped, percent };
   }, [todayExercises, historyToday]);
 
+  const totalMinutes = useMemo(
+    () => todayExercises.reduce((s, e) => s + (Number(e.duration) || 0), 0),
+    [todayExercises]
+  );
+
   // Log workout activity
   const logWorkout = async (exerciseId, status, duration) => {
     setSubmittingId(`${exerciseId}-${status}`);
@@ -342,92 +348,93 @@ export default function TodayWorkout() {
             </div>
           ) : (
             <>
-              {/* Progress bar */}
-              <div className="mb-4">
-                <div className="d-flex justify-content-between align-items-center mb-1 text-muted small">
-                  <span>Tiến độ hoàn thành: {stats.completed}/{stats.total} bài tập</span>
-                  <span className="fw-bold" style={{ color: "var(--ink)" }}>{stats.percent}%</span>
+              {/* Summary tile — answers "hôm nay tôi làm gì?" in one glance */}
+              <div className="d-flex align-items-center justify-content-between mb-2">
+                <div>
+                  <span
+                    className="g-num fw-bold"
+                    style={{ fontSize: "1.7rem", letterSpacing: "-.02em", color: stats.percent === 100 ? "var(--green)" : "var(--ink)" }}
+                  >
+                    {stats.completed}/{stats.total}
+                  </span>
+                  <span className="ms-2" style={{ color: "var(--muted)", fontSize: 13.5 }}>
+                    bài hoàn thành{totalMinutes > 0 ? ` · ${totalMinutes} phút` : ""}
+                  </span>
                 </div>
-                <ProgressBar
-                  now={stats.percent}
-                  style={{ height: "8px", backgroundColor: "var(--hair)" }}
-                  variant={stats.percent === 100 ? "success" : "info"}
-                />
+                <button
+                  onClick={() => setShowDetail((v) => !v)}
+                  style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontSize: 13, fontWeight: 600, padding: "4px 0" }}
+                  aria-expanded={showDetail}
+                >
+                  {showDetail ? "Thu gọn ↑" : "Chi tiết ↓"}
+                </button>
               </div>
 
-              <Row className="g-3">
-                {todayExercises.map((ex) => {
-                  const recorded = historyToday.find((h) => h.exerciseId === ex.exerciseId);
-                  const isCompleted = recorded?.status === "COMPLETED";
-                  const isSkipped = recorded?.status === "SKIPPED";
-                  
-                  return (
-                    <Col key={ex.detailId} xs={12} md={6}>
-                      <Card 
-                        className={`h-100 border-0 p-3`} 
-                        style={{ 
-                          background: isCompleted
-                            ? "color-mix(in srgb, var(--green) 8%, transparent)"
-                            : isSkipped
-                            ? "color-mix(in srgb, var(--muted) 10%, transparent)"
-                            : "var(--surface-2)",
-                          border: isCompleted
-                            ? "1px solid color-mix(in srgb, var(--green) 30%, transparent)"
-                            : "1px solid var(--hair)",
-                          borderRadius: "12px"
-                        }}
-                      >
-                        <div className="d-flex justify-content-between align-items-start gap-2">
-                          <div>
-                            <h6 className="fw-bold mb-1" style={{ color: "var(--ink)" }}>
-                              {ex.exerciseName}
-                            </h6>
-                            <div className="d-flex gap-2 align-items-center flex-wrap mt-1">
-                              <Badge bg="secondary" className="bg-opacity-25 text-light-50">⏱️ {ex.duration} phút</Badge>
-                              {isCompleted && <Badge bg="success">Hoàn thành</Badge>}
-                              {isSkipped && <Badge bg="secondary">Đã bỏ qua</Badge>}
+              <ProgressBar
+                now={stats.percent}
+                style={{ height: "6px", backgroundColor: "var(--hair)", borderRadius: 999, marginBottom: 0 }}
+                variant={stats.percent === 100 ? "success" : "info"}
+              />
+
+              {/* Expandable exercise list */}
+              {showDetail && (
+                <Row className="g-3 mt-2">
+                  {todayExercises.map((ex) => {
+                    const recorded = historyToday.find((h) => h.exerciseId === ex.exerciseId);
+                    const isCompleted = recorded?.status === "COMPLETED";
+                    const isSkipped = recorded?.status === "SKIPPED";
+                    return (
+                      <Col key={ex.detailId} xs={12} md={6}>
+                        <Card
+                          className="h-100 border-0 p-3"
+                          style={{
+                            background: isCompleted
+                              ? "color-mix(in srgb, var(--green) 8%, transparent)"
+                              : isSkipped
+                              ? "color-mix(in srgb, var(--muted) 10%, transparent)"
+                              : "var(--surface-2)",
+                            border: isCompleted
+                              ? "1px solid color-mix(in srgb, var(--green) 30%, transparent)"
+                              : "1px solid var(--hair)",
+                            borderRadius: "12px",
+                          }}
+                        >
+                          <div className="d-flex justify-content-between align-items-start gap-2">
+                            <div>
+                              <h6 className="fw-bold mb-1" style={{ color: "var(--ink)" }}>{ex.exerciseName}</h6>
+                              <div className="d-flex gap-2 align-items-center flex-wrap mt-1">
+                                <Badge bg="secondary" className="bg-opacity-25 text-light-50">⏱️ {ex.duration} phút</Badge>
+                                {isCompleted && <Badge bg="success">Hoàn thành</Badge>}
+                                {isSkipped && <Badge bg="secondary">Đã bỏ qua</Badge>}
+                              </div>
+                            </div>
+                            <div className="d-flex gap-1">
+                              {!isCompleted && !isSkipped ? (
+                                <>
+                                  <Button size="sm" variant="primary" disabled={submittingId !== null}
+                                    onClick={() => logWorkout(ex.exerciseId, "COMPLETED", ex.duration)}>
+                                    {submittingId === `${ex.exerciseId}-COMPLETED` ? "..." : "✓"}
+                                  </Button>
+                                  <Button size="sm" variant="outline-secondary" disabled={submittingId !== null}
+                                    onClick={() => logWorkout(ex.exerciseId, "SKIPPED", 0)}>
+                                    {submittingId === `${ex.exerciseId}-SKIPPED` ? "..." : "Skip"}
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button size="sm" variant="link" className="text-muted p-0 text-decoration-none"
+                                  style={{ fontSize: "0.85rem" }} disabled={submittingId !== null}
+                                  onClick={() => logWorkout(ex.exerciseId, "ONGOING", 0)}>
+                                  Hoàn tác
+                                </Button>
+                              )}
                             </div>
                           </div>
-                          
-                          <div className="d-flex gap-1">
-                            {!isCompleted && !isSkipped ? (
-                              <>
-                                <Button 
-                                  size="sm" 
-                                  variant="primary" 
-                                  disabled={submittingId !== null}
-                                  onClick={() => logWorkout(ex.exerciseId, "COMPLETED", ex.duration)}
-                                >
-                                  {submittingId === `${ex.exerciseId}-COMPLETED` ? "..." : "✓"}
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline-secondary" 
-                                  disabled={submittingId !== null}
-                                  onClick={() => logWorkout(ex.exerciseId, "SKIPPED", 0)}
-                                >
-                                  {submittingId === `${ex.exerciseId}-SKIPPED` ? "..." : "Skip"}
-                                </Button>
-                              </>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="link"
-                                className="text-muted p-0 text-decoration-none"
-                                style={{ fontSize: "0.85rem" }}
-                                onClick={() => logWorkout(ex.exerciseId, "ONGOING", 0)} // reset
-                                disabled={submittingId !== null}
-                              >
-                                Hoàn tác
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    </Col>
-                  );
-                })}
-              </Row>
+                        </Card>
+                      </Col>
+                    );
+                  })}
+                </Row>
+              )}
             </>
           )}
         </Card.Body>
@@ -539,7 +546,7 @@ export default function TodayWorkout() {
                 <Button 
                   variant="success" 
                   className="fw-bold px-4 py-2"
-                  style={{ flex: 2, background: "linear-gradient(135deg, #10b981, #059669)", border: "none" }}
+                  style={{ flex: 2, background: "var(--green)", border: "none" }}
                   onClick={() => handleActiveExerciseComplete(currentEx.exerciseId, currentEx.duration)}
                 >
                   ✓ Hoàn thành

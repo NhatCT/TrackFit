@@ -1,0 +1,119 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: trackfit-mysql
+    environment:
+      MYSQL_DATABASE: trackfitdb
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env or your shell environment}
+      MYSQL_USER: trackfit
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env or your shell environment}
+      TZ: "Asia/Ho_Chi_Minh"
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports: ["3307:3306"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL","mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 120s
+    restart: unless-stopped
+
+  ai:
+    image: nhatct/trackfit-ai:latest
+    container_name: trackfit-ai
+    ports: ["8000:8000"]
+    env_file:
+      - ai-reco/.env.ai
+    environment:
+      HF_HOME: /opt/hf-cache
+      HUGGINGFACE_HUB_CACHE: /opt/hf-cache/hub
+      TRANSFORMERS_CACHE: /opt/hf-cache/transformers
+      SENTENCE_TRANSFORMERS_HOME: /opt/hf-cache/sentencetransformers
+      TORCH_HOME: /opt/hf-cache/torch
+      XDG_CACHE_HOME: /opt/hf-cache/.xdg
+    volumes:
+      - "E:/hf-cache-mnt:/opt/hf-cache:rw"
+    healthcheck:
+      test: ["CMD-SHELL","curl -sf http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    restart: unless-stopped
+
+  backend:
+    build: ./TrackFitApp
+    container_name: trackfit-backend
+    ports: ["8080:8080"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      ai:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      DB_URL: "jdbc:mysql://mysql:3306/trackfitdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8"
+      DB_USERNAME: trackfit
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env or your shell environment}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET (at least 32 characters) in .env or your shell environment}
+      FLYWAY_ENABLED: "true"
+      TZ: "Asia/Ho_Chi_Minh"
+      AI_RECO_URL: "http://ai:8000"
+      REDIS_HOST: "redis"
+      KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+      KAFKA_ENABLED: "true"
+    restart: unless-stopped
+
+  frontend:
+    build: ./trackfitweb
+    container_name: trackfit-frontend
+    ports: ["3000:80"]
+    depends_on:
+      backend:
+        condition: service_started
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: trackfit-redis
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: trackfit-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      CLUSTER_ID: "gutim-kafka-cluster-001"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  mysql_data: {}
